@@ -1,20 +1,21 @@
-var aniscrape = require("aniscrape");
-var kissanime = require("aniscrape-kissanime")
-var Discord = require("discord.js");
-var nani = require("nani");
-var nedb = require("nedb")
-var request = require("request");
-var youtubeNode = require("youtube-node");
-var ytdl = require("ytdl-core");
-
-
 var config = require("./config.json");
 var userDB = require("./runtime/user_rt.js");
 var serverDB = require("./runtime/server_rt.js");
 var permissionDB = require("./runtime/permission_rt.js");
 var factionDB = require("./runtime/faction_rt.js");
+var mangaDB = require("./runtime/manga_track_rt.js");
 
-var dekubot = new Discord.Client();
+var aniscrape = require("aniscrape");
+var kissanime = require("aniscrape-kissanime")
+var Discord = require("discord.js");
+var nani = require("nani").init(config.anilistID, config.anilist_Secret);
+var nedb = require("nedb")
+var request = require("request");
+var youtubeNode = require("youtube-node");
+var ytdl = require("ytdl-core");
+var reddit = require('redwrap');
+
+var dekubot = new Discord.Client({forceFetchUsers: true});
 var youtubeNode = new youtubeNode();
 var authorpermissionlvl = null;
 var botID = config.botID;
@@ -55,53 +56,57 @@ dekubot.on("serverCreated", function(server) {
 	}
 });
 
-//commands
-var userCommands = {
-  "help": function(bot, msg) {
-	dekubot.reply(msg, "https://github.com/RoddersGH/DekuBot/wiki/General-Commands");
-  },
-  "ping": function(bot, msg) {
-    dekubot.reply(msg, "pong");
-  },
-  /* "joinvc": function(bot, msg, args) {
-    var channel = dekubot.channels.get("name", args);
-	if ((channel == null) || (channel.type == "text")) {
-		"please enter a valid voice channel"
-	} else {
-		dekubot.joinVoiceChannel(channel, function() {
-			dekubot.reply(msg, "Joining " + channel);
-		});
-	}
-  },
-  "leavevc": function(bot, msg) {
-    dekubot.leaveVoiceChannel(bot.voiceConnection.voiceChannel, function() {
-      dekubot.reply(msg, "Bye...");
-    });
-  }, */
-  "purge": function(bot, msg, args) {
+var Commands = [];
+
+Commands.help = {
+	name: "help",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg) {
+  	bot.reply(msg, "https://github.com/RoddersGH/DekuBot/wiki/General-Commands");
+  }
+};
+
+Commands.ping = {
+	name: "ping",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg) {
+  	bot.reply(msg, "pong");
+  }
+};
+
+Commands.purge = {
+	name: "purge",
+	help: "tbd",
+	type: "admin",
+	lvl: 1,
+	func: function(bot, msg, args) {
     if (!msg.channel.server) {
-      dekubot.sendMessage(msg.channel, "You can't do that in a DM you silly silly person!");
+      bot.sendMessage(msg.channel, "You can't do that in a DM you silly silly person!");
       return;
     }
     if (!args || isNaN(args)) {
-      dekubot.sendMessage(msg.channel, "Please define an amount of messages for me to delete!");
+      bot.sendMessage(msg.channel, "Please define an amount of messages for me to delete!");
       return;
     }
     if (!msg.channel.permissionsOf(msg.sender).hasPermission("manageMessages")) {
-      dekubot.sendMessage(msg.channel, "Your role in this server does not have enough permissions.");
+      bot.sendMessage(msg.channel, "Your role in this server does not have enough permissions.");
       return;
     }
     if (!msg.channel.permissionsOf(bot.user).hasPermission("manageMessages")) {
-      dekubot.sendMessage(msg.channel, "I don't have permission to do that!");
+      bot.sendMessage(msg.channel, "I don't have permission to do that!");
       return;
     }
     if (args > 50) {
-      dekubot.sendMessage(msg.channel, "The maximum is 50.");
+      bot.sendMessage(msg.channel, "The maximum is 50.");
       return;
     }
-    dekubot.getChannelLogs(msg.channel, args, function(error, messages) {
+    bot.getChannelLogs(msg.channel, args, function(error, messages) {
       if (error) {
-        bot.sendMessage(msg.channel, "Something went wrong with the whole getting logs thing.");
+        bot.sendMessage(msg.channel, "Something went wrong while getting logs thing.");
         return;
       } else {
         var msgsleft = messages.length,
@@ -117,120 +122,152 @@ var userCommands = {
         }
       }
     });
-  },
-  "namechanges": function(bot, msg) {
-	if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-		bot.sendMessage(msg.channel, "Please mention a single user.");
-	} else {
-	msg.mentions.map(function(user) {
-      userDB.returnNamechanges(user).then(function(reply) {
-        bot.sendMessage(msg.channel, reply.join(', '));
-      }).catch(function(err) {
-        if (err === 'No changes found!') {
-          bot.sendMessage(msg.channel, "I don't have any changes registered.");
-          return;
-        }
-        bot.sendMessage(msg.channel, 'Something went wrong, try again later.');
-      });
-    });
-	}
-  },
-  "botstatus": function(bot, msg) {
-	var channelcount = 0;
-	var usercount = 0;
-	var finalstring = [];
+  }
+};
 
-	for (server of bot.servers) {
-		for (channel of server.channels ) {
-			channelcount++;
+Commands.namechanges = {
+	name: "namechanges",
+	help: "tbt",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg) {
+		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
+			bot.sendMessage(msg.channel, "Please mention a single user.");
+		} else {
+			msg.mentions.map(function(user) {
+	      userDB.returnNamechanges(user).then(function(reply) {
+	        bot.sendMessage(msg.channel, reply.join(', '));
+	      }).catch(function(err) {
+	        if (err === 'No changes found!') {
+	          bot.sendMessage(msg.channel, "I don't have any changes registered.");
+	          return;
+	        }
+	        bot.sendMessage(msg.channel, 'Something went wrong, try again later.');
+	      });
+	    });
+		}
+  }
+};
+
+Commands.botstatus = {
+	name: "botstatus",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg) {
+		var channelcount = 0;
+		var usercount = 0;
+		var finalstring = [];
+
+		for (server of bot.servers) {
+			for (channel of server.channels ) {
+				channelcount++;
+			};
+			for (member of server.members) {
+				usercount++;
+			};
 		};
-		for (member of server.members) {
-			usercount++;
-		};
-	};
-	var date = new Date(bot.uptime);
-	// Hours part from the timestamp
-	var hours = date.getHours();
-	// Minutes part from the timestamp
-	var minutes = "0" + date.getMinutes();
-	// Seconds part from the timestamp
-	var seconds = "0" + date.getSeconds();
-	// Will display time in 10:30:23 format
-	var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+		var date = new Date(bot.uptime);
+		// Hours part from the timestamp
+		var hours = date.getHours();
+		// Minutes part from the timestamp
+		var minutes = "0" + date.getMinutes();
+		// Seconds part from the timestamp
+		var seconds = "0" + date.getSeconds();
+		// Will display time in 10:30:23 format
+		var formattedTime = hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
 
 
-	 finalstring.push("Hi! Im DekuBot.");
-	 finalstring.push("Im currently used in " + bot.servers.length + " server(s), in " + channelcount + " channels used by " + usercount + " users.");
-	 finalstring.push("I've been up and ready for " + formattedTime + ".");
-     finalstring.push("If you have any questions or need some help, contact " + (bot.servers.get("name", msg.channel.server).members.get("id", 159704938283401216).mention()))
-	 finalstring.push("```         __    __");
-	 finalstring.push("        /  |  | |'-.");
-	 finalstring.push("       .|__/  | |   |");
-	 finalstring.push("    _ /  `._  |_|_.-'");
-	 finalstring.push("   | /  |__.`=._) (_");
-	 finalstring.push('   |/ ._/  |"""""""""|');
-	 finalstring.push("   |'.  ` )|         |");
-	 finalstring.push('   ;"""/ / |         |');
-	 finalstring.push("    ) /_/| |.-------.|");
-	 finalstring.push("   o  `-`o o         o	```");
-	bot.sendMessage(msg.channel, finalstring);
-  },
-  "serverspoilertoggle": function(bot, msg, args, lvl) {
+		finalstring.push("Hi! Im DekuBot.");
+		finalstring.push("Im currently used in " + bot.servers.length + " server(s), in " + channelcount + " channels used by " + usercount + " users.");
+		finalstring.push("I've been up and ready for " + formattedTime + ".");
+	  finalstring.push("If you have any questions or need some help, contact " + (bot.servers.get("name", msg.channel.server).members.get("id", 159704938283401216).mention()))
+		finalstring.push("```         __    __");
+		finalstring.push("        /  |  | |'-.");
+		finalstring.push("       .|__/  | |   |");
+		finalstring.push("    _ /  `._  |_|_.-'");
+		finalstring.push("   | /  |__.`=._) (_");
+		finalstring.push('   |/ ._/  |"""""""""|');
+		finalstring.push("   |'.  ` )|         |");
+		finalstring.push('   ;"""/ / |         |');
+		finalstring.push("    ) /_/| |.-------.|");
+		finalstring.push("   o  `-`o o         o	```");
+		bot.sendMessage(msg.channel, finalstring);
+  }
+};
+
+Commands.serverspoilertoggle = {
+	name: "serverspoilertoggle",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
 	  if (msg.channel.permissionsOf(msg.sender).hasPermission("manageServer")) {
-		serverDB.togglespoiler(msg.channel.server.id);
+			serverDB.togglespoiler(msg.channel.server.id);
 	  } else {
-		bot.sendMessage(msg.channel, "Your role in this server does not have enough permissions.")
+			bot.sendMessage(msg.channel, "Your role in this server does not have enough permissions.")
 	  }
+  }
+};
 
-  },
-  "getpermissionlvl": function(bot, msg, args, lvl) {
-	if (lvl >= 1) {
+Commands.getpermissionlvl = {
+	name: "getpermissionlvl",
+	help: "tbd",
+	type: "admin",
+	lvl: 1,
+	func: function(bot, msg, args, lvl) {
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
 			bot.reply(msg, "Please mention a user");
 		} else {
 			permissionDB.getPermission(msg.channel.server.id, msg.mentions[0].id).then(function(r) {
 				bot.sendMessage(msg.channel, r);
-		});
+			});
 		}
-	} else {
-		bot.sendMessage(msg.channel, "you don't have a high enough permission level to use this command")
-	}
-  },
-  "setpermissionlvl": function(bot, msg, args, lvl) {
-	if (lvl >= 3) {
-	var num = args.substr(args.indexOf(" ") + 1)
-	var isnum = /^\d+$/.test(num);
-	if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-		bot.reply(msg, "Please mention a user");
-		return;
-	} else {
-		if (!num || isnum == false || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
-			bot.sendMessage(msg.channel, "Please define the permission level you wish to set for the user.");
+  }
+};
+
+Commands.setpermissionlvl = {
+	name: "setpermissionlvl",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
+		var num = args.substr(args.indexOf(" ") + 1)
+		var isnum = /^\d+$/.test(num);
+		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
+			bot.reply(msg, "Please mention a user");
 			return;
 		} else {
-			permissionDB.check(msg.channel.server.id, msg.mentions[0].id).catch(function(e) {
-				console.log(e);
-				if (e == 'Nothing found!') {
-					permissionDB.newPermission(msg.channel.server, msg.mentions[0]);
-				};
-			});
-			permissionDB.getPermission(msg.channel.server.id, msg.author.id).then(function(r) {
-				permissionDB.setPermission(r, msg.channel.server, msg.mentions[0], num).then(function(res) {
-					bot.sendMessage(msg.channel, msg.mentions[0] + res);
-				}).catch(function(e) {
-					bot.sendMessage(msg.channel, e);
+			if (!num || isnum == false || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
+				bot.sendMessage(msg.channel, "Please define the permission level you wish to set for the user.");
+				return;
+			} else {
+				permissionDB.check(msg.channel.server.id, msg.mentions[0].id).catch(function(e) {
+					console.log(e);
+					if (e == 'Nothing found!') {
+						permissionDB.newPermission(msg.channel.server, msg.mentions[0]);
+					};
 				});
-			}).catch(function(e) {
-				console.log(e);
-			});
-		}
-  	}
-	} else {
-		bot.sendMessage(msg.channel, "you don't have a high enough permission level to use this command")
-	}
-  },
-  "createfaction": function(bot, msg, args, lvl) {
-	if (lvl >= 3) {
+				permissionDB.getPermission(msg.channel.server.id, msg.author.id).then(function(r) {
+					permissionDB.setPermission(r, msg.channel.server, msg.mentions[0], num).then(function(res) {
+						bot.sendMessage(msg.channel, msg.mentions[0] + res);
+					}).catch(function(e) {
+						bot.sendMessage(msg.channel, e);
+					});
+				}).catch(function(e) {
+					console.log(e);
+				});
+			}
+	  }
+  }
+};
+
+Commands.createfaction = {
+	name: "createfaction",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
 		var name = args.substr(0, args.indexOf("#") - 1)
 		var hex = args.substr(args.indexOf("#"))
 		var isHex = /^#[0-9A-F]{6}$/i.test(hex);
@@ -260,237 +297,705 @@ var userCommands = {
 			bot.sendMessage(msg.channel, e);
 			return;
 		});
+  }
+};
 
-	}
-  },
-  "manualjoinfaction": function(bot, msg, args, lvl) {
-	if (lvl >= 3) {
-	var name = args.substr(args.indexOf(" ") + 1)
-	var exitloop2 = false;
-	if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-		bot.reply(msg, "Please mention a user");
-		return;
-	} else {
-		if (!name) {
-			bot.sendMessage(msg.channel, "Please define the faction you wish the user to join.");
+Commands.manualjoinfaction = {
+	name: "manualjoinfaction",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
+		var name = args.substr(args.indexOf(" ") + 1)
+		var exitloop2 = false;
+		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
+			bot.reply(msg, "Please mention a user");
 			return;
 		} else {
-			factionDB.getFactionsHere(msg.channel.server).then(function(r) {     //r is servers factions
-				for (factionid of r) {
-					if (exitloop2 == true) {
-						break;
-					};
-					factionDB.getFactionName(factionid).then(function(v) {
-						if (v == name) {
-							userDB.getFactionIDs(msg.mentions[0]).then(function(q){
-								for (facid of q) {
-									factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
-									if ((j == facid) || (facid = r[0]) || (facid = r[1]) || (facid = r[2])) {
-										bot.sendMessage(msg.channel, "The user is already in a faction on this server.");
-										return;
-									} else {
-										userDB.addToFaction(msg.mentions[0], j);
-										bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
-									};
-									});
-								};
-							}).catch(function(e) {
-								if (e == 'No factions found!') {
-										factionDB.getFactionID(msg.channel.server.id, v).then(function(m) {
-											userDB.addToFaction(msg.mentions[0], m);
-											bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
-										});
-								}
-							});
-							exitloop2 = true;
+			if (!name) {
+				bot.sendMessage(msg.channel, "Please define the faction you wish the user to join.");
+				return;
+			} else {
+				factionDB.getFactionsHere(msg.channel.server).then(function(r) {     //r is servers factions
+					for (factionid of r) {
+						if (exitloop2 == true) {
+							break;
 						};
-					});
-				}
+						factionDB.getFactionName(factionid).then(function(v) {
+							if (v == name) {
+								userDB.getFactionIDs(msg.mentions[0]).then(function(q){
+									for (facid of q) {
+										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
+										if ((j == facid) || (facid = r[0]) || (facid = r[1]) || (facid = r[2])) {
+											bot.sendMessage(msg.channel, "The user is already in a faction on this server.");
+											return;
+										} else {
+											userDB.addToFaction(msg.mentions[0], j);
+											bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
+										};
+										});
+									};
+								}).catch(function(e) {
+									if (e == 'No factions found!') {
+											factionDB.getFactionID(msg.channel.server.id, v).then(function(m) {
+												userDB.addToFaction(msg.mentions[0], m);
+												bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
+											});
+									}
+								});
+								exitloop2 = true;
+							};
+						});
+					}
 
-			}).catch(function(e) {
-				bot.sendMessage(msg.channel, e);
-			});
-		}
-  	}
-	} else {
-		bot.sendMessage(msg.channel, "you don't have a high enough permission level to use this command")
-	}
-  },
-  "manualleavefaction": function(bot, msg, args, lvl) {
-	if (lvl >= 3) {
-	var name = args.substr(args.indexOf(" ") + 1)
-	exitloop = false;
-	if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-		bot.reply(msg, "Please mention a user");
-		return;
-	} else {
-		if (!name) {
-			bot.sendMessage(msg.channel, "Please define the faction you wish the user to leave.");
+				}).catch(function(e) {
+					bot.sendMessage(msg.channel, e);
+				});
+			}
+	  }
+  }
+};
+
+Commands.manualleavefaction = {
+	name: "manualleavefaction",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
+		var name = args.substr(args.indexOf(" ") + 1)
+		exitloop = false;
+		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
+			bot.reply(msg, "Please mention a user");
 			return;
 		} else {
-			factionDB.getFactionsHere(msg.channel.server).then(function(r) {
-				for (factionid of r) {
-					factionDB.getFactionName(factionid).then(function(v) {
-						if (v == name) {
-							userDB.getFactionIDs(msg.mentions[0]).then(function(q){
-								for (facid of q) {
-									if (exitloop = true) {
-										break;
-									};
-									factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
-									if (j == facid) {
-										userDB.removeFromFaction(msg.mentions[0], j);
-										bot.sendMessage(msg.channel, "The user has successfully been removed from " + name);
+			if (!name) {
+				bot.sendMessage(msg.channel, "Please define the faction you wish the user to leave.");
+				return;
+			} else {
+				factionDB.getFactionsHere(msg.channel.server).then(function(r) {
+					for (factionid of r) {
+						factionDB.getFactionName(factionid).then(function(v) {
+							if (v == name) {
+								userDB.getFactionIDs(msg.mentions[0]).then(function(q){
+									for (facid of q) {
+										if (exitloop = true) {
+											break;
+										};
+										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
+										if (j == facid) {
+											userDB.removeFromFaction(msg.mentions[0], j);
+											bot.sendMessage(msg.channel, "The user has successfully been removed from " + name);
 
+											exitloop = true;
+											return;
+										};
+										});
+									};
+								}).catch(function(e) {
+									if (e == 'No factions found!') {
+										bot.sendMessage(msg.channel, "The user is not in any faction");
 										exitloop = true;
-										return;
-									};
-									});
-								};
-							}).catch(function(e) {
-								if (e == 'No factions found!') {
-									bot.sendMessage(msg.channel, "The user is not in any faction");
-									exitloop = true;
-								}
-							})
+									}
+								})
 
-						}
-					})
-				}
-				if (exitloop == false) {
-					bot.sendMessage(msg.channel, "The user is not a member of the faction " + name);
-				}
-			})
-		}
-  	}
-	} else {
-		bot.sendMessage(msg.channel, "you don't have a high enough permission level to use this command")
-	}
-  },
-  "faction": function(bot, msg, args, lvl) {
+							}
+						})
+					}
+					if (exitloop == false) {
+						bot.sendMessage(msg.channel, "The user is not a member of the faction " + name);
+					}
+				})
+			}
+	  }
+  }
+};
+
+Commands.faction = {
+	name: "faction",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg, args, lvl) {
 	  var msgArray = [];
 	  var serverFactions = [];
 	  var userFactions = [];
 	  factionDB.getFactionsHere(msg.server).then(function(serverFactions) {
 		  userDB.getFactionIDs(msg.author).then(function(userFactions) {
+				for (m of serverFactions) {
+						for (n of userFactions) {
+								if (m == n) {
+									bot.sendMessage(msg.author, "Sorry, you are already in a faction :heart:", {}, function(err, sentmsg) {
+										if (err) {
+											console.log(err);
+										}
+									});
+									return;
+								} else {
+									msgArray.push("Hello member of the " + msg.channel.server.name + " server");
+								    msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
+									msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
+									msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
+									msgArray.push(" ");
+									msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
+									msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
+									msgArray.push("The factions are:" );
+									msgArray.push("1. Pirates" );
+									msgArray.push("2. Marines" );
+									msgArray.push("3. Revolutionary Army" );
 
-			for (m of serverFactions) {
-					for (n of userFactions) {
-							if (m == n) {
-								bot.sendMessage(msg.author, "Sorry, you are already in a faction :heart:", {}, function(err, sentmsg) {
-									if (err) {
-										console.log(err);
-									}
-								});
-								return;
-							} else {
-								msgArray.push("Hello member of the " + msg.channel.server.name + " server");
-							    msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
-								msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
-								msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
-								msgArray.push(" ");
-								msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
-								msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
-								msgArray.push("The factions are:" );
-								msgArray.push("1. Pirates" );
-								msgArray.push("2. Marines" );
-								msgArray.push("3. Revolutionary Army" );
-
-								bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
-									sentmsg.author = msg.author
-									responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
-								});
-							}
-					}
-			}
-
+									bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
+										sentmsg.author = msg.author
+										responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
+									});
+								}
+						}
+				}
 		  }).catch (function(e) {
 			  if (e == 'No factions found!') {
-				msgArray.push("Hello member of the " + msg.channel.server.name + " server");
-				msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
-				msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
-				msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
-				msgArray.push(" ");
-				msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
-				msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
-				msgArray.push("The factions are:" );
-				msgArray.push("1. Pirates" );
-				msgArray.push("2. Marines" );
-				msgArray.push("3. Revolutionary Army" );
+					msgArray.push("Hello member of the " + msg.channel.server.name + " server");
+					msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
+					msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
+					msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
+					msgArray.push(" ");
+					msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
+					msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
+					msgArray.push("The factions are:" );
+					msgArray.push("1. Pirates" );
+					msgArray.push("2. Marines" );
+					msgArray.push("3. Revolutionary Army" );
 
-				bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
-					sentmsg.author = msg.author
-					responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
-				});
+					bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
+						sentmsg.author = msg.author
+						responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
+					});
 			  }
 		  });
 	  });
-  },
-  "ignore": function(bot, msg, args, lvl) {
-	if (lvl >= 3) {
+  }
+};
+
+Commands.ignore = {
+	name: "ignore",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
 		serverDB.ignoreChannel(msg.channel).then(function(r) {
 			bot.reply(msg, r);
 		}).catch(function(e) {
 			bot.reply(msg, e);
 		})
-	}
-  },
-  "unignore": function(bot, msg, args, lvl) {
-	if (lvl >= 3) {
+  }
+};
+
+Commands.unignore = {
+	name: "unignore",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
 		serverDB.unignoreChannel(msg.channel).then(function(r) {
 			bot.reply(msg, r);
 		}).catch(function(e) {
 			bot.reply(msg, e);
 		})
-	}
   }
-  /* "pushfactionmessage": function(bot, msg, args, lvl) {
-	if (lvl = 6) {
-	  var msgArray = [];
-	  msgArray.push("Hello member of the " + msg.channel.server.name + " server");
-	  msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
-	  msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
-	  msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
-	  msgArray.push(" ");
-	  msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
-	  msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
-	  msgArray.push("The factions are:" );
-	  msgArray.push("1. Pirates" );
-	  msgArray.push("2. Marines" );
-	  msgArray.push("3. Revolutionary Army" );
-	  for (var i = 0; i < msg.server.members.length-1; i++) {
-		(function(x) {
-		  console.log(msg.server.members[x].id + msg.server.members[x].username);
-		  if (msg.server.members[x].id != config.botID) {
-			dekubot.sendMessage(msg.server.members[x], msgArray, {}, function(err, sentmsg) {
-				sentmsg.author = msg.server.members[x];
-				responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.server.members[x], msg.server);
-			});
-		  }
-	    })(i);
-	  }
-	}
-  } */
-
-
-
-
-
 };
 
-/* dekubot.on("ready", function() {
-	dekubot.setAvatar("https://cdn.discordapp.com/app-icons/183665303450943491/f8a7fa28680a5d6e0dc1c7b47ebfbdcd.jpg", function(err) {
-		if (err) {
-			console.log(err);
+Commands.anime = {
+	name: "anime",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		nani.get('anime/search/' + args).then(function(r) {
+			if (r.length == 0) {
+				bot.reply(msg, "Nothing found");
+				return
+			} else {
+				nani.get('anime/' + r[0].id).then(function(data) {
+					bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+						var msgArray = [];
+						msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
+						msgArray.push("**Type: **" + data.type);
+						msgArray.push("**Genres: **" + data.genres);
+						msgArray.push("**Score: **" + data.average_score);
+						msgArray.push("**Status: **" + data.airing_status);
+						if (data.total_episodes != 0) {
+							msgArray.push("**# of Episodes: **" + data.total_episodes);
+						}
+						msgArray.push("**Start Date: **" + data.start_date.substr(0, 10));
+						if (data.end_date) {
+							msgArray.push("**End Date: **" + data.end_date.substr(0, 10));
+						}
+						var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
+						msgArray.push("**Description: **" + cleanText);
+						bot.sendMessage(msg.channel, msgArray);
+					});
+				}).catch(function(e) {
+					console.log(e);
+				});
+			}
+		}).catch(function(e) {
+			console.log(e);
+		});
+  }
+};
+
+Commands.manga = {
+	name: "manga",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		nani.get('manga/search/' + args).then(function(r) {
+			if (r.length == 0) {
+				bot.reply(msg, "Nothing found");
+				return
+			} else {
+				nani.get('manga/' + r[0].id).then(function(data) {
+					bot.sendMessage(msg.channel, 'http://anilist.co/manga/' + data.id + "   " + data.image_url_lge, function(err, message) {
+						var msgArray = [];
+						msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
+						msgArray.push("**Type: **" + data.type);
+						msgArray.push("**Genres: **" + data.genres);
+						msgArray.push("**Score: **" + data.average_score);
+						msgArray.push("**Status: **" + data.airing_status);
+						if (data.total_chapters != 0) {
+							msgArray.push("**# of Chapters: **" + data.total_chapters + " In " + data.total_volumes + " Volumes.");
+						}
+						msgArray.push("**Start Date: **" + data.start_date.substr(0, 10));
+						if (data.end_date) {
+							msgArray.push("**End Date: **" + data.end_date.substr(0, 10));
+						}
+						var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
+						msgArray.push("**Description: **" + cleanText);
+						bot.sendMessage(msg.channel, msgArray);
+					});
+				}).catch(function(e) {
+					console.log(e);
+				});
+			}
+		}).catch(function(e) {
+			console.log(e);
+		});
+  }
+};
+
+Commands.character = {
+	name: "character",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		nani.get('character/search/' + args).then(function(r) {
+			if (r.length == 0) {
+				bot.reply(msg, "Nothing found");
+				return
+			} else {
+				var msgArray1 = [];
+				if (r.length > 1 ) {
+					for (i = 0; i < r.length; i++) {
+						msgArray1.push("[ " + (i+1) + " ]  -  " + r[i].name_last + " " + r[i].name_first);
+					}
+				} else if (r.length == 1) {
+				nani.get('character/' + r[0].id).then(function(data) {
+					bot.sendMessage(msg.channel, 'http://anilist.co/character/' + data.id + "   " + data.image_url_lge, function(err, message) {
+						var msgArray = [];
+						msgArray.push("**Names: **" + data.name_last + " " + data.name_first + ", " + data.name_alt + ", " + data.name_japanese);
+						var a = data.info.replace(/__/g, "**");
+						var b = a.replace(/~!/g, " ");
+						var c = b.replace(/!~/g, " ");
+						if (data.info.length >= 1600) {
+							msgArray.push("**Description: **\n\n" + c.substr(0, 1600) + "...       _click the first link above to read more_");
+						} else {
+							msgArray.push("**Description: **\n\n" + c);
+						}
+
+						bot.sendMessage(msg.channel, msgArray);
+					});
+				}).catch(function(e) {
+					console.log(e);
+				});
+				return;
+				}
+				bot.sendMessage(msg.channel, "**Please choose one be giving a number:**", function(err, mesg){
+					mesg.author = msg.author
+					responseHandlingREG(bot, mesg, msgArray1, msg.author).then(function(num){
+						if (num > 0 && num <= r.length && num.length <= 2) {
+							nani.get('character/' + r[num-1].id).then(function(data) {
+								bot.sendMessage(msg.channel, 'http://anilist.co/character/' + data.id + "   " + data.image_url_lge, function(err, message) {
+									var msgArray = [];
+									msgArray.push("**Names: **" + data.name_last + " " + data.name_first + ", " + data.name_alt + ", " + data.name_japanese);
+									var a = data.info.replace(/__/g, "**");
+									var b = a.replace(/~!/g, " ");
+									var c = b.replace(/!~/g, " ");
+									var d = c.replace(/&#039;/, "'")
+									if (data.info.length >= 1600) {
+										msgArray.push("**Description: **\n\n" + d.substr(0, 1600) + "...       _click the first link above to read more_");
+									} else {
+										msgArray.push("**Description: **\n\n" + d);
+									}
+
+									bot.sendMessage(msg.channel, msgArray);
+								});
+							}).catch(function(e) {
+								console.log(e);
+							});
+						}
+					}).catch(function(e) {
+						console.log(e);
+					});
+
+				});
+			}
+		}).catch(function(e) {
+			console.log(e);
+		});
+  }
+};
+
+Commands.animesearch = {
+	name: "animesearch",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		nani.get('anime/search/' + args).then(function(r) {
+			if (r.length == 0) {
+				bot.reply(msg, "Nothing found");
+				return
+			} else {
+				var msgArray1 = [];
+				if (r.length > 1 ) {
+					for (i = 0; i < r.length; i++) {
+						msgArray1.push("[ " + (i+1) + " ]  -  " + r[i].title_english);
+					}
+				} else if (r.length == 1) {
+				nani.get('anime/' + r[0].id).then(function(data) {
+					bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+						var msgArray = [];
+						msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
+						msgArray.push("**Type: **" + data.type);
+						msgArray.push("**Genres: **" + data.genres);
+						if (data.average_score == 0) {
+							msgArray.push("**Score: **Undecided" );
+						} else {
+							msgArray.push("**Score: **" + data.average_score);
+						}
+						msgArray.push("**Status: **" + data.airing_status);
+						if (data.total_episodes != 0) {
+							msgArray.push("**# of Episodes: **" + data.total_episodes);
+						}
+						msgArray.push("**Start Date: **" + data.start_date.substr(0, 10));
+						if (data.end_date) {
+							msgArray.push("**End Date: **" + data.end_date.substr(0, 10));
+						}
+						if (data.description) {
+							var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
+							msgArray.push("**Description: **" + cleanText);
+						}
+						bot.sendMessage(msg.channel, msgArray);
+					});
+				}).catch(function(e) {
+					console.log(e);
+				});
+				return;
+				}
+				bot.sendMessage(msg.channel, "**Please choose one be giving a number:**", function(err, mesg){
+					mesg.author = msg.author
+					responseHandlingREG(bot, mesg, msgArray1, msg.author).then(function(num){
+						if (num > 0 && num <= r.length && num.length <= 2) {
+							nani.get('anime/' + r[num-1].id).then(function(data) {
+								bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+									var msgArray = [];
+									msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
+									msgArray.push("**Type: **" + data.type);
+									msgArray.push("**Genres: **" + data.genres);
+									if (data.average_score == 0) {
+										msgArray.push("**Score: **Undecided" );
+									} else {
+										msgArray.push("**Score: **" + data.average_score);
+									}
+									msgArray.push("**Status: **" + data.airing_status);
+									if (data.total_episodes != 0) {
+										msgArray.push("**# of Episodes: **" + data.total_episodes);
+									}
+									msgArray.push("**Start Date: **" + data.start_date.substr(0, 10));
+									if (data.end_date) {
+										msgArray.push("**End Date: **" + data.end_date.substr(0, 10));
+									}
+									if (data.description) {
+										var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
+										msgArray.push("**Description: **" + cleanText);
+									}
+									bot.sendMessage(msg.channel, msgArray);
+								});
+							}).catch(function(e) {
+								console.log(e);
+							});
+						}
+					}).catch(function(e) {
+						console.log(e);
+					});
+
+				});
+			}
+		}).catch(function(e) {
+			console.log(e);
+		});
+  }
+};
+
+Commands.mangasearch = {
+	name: "mangasearch",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		nani.get('manga/search/' + args).then(function(r) {
+			if (r.length == 0) {
+				bot.reply(msg, "Nothing found");
+				return
+			} else {
+				var msgArray1 = [];
+				if (r.length > 1 ) {
+					for (i = 0; i < r.length; i++) {
+						msgArray1.push("[ " + (i+1) + " ]  -  " + r[i].title_english);
+					}
+				} else if (r.length == 1) {
+					nani.get('manga/' + r[0].id).then(function(data) {
+						bot.sendMessage(msg.channel, 'http://anilist.co/manga/' + data.id + "   " + data.image_url_lge, function(err, message) {
+							var msgArray = [];
+							msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
+							msgArray.push("**Type: **" + data.type);
+							msgArray.push("**Genres: **" + data.genres);
+							msgArray.push("**Score: **" + data.average_score);
+							msgArray.push("**Status: **" + data.airing_status);
+							if (data.total_chapters != 0) {
+								msgArray.push("**# of Chapters: **" + data.total_chapters + " In " + data.total_volumes + " Volumes.");
+							}
+							msgArray.push("**Start Date: **" + data.start_date.substr(0, 10));
+							if (data.end_date) {
+								msgArray.push("**End Date: **" + data.end_date.substr(0, 10));
+							}
+							var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
+							msgArray.push("**Description: **" + cleanText);
+							bot.sendMessage(msg.channel, msgArray);
+						});
+					}).catch(function(e) {
+						console.log(e);
+					});
+				return;
+				}
+				bot.sendMessage(msg.channel, "**Please choose one be giving a number:**", function(err, mesg){
+					mesg.author = msg.author
+					responseHandlingREG(bot, mesg, msgArray1, msg.author).then(function(num){
+						if (num > 0 && num <= r.length && num.length <= 2) {
+							nani.get('manga/' + r[num-1].id).then(function(data) {
+								bot.sendMessage(msg.channel, 'http://anilist.co/manga/' + data.id + "   " + data.image_url_lge, function(err, message) {
+									var msgArray = [];
+									msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
+									msgArray.push("**Type: **" + data.type);
+									msgArray.push("**Genres: **" + data.genres);
+									msgArray.push("**Score: **" + data.average_score);
+									msgArray.push("**Status: **" + data.airing_status);
+									if (data.total_chapters != 0) {
+										msgArray.push("**# of Chapters: **" + data.total_chapters + " In " + data.total_volumes + " Volumes.");
+									}
+									msgArray.push("**Start Date: **" + data.start_date.substr(0, 10));
+									if (data.end_date) {
+										msgArray.push("**End Date: **" + data.end_date.substr(0, 10));
+									}
+									var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
+									msgArray.push("**Description: **" + cleanText);
+									bot.sendMessage(msg.channel, msgArray);
+								});
+							}).catch(function(e) {
+								console.log(e);
+							});
+						}
+					}).catch(function(e) {
+						console.log(e);
+					});
+				});
+			}
+		}).catch(function(e) {
+			console.log(e);
+		});
+  }
+};
+
+Commands.animeairdate = {
+	name: "animeairdate",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		nani.get('anime/search/' + args).then(function(r) {
+			if (r.length == 0) {
+				bot.reply(msg, "Nothing found");
+				return
+			} else {
+				nani.get('anime/' + r[0].id).then(function(data) {
+					bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+						var msgArray = [];
+						console.log(data.airing_status);
+						if (data.airing_status == 'finished airing' || data.airing_status == 'not yet aired') {
+							msgArray.push("**Status: **" + data.airing_status);
+						} else {
+							var date = new Date(null);
+							date.setSeconds(data.airing.countdown); // specify value for SECONDS here
+							var formattedDate = date.toISOString().substr(8,2)-1 + " Days, " + date.toISOString().substr(11,2) + " Hours, " + date.toISOString().substr(14,2) + " Minutes"
+
+							msgArray.push("**Next Episode: **" + data.airing.next_episode);
+							msgArray.push("**Airing On: **" + data.airing.time.substr(0, 10));
+							msgArray.push("**Countdown: ** :hourglass_flowing_sand: " + formattedDate);
+						}
+
+						bot.sendMessage(msg.channel, msgArray);
+					});
+				}).catch(function(e) {
+					console.log(e);
+				});
+			}
+		}).catch(function(e) {
+			console.log(e);
+		});
+  }
+};
+
+Commands.track = {
+	name: "track",
+	help: "tbd",
+	type: "weeb",
+	lvl: 3,
+	func: function(bot, msg, args, lvl) {
+		var url = args;
+		var mangatag = url.substr(29);
+		request(url, function(error, response, body) {
+			if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
+				var n = body.search( 'http://mangastream.com/r/' + mangatag + '/')
+				mangaDB.trackManga(url, body.substr(n+35, 3), msg);
+			}
+		})
+  }
+};
+
+var responseHandlingREG = function(bot, msg, promptmsg, user) {
+  return new Promise(function(resolve, reject) {
+    try {
+      bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
+				if (error) {
+					bot.sendMessage(msg.channel, error);
+					return;
+				}
+				bot.getChannelLogs(msg.channel, 100, {after: msg}, function(error, messages) {
+					for (var i = 0; i < 100; i++) {
+						if (messages[i].author.id == user.id) {
+							var response = messages[i].content.toLowerCase();
+							resolve(response);
+							break;
+						}
+					}
+				})
+	  	});
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+var lastID = 0
+
+var checkReddit = function(bot, channel) {
+	var checkR = function() {
+		console.log("checking reddit");
+		console.log(lastID);
+		if (lastID == 0) {
+			reddit.r('OnePiece').new().limit(25, function(err, data, res) {
+				if (err) {
+					console.log(err);
+				} else {
+					var msgArray = [];
+					msgArray.push('\n\n\n────────────────────────────────────────────────────────────────────────\n');
+					msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/OnePiece*');
+					if (data.data.children[0].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
+						msgArray.push('*https://redd.it/' + data.data.children[0].data.id + '*\n');
+						msgArray.push('**' + data.data.children[0].data.title + '**:');
+						msgArray.push(data.data.children[0].data.selftext + "\n\n\n\n");
+					} else {
+						msgArray.push('\n**' + data.data.children[0].data.title + '**');
+						msgArray.push(data.data.children[0].data.url + '\n');
+					}
+					bot.sendMessage(channel, msgArray)
+					lastID = data.data.children[0].data.name
+				}
+			});
 		} else {
-			console.log("done bby");
+			reddit.r('OnePiece').new().before(lastID).limit(25, function(err, data, res) {
+				console.log(lastID);
+				if (err) {
+					console.log(err);
+				} else {
+					for (i = 0; i < data.data.children.length; i++) {
+						if (data.data.children[i].data.name != lastID) {
+							var msgArray = [];
+							msgArray.push('\n\n\n────────────────────────────────────────────────────────────────────────\n');
+							msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/OnePiece*');
+							if (data.data.children[i].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
+								msgArray.push('*https://redd.it/' + data.data.children[i].data.id + '*\n');
+								msgArray.push('**' + data.data.children[i].data.title + '**:');
+								msgArray.push(data.data.children[i].data.selftext + "\n\n\n\n");
+							} else {
+								msgArray.push('\n**' + data.data.children[i].data.title + '**');
+								msgArray.push(data.data.children[i].data.url)+ '\n';
+							}
+							bot.sendMessage(channel, msgArray)
+							lastID = data.data.children[0].data.name
+							console.log(data.data.children[i].data.name);
+						}
+						console.log(data.data.children[i].data.name);
+					}
+				}
+			});
 		}
-	})
-}); */
+	}
+	var timer = setInterval(checkR, 20000);
+};
+
+var checkManga = function(bot, channel) {
+	var timercheck = 20000;
+	var check = function() {
+	mangaDB.getAll().then(function(mangaArray) {
+		for (m of mangaArray) {
+			var mangatag = m.url.substr(29);
+			request(m.url, function(error, response, body) {
+				console.log("checking");
+				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
+					var n = body.search('http://mangastream.com/r/' + mangatag + '/')
+					bot.sendMessage(channel, "@everyone, " + body.substr(n, 45));
+					mangaDB.updateChapter(m._id, body.substr(n+35, 3));
+					//timercheck = 345600000;
+				}
+			})
+		}
+	});
+	}
+	var timer = setInterval(check, timercheck);
+};
+
+
+dekubot.on("ready", function() {
+	var server = dekubot.servers.get("id", config.server_id)                                        //IDSPECIFIC
+	var channel = server.channels.get("name", "general")
+	checkManga(dekubot, channel);
+	checkReddit(dekubot, channel);
+});
 
 //Bot start:
 dekubot.on("message", function(message) {
-serverDB.checkIgnore(message.channel).then(function(r) {
+
 if (message.author.id == config.botID) {
 	return;
 } else if (message.channel.isPrivate == true) {
@@ -498,7 +1003,7 @@ if (message.author.id == config.botID) {
 } else if (message.server.id != config.server_id) {														//IDSPECIFIC
 	return;
 } else {
-
+ serverDB.checkIgnore(message.channel).then(function(r) {
   userDB.check(message.author).catch(function() {
     userDB.trackUser(message.author).catch(function(e) {
         console.log(e);
@@ -517,44 +1022,16 @@ if (message.author.id == config.botID) {
 
   //Commands
   if (firstWord.charAt(0) == '!') {
-	permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
-		authorpermissionlvl = r;
-	});
-    var command = firstWord.slice(1);
-    try {
-      userCommands[command](dekubot, message, args, authorpermissionlvl);
-    } catch (err) {
-      console.log(err);
-    }
-  } //else {
-//   function() {
-//   if ((firstWord.substr(0, 1) == "1") || (firstWord.substr(0, 1) == "2") || (firstWord.substr(0, 1) == "3")) {
-//	  if (message.channel.isPrivate == true) {
-//		  factionDB.getFactionsHere(message.channel.server).then(function(v) {
-//				userDB.getFactionIDs(message.author).then(function(r) {
-//					for (userfaction of r) {
-//						for(serverfaction of v) {
-//							if (userfaction == serverfaction) {
-//								return;
-//							}
-//						}
-//					}
-//				});
-//		  });
-//		if (firstWord.substr(0, 1) == "1") {
-//			factionDB.addToFaction(message.author, )
-//		}
-//
-//
-//
-//
-//	  }
-//    }
-//
-//  };
-//  };
-  };
-  //Automated functions:
+		permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
+			authorpermissionlvl = r;
+		});
+		var command = firstWord.slice(1);
+    if (authorpermissionlvl >= Commands[command].lvl) {
+			Commands[command].func(dekubot, message, args, authorpermissionlvl);
+		} else {
+			dekubot.sendMessage(message.channel, "You dont have a high enough permission level to use this command.")
+		}
+  }
 }).catch(function(e) {
     if (e) {
 		if (e != 'This channel is ignored') {
@@ -572,8 +1049,8 @@ if (message.author.id == config.botID) {
 			});
 			var command = firstWord.slice(1);
 			try {
-				if (command == "unignore") {
-					userCommands[command](dekubot, message, args, authorpermissionlvl);
+				if (authorpermissionlvl >= 3) {
+					Commands[command].func(dekubot, message, args, authorpermissionlvl);
 				}
 			} catch (err) {
 			console.log(err);
@@ -582,6 +1059,7 @@ if (message.author.id == config.botID) {
 		return;
 	}
 });
+};
 });
 
 

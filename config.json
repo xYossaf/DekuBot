@@ -6,5 +6,7 @@
   "botID": "",
   "token_mode": true,
   "token": "",
+  "anilistID": "",
+  "anilist_Secret": "",
   "server_id": ""
 }
