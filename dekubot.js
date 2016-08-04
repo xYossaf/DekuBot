@@ -91,7 +91,7 @@ if (message.author.id == dekubot.user.id) {
 			authorpermissionlvl = r;
 			var command = firstWord.slice(1);
 	    if (authorpermissionlvl >= Commands[command].lvl) {
-				Commands[command].func(dekubot, message, args, authorpermissionlvl);
+				Commands[command].func(dekubot, message, args);
 			} else {
 				dekubot.sendMessage(message.channel, "You dont have a high enough permission level to use this command.")
 			}
@@ -113,7 +113,7 @@ if (message.author.id == dekubot.user.id) {
 				authorpermissionlvl = r;
 				var command = firstWord.slice(1);
 				if (authorpermissionlvl >= 3) {
-					Commands[command].func(dekubot, message, args, authorpermissionlvl);
+					Commands[command].func(dekubot, message, args);
 				}
 			});
 		}

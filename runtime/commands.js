@@ -148,7 +148,7 @@ Commands.serverspoilertoggle = {//USELESS
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 	  if (msg.channel.permissionsOf(msg.sender).hasPermission("manageServer")) {
 			serverDB.togglespoiler(msg.channel.server.id);
 	  } else {
@@ -162,7 +162,7 @@ Commands.getpermissionlvl = {
 	help: "tbd",
 	type: "admin",
 	lvl: 1,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
 			bot.reply(msg, "Please mention a user");
 		} else {
@@ -178,7 +178,7 @@ Commands.setpermissionlvl = {
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		var num = args.substr(args.indexOf(" ") + 1)
 		var isnum = /^\d+$/.test(num);
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
@@ -214,7 +214,7 @@ Commands.createfaction = {
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		var name = args.substr(0, args.indexOf("#") - 1)
 		var hex = args.substr(args.indexOf("#"))
 		var isHex = /^#[0-9A-F]{6}$/i.test(hex);
@@ -252,7 +252,7 @@ Commands.manualjoinfaction = {
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		var name = args.substr(args.indexOf(" ") + 1)
 		var exitloop2 = false;
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
@@ -308,7 +308,7 @@ Commands.manualleavefaction = {
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		var name = args.substr(args.indexOf(" ") + 1)
 		exitloop = false;
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
@@ -362,7 +362,7 @@ Commands.faction = {
 	help: "tbd",
 	type: "general",
 	lvl: 0,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 	  var msgArray = [];
 	  var serverFactions = [];
 	  var userFactions = [];
@@ -426,7 +426,7 @@ Commands.ignore = {
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		serverDB.ignoreChannel(msg.channel).then(function(r) {
 			bot.reply(msg, r);
 		}).catch(function(e) {
@@ -440,7 +440,7 @@ Commands.unignore = {
 	help: "tbd",
 	type: "admin",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		serverDB.unignoreChannel(msg.channel).then(function(r) {
 			bot.reply(msg, r);
 		}).catch(function(e) {
@@ -817,7 +817,7 @@ Commands.track = {
 	help: "tbd",
 	type: "weeb",
 	lvl: 3,
-	func: function(bot, msg, args, lvl) {
+	func: function(bot, msg, args) {
 		var url = args;
 		var mangatag = url.substr(29);
 		request(url, function(error, response, body) {
