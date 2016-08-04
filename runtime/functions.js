@@ -1,7 +1,41 @@
+var config = require("../config.json");
+var userDB = require("./user_rt.js");
+var serverDB = require("./server_rt.js");
+var permissionDB = require("./permission_rt.js");
+var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
+
+var aniscrape = require("aniscrape");
+var kissanime = require("aniscrape-kissanime")
+var nani = require("nani").init(config.anilistID, config.anilist_Secret);
+var nedb = require("nedb")
+var request = require("request");
+var youtubeNode = require("youtube-node");
+var ytdl = require("ytdl-core");
 
 var reddit = require('redwrap');
 var lastID = 0
+
+exports.checkManga = function(bot, channel) {
+	var timercheck = 20000;
+	var check = function() {
+	mangaDB.getAll().then(function(mangaArray) {
+		for (m of mangaArray) {
+			var mangatag = m.url.substr(29);
+			request(m.url, function(error, response, body) {
+				console.log("checking");
+				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
+					var n = body.search('http://mangastream.com/r/' + mangatag + '/')
+					bot.sendMessage(channel, "@everyone, " + body.substr(n, 45));
+					mangaDB.updateChapter(m._id, body.substr(n+35, 3));
+					//timercheck = 345600000;
+				}
+			})
+		}
+	});
+	}
+	var timer = setInterval(check, timercheck);
+};
 
 exports.checkReddit = function(bot, channel) {
 	var checkR = function() {
@@ -59,27 +93,6 @@ exports.checkReddit = function(bot, channel) {
 	var timer = setInterval(checkR, 20000);
 };
 
-exports.checkManga = function(bot, channel) {
-	var timercheck = 20000;
-	var check = function() {
-	mangaDB.getAll().then(function(mangaArray) {
-		for (m of mangaArray) {
-			var mangatag = m.url.substr(29);
-			request(m.url, function(error, response, body) {
-				console.log("checking");
-				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
-					var n = body.search('http://mangastream.com/r/' + mangatag + '/')
-					bot.sendMessage(channel, "@everyone, " + body.substr(n, 45));
-					mangaDB.updateChapter(m._id, body.substr(n+35, 3));
-					//timercheck = 345600000;
-				}
-			})
-		}
-	});
-	}
-	var timer = setInterval(check, timercheck);
-};
-
 exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
   return new Promise(function(resolve, reject) {
     try {
@@ -105,6 +118,7 @@ exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
 };
 
 exports.responseHandling = function(bot, msg, promptmsg, user, server) {
+	console.log("here");
 	bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
 		if (error) {
 			bot.sendMessage(msg.author, error);
@@ -115,7 +129,7 @@ exports.responseHandling = function(bot, msg, promptmsg, user, server) {
 				if (messages[i].author.id == user.id) {
 					var response = messages[i].content.toLowerCase();
 					var responsechannel = messages[i].channel;
-					exports.choice(dekubot, user, server, response, responsechannel);
+					exports.choice(bot, user, server, response, responsechannel);
 					break;
 				}
 			}

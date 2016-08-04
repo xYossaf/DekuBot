@@ -4,7 +4,7 @@ var serverDB = require("./runtime/server_rt.js");
 var permissionDB = require("./runtime/permission_rt.js");
 var factionDB = require("./runtime/faction_rt.js");
 var Commands = require("./runtime/commands.js").Commands;
-var functions = require("./runtime/functions.js")
+var functions = require("./runtime/functions.js");
 
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
@@ -89,13 +89,13 @@ if (message.author.id == dekubot.user.id) {
   if (firstWord.charAt(0) == '!') {
 		permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
 			authorpermissionlvl = r;
+			var command = firstWord.slice(1);
+	    if (authorpermissionlvl >= Commands[command].lvl) {
+				Commands[command].func(dekubot, message, args, authorpermissionlvl);
+			} else {
+				dekubot.sendMessage(message.channel, "You dont have a high enough permission level to use this command.")
+			}
 		});
-		var command = firstWord.slice(1);
-    if (authorpermissionlvl >= Commands[command].lvl) {
-			Commands[command].func(dekubot, message, args, authorpermissionlvl);
-		} else {
-			dekubot.sendMessage(message.channel, "You dont have a high enough permission level to use this command.")
-		}
   }
 }).catch(function(e) {
     if (e) {
@@ -111,15 +111,11 @@ if (message.author.id == dekubot.user.id) {
 		if (firstWord.charAt(0) == '!') {
 			permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
 				authorpermissionlvl = r;
-			});
-			var command = firstWord.slice(1);
-			try {
+				var command = firstWord.slice(1);
 				if (authorpermissionlvl >= 3) {
 					Commands[command].func(dekubot, message, args, authorpermissionlvl);
 				}
-			} catch (err) {
-			console.log(err);
-			}
+			});
 		}
 		return;
 	}

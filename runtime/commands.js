@@ -1,5 +1,10 @@
 var config = require("../config.json");
+var userDB = require("./user_rt.js");
+var serverDB = require("./server_rt.js");
+var permissionDB = require("./permission_rt.js");
+var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
+var functions = require("./functions.js");
 
 var aniscrape = require("aniscrape");
 var kissanime = require("aniscrape-kissanime")
@@ -138,7 +143,7 @@ Commands.botstatus = {
   }
 };
 
-Commands.serverspoilertoggle = {
+Commands.serverspoilertoggle = {//USELESS
 	name: "serverspoilertoggle",
 	help: "tbd",
 	type: "admin",
@@ -387,7 +392,7 @@ Commands.faction = {
 
 									bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
 										sentmsg.author = msg.author
-										responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
+										functions.responseHandling(bot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
 									});
 								}
 						}
@@ -408,7 +413,7 @@ Commands.faction = {
 
 					bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
 						sentmsg.author = msg.author
-						responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
+						functions.responseHandling(bot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
 					});
 			  }
 		  });
