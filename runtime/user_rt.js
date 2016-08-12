@@ -1,6 +1,6 @@
 var config = require("../config.json"),
 	Datastore = require('nedb');
-	
+
 var db = new Datastore({
   filename: './runtime/databases/user_store',
   autoload: true
@@ -8,7 +8,7 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.trackUser = function(user) { 
+exports.trackUser = function(user) {
   var userdoc = {
     _id: user.id,
     known_names: [user.username],
@@ -16,19 +16,19 @@ exports.trackUser = function(user) {
   };
   db.insert(userdoc, function(err, result) {
     if (err) {
-      console.log('Error making user document! ' + err); 
+      console.log('Error making user document! ' + err);
     } else if (result) {
 	  console.log('Sucess making an UserDB doc');
     }
   });
 };
-  
+
 exports.nameChange = function(user) {
 try {
 	db.find({
     _id: user.id
   }, function(err, result) {
-	  if(!err || result.length > 0) {
+	  if(!err && result.length > 0) {
 		if (result[0].known_names.length > 20) {
 			db.update({
 			  _id: user.id
@@ -39,7 +39,7 @@ try {
 			}, {});
         }
 	  }
-      
+
    });
   db.update({
     _id: user.id
@@ -51,7 +51,7 @@ try {
 } catch (e) {
 	console.log(e);
 }
-  
+
 };
 
 exports.returnNamechanges = function(user) {
@@ -220,17 +220,3 @@ exports.removeFromFaction = function(user, factionid) {
     //}
  /// })//;
 //};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
