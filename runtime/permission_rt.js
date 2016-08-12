@@ -8,32 +8,32 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.newPermission = function(server, user) { 
+exports.newPermission = function(server, user) {
   var permissiondoc = {
-	_id: (user.id.toString() + "^_^" + server.id.toString()),  
+	_id: (user.id.toString() + "^_^" + server.id.toString()),
     user_id: user.id,
     server_id: server.id,
-    permission_lvl: 0 
+    permission_lvl: 0
   };
 	db.insert(permissiondoc, function (err, result){
     if (err) {
-      console.log('Error making permission document! ' + err); 
+      console.log('Error making permission document! ' + err);
     } else if (result) {
 	  console.log('Sucess making an permissionDB doc');
     }
   });
 };
 
-exports.SuperUserPermission = function(server) { 
+exports.SuperUserPermission = function(server) {
   var permissiondoc = {
     _id: (server.owner.id.toString() + "^_^" + server.id.toString()),
 	user_id: server.owner.id,
     server_id: server.id,
-    permission_lvl: 6 
+    permission_lvl: 6
   };
 	db.insert(permissiondoc, function (err, result){
     if (err) {
-      console.log('Error making permission document! ' + err); 
+      console.log('Error making permission document! ' + err);
     } else if (result) {
 	  console.log('Sucess making an permissionDB doc');
     }
@@ -51,8 +51,8 @@ exports.getPermission = function(serverid, userid) {
         }
         if (res.length === 0) {
           return reject('No user permission');
-        } else {	
-			resolve(res[0].permission_lvl);  
+        } else {
+			resolve(res[0].permission_lvl);
         }
       });
     } catch (e) {
@@ -84,7 +84,7 @@ exports.setPermission = function(authorlvl, server, user, num) {
 				resolve("'s permission level has been changed to " + num)
 			} else {
 				return reject("The permission level you are trying to change/change to is greater than or equal to yours");
-			}		  
+			}
         }
       });
     } catch (e) {
@@ -117,12 +117,8 @@ exports.check = function(serverid, userid) {
 exports.deletePermission = function(server, user) {
 	db.remove({
 		_id: (user.id.toString() + "^_^" + server.id.toString())
-	}, {}, 
+	}, {},
 	function(err, numRemoved) {
 		console.log(numRemoved);
 	});
 };
-
-
-
-

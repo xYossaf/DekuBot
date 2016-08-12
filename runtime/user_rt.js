@@ -1,6 +1,6 @@
 var config = require("../config.json"),
 	Datastore = require('nedb');
-	
+
 var db = new Datastore({
   filename: './runtime/databases/user_store',
   autoload: true
@@ -8,7 +8,7 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.trackUser = function(user) { 
+exports.trackUser = function(user) {
   var userdoc = {
     _id: user.id,
     known_names: [user.username],
@@ -16,30 +16,30 @@ exports.trackUser = function(user) {
   };
   db.insert(userdoc, function(err, result) {
     if (err) {
-      console.log('Error making user document! ' + err); 
+      console.log('Error making user document! ' + err);
     } else if (result) {
 	  console.log('Sucess making an UserDB doc');
     }
   });
 };
-  
+
 exports.nameChange = function(user) {
 try {
 	db.find({
     _id: user.id
   }, function(err, result) {
-	  if(!err) {
-		  if (result[0].known_names.length > 20) {
-        db.update({
-          _id: user.id
-        }, {
-          $pop: {
-            known_names: 1
-          }
-        }, {});
-      }
+	  if(!err && result.length > 0) {
+		if (result[0].known_names.length > 20) {
+			db.update({
+			  _id: user.id
+			}, {
+			  $pop: {
+				known_names: 1
+			  }
+			}, {});
+        }
 	  }
-      
+
    });
   db.update({
     _id: user.id
@@ -51,7 +51,7 @@ try {
 } catch (e) {
 	console.log(e);
 }
-  
+
 };
 
 exports.returnNamechanges = function(user) {
@@ -184,3 +184,39 @@ exports.removeFromFaction = function(user, factionid) {
 
 
 
+
+
+
+
+//= function(user, factionID) {
+//  return new Promise(function(resolve, reject) {
+//    try {
+//      db.find({
+//        _id: user.id
+//      }, function(err, result) {
+//        if (err) {
+//          return reject(err);
+//        }
+//        if (result) {
+//          if (result.length === 0) {
+//            return reject('Nothing found!');
+//          }
+//          for (faction of result[0].factions) {
+//			  if (faction == factionID) {
+//				  return reject('This user is already a member of this faction');
+//			  };
+//		  };
+//		  db.update({
+//			_id: user.id
+//		  }, {
+//			$push: {
+//				factions: factionID
+//			}
+//		  }, {});
+ //       }
+ //     });
+  //  } catch (e) {
+   //   reject(e);
+    //}
+ /// })//;
+//};
