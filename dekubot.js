@@ -5,6 +5,8 @@ var permissionDB = require("./runtime/permission_rt.js");
 var factionDB = require("./runtime/faction_rt.js");
 var Commands = require("./runtime/commands.js").Commands;
 var functions = require("./runtime/functions.js");
+var battle = require("./runtime/battle_rt.js");
+var customcommands = require("./runtime/custom_command_rt.js");
 
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
@@ -55,7 +57,7 @@ dekubot.on("ready", function() {
 	var server = dekubot.servers.get("id", config.server_id)                                        //IDSPECIFIC
 	var channel = server.channels.get("name", "general")
 	functions.checkManga(dekubot, channel);
-	functions.checkReddit(dekubot, channel);
+	functions.checkReddit(dekubot);
 });
 
 //Bot start:
@@ -82,16 +84,38 @@ if (message.author.id == dekubot.user.id) {
   var temp = message.content.toLowerCase();
   var words = temp.split(' ');
   var firstWord = words[0];
-  var args = message.content.substr(message.content.indexOf(" ") + 1);
-
+	var args = message.content.substr(words[0].length+1);
 
   //Commands
   if (firstWord.charAt(0) == '!') {
 		permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
 			authorpermissionlvl = r;
 			var command = firstWord.slice(1);
+			customcommands.getAllHere(message.server).then(function(r) {
+				for (i = 0; i < r.length; i++) {
+					if (r[i].name == command && message.server.id == r[i].server_id && authorpermissionlvl >= r[i].lvl) {
+						dekubot.sendMessage(message.channel, r[i].text);
+					}
+				}
+			})
 	    if (authorpermissionlvl >= Commands[command].lvl) {
-				Commands[command].func(dekubot, message, args);
+				if (Commands[command].type == 'nsfw') {
+					serverDB.checkNSFW(message.channel).then(function(r) {
+						if (r != 'Channel is not nsfw') {
+							console.log(r);
+						} else {
+							dekubot.sendMessage(message.channel, r);
+						}
+					}).catch(function(e) {
+						if (e != 'This channel is nsfw') {
+							console.log(e);
+						} else {
+							Commands[command].func(dekubot, message, args);
+						}
+					})
+				} else {
+					Commands[command].func(dekubot, message, args);
+				}
 			} else {
 				dekubot.sendMessage(message.channel, "You dont have a high enough permission level to use this command.")
 			}

@@ -8,12 +8,14 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.trackManga = function(urls, chap, msg) {
+exports.trackManga = function(urls, chap, channel, server, mention) {
   var mangadoc = {
     url: urls,
     chapter: chap,
-	server_id: msg.server.id,
-	channel_id: msg.channel.id
+		server_id: server,
+		channel_id: channel,
+		mention: mention,
+		pm_array: []
   };
   db.insert(mangadoc, function(err, result) {
     if (err) {
@@ -51,7 +53,7 @@ exports.updateChapter = function(id, chap) {
       db.find({
 		_id: id
 	  }, function(err, result) {
-		  if(!err || result.length > 0) {
+		  if(!err && result.length > 0) {
 			if (result[0].chapter != chap) {
 				db.update({
 				  _id: id
@@ -64,6 +66,158 @@ exports.updateChapter = function(id, chap) {
 		  }
 
 	   });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.updateChannel = function(id, channel) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+		_id: id
+	  }, function(err, result) {
+		  if(!err && result.length > 0) {
+			if (result[0].channel_id != channel) {
+				db.update({
+				  _id: id
+				}, {
+				  $set: {
+					channel_id: channel
+				  }
+				}, {});
+			}
+		  }
+
+	   });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.updateMention = function(id, mention) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+		_id: id
+	  }, function(err, result) {
+		  if(!err && result.length > 0) {
+			if (result[0].mention != mention) {
+				db.update({
+				  _id: id
+				}, {
+				  $set: {
+					mention: mention
+				  }
+				}, {});
+			}
+		  }
+
+	   });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.addToPM = function(id, user) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!');
+        } else {
+			db.update({
+				_id: id
+			}, {
+				$push: {
+					pm_array: user.id
+				}
+			}, {});
+          resolve('User now tracking');
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.removeFromPM = function(id, user) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!');
+        } else {
+			db.update({
+				_id: id
+			}, {
+				$pull: {
+					pm_array: user.id
+				}
+			}, {});
+          resolve('User now not tracking');
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.get = function(id) {
+	return new Promise(function(resolve, reject) {
+		try {
+			db.find({
+			_id: id
+		  }, function(err, result) {
+			  if(!err && result.length > 0) {
+					resolve(result[0]);
+			  }
+		   });
+		} catch (e) {
+			reject(e);
+		}
+	});
+};
+
+exports.deleteTrack = function(id) {
+	return new Promise(function(resolve, reject) {
+    try {
+			db.find({
+			_id: id
+		  }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Not tracking a manga with this name');
+        } else {
+          db.remove({
+            _id: res[0]._id
+          }, {}, function(err, nr) {
+            if (err) {
+              return reject(err);
+            }
+            if (nr >= 1) {
+              resolve('No longer tracking.');
+            }
+          });
+        }
+      });
     } catch (e) {
       reject(e);
     }

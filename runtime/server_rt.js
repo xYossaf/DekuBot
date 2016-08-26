@@ -8,7 +8,7 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.newServer = function(server) { 
+exports.newServer = function(server) {
   var serverdoc = {
     _id: server.id,
     superuser_id: server.owner.id,
@@ -23,7 +23,7 @@ exports.newServer = function(server) {
   };
 	db.insert(serverdoc, function (err, result){
     if (err) {
-      console.log('Error making server document! ' + err); 
+      console.log('Error making server document! ' + err);
     } else if (result) {
 	  console.log('Sucess making an serverDB doc');
     }
@@ -56,7 +56,7 @@ exports.togglensfw = function(serverid) {
 	 	  $set: {
 			nsfw: true
 			}
-		}, {});  
+		}, {});
 	  }
     }
   });
@@ -87,7 +87,7 @@ exports.togglespoiler = function(serverid) {
 	 	  $set: {
 			spoiler: true
 			}
-		}, {});  
+		}, {});
 	  }
     }
   });
@@ -147,7 +147,7 @@ exports.getAnnouncementChannel = function(serverid) {
         if (res.length === 0) {
           return reject('No message');
         } else {
-		  console.log(res[0].announcmentchannel);			
+		  console.log(res[0].announcmentchannel);
           resolve(res[0].announcmentchannel);
         }
       });
@@ -155,7 +155,7 @@ exports.getAnnouncementChannel = function(serverid) {
       reject(e);
     }
   });
-	
+
 };
 
 exports.getServerNum = function() {
@@ -168,7 +168,7 @@ exports.getServerNum = function() {
         }
         if (count === 0) {
           return reject('No message');
-        } else {														
+        } else {
           resolve(count);
         }
       });
@@ -177,19 +177,19 @@ exports.getServerNum = function() {
     }
   });
 };
-	
+
 exports.getSuperUser = function(serverid) {
     return new Promise(function(resolve, reject) {
     try {
       db.find({
-		_id: serverid 
+		_id: serverid
       }, function(err, res) {
         if (err) {
           return reject(err);
         }
         if (res.superuser === undefined) {
           return reject('No id');
-        } else {	
+        } else {
           resolve(res[0].superuser_id);
         }
       });
@@ -199,7 +199,7 @@ exports.getSuperUser = function(serverid) {
   });
 };
 
-exports.check = function(server) {															
+exports.check = function(server) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
@@ -210,7 +210,7 @@ exports.check = function(server) {
         }
         if (res.length === 0) {
           return reject('Nothing found!');
-        } else {																	
+        } else {
           resolve('This server is known to the database.');
         }
       });
@@ -220,7 +220,7 @@ exports.check = function(server) {
   });
 };
 
-exports.ignoreChannel = function(channel) {															
+exports.ignoreChannel = function(channel) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
@@ -238,7 +238,7 @@ exports.ignoreChannel = function(channel) {
 				$push: {
 					ignoredchannels: channel.id
 				}
-			}, {});			
+			}, {});
           resolve('Channel now ignored');
         }
       });
@@ -248,7 +248,7 @@ exports.ignoreChannel = function(channel) {
   });
 };
 
-exports.unignoreChannel = function(channel) {															
+exports.unignoreChannel = function(channel) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
@@ -266,7 +266,7 @@ exports.unignoreChannel = function(channel) {
 				$pull: {
 					ignoredchannels: channel.id
 				}
-			}, {});			
+			}, {});
           resolve('Channel now unignored');
         }
       });
@@ -296,7 +296,7 @@ exports.checkIgnore = function(channel) {
 						}
 					})(channel, m)
 				};
-			}	
+			}
           resolve('Channel not ignored');
         }
       });
@@ -306,18 +306,88 @@ exports.checkIgnore = function(channel) {
   });
 };
 
+exports.nsfwChannel = function(channel) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: channel.server.id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!');
+        } else {
+			db.update({
+				_id: channel.server.id
+			}, {
+				$push: {
+					nsfwchannels: channel.id
+				}
+			}, {});
+          resolve('Channel now nsfw');
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
+exports.unNSFWChannel = function(channel) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: channel.server.id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!');
+        } else {
+			db.update({
+				_id: channel.server.id
+			}, {
+				$pull: {
+					nsfwchannels: channel.id
+				}
+			}, {});
+          resolve('Channel now not nsfw');
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+exports.checkNSFW = function(channel) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: channel.server.id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!');
+        } else {
+			if (res[0].nsfwchannels.length != 0 || res[0].nsfwchannels != undefined) {
+				for (m of res[0].nsfwchannels) {
+					(function(x, n) {
+						if (n == x.id) {
+							reject('This channel is nsfw')
+						}
+					})(channel, m)
+				};
+			}
+          resolve('Channel is not nsfw');
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};

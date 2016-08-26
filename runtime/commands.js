@@ -4,8 +4,12 @@ var serverDB = require("./server_rt.js");
 var permissionDB = require("./permission_rt.js");
 var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
+var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
+var battle = require("./battle_rt.js");
+var customcommands = require("./custom_command_rt.js");
 
+var parseString = require('xml2js').parseString;
 var aniscrape = require("aniscrape");
 var kissanime = require("aniscrape-kissanime")
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
@@ -812,18 +816,610 @@ Commands.animeairdate = {
   }
 };
 
-Commands.track = {
-	name: "track",
+Commands.mangatrack = {
+	name: "mangatrack",
+	help: "tbd",
+	type: "weeb",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		var found = false;
+		var pmfound = false;
+		if (args.indexOf(" ") > 0) {
+			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			return;
+		}
+		request(args, function(error, response, body) {
+			if (error) {
+				console.log(error);
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
+				var temptag = args.substr(29);
+				var mangatag = 0
+				if (temptag.indexOf('/') >= 0) {
+					mangatag = temptag.slice(0, temptag.indexOf('/'))
+				} else {
+					mangatag = temptag
+				}
+				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
+
+					var temp = ('http://mangastream.com/r/' + mangatag + '/').length
+					var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
+					var othertemp = body.substr(begin)
+					var end = othertemp.indexOf("/")
+					mangaDB.getAll().then(function(r) {
+						if (r.length != 0) {
+							for(i = 0; i < r.length; i++) {
+								if (r[i].url == args && r[i].server_id == msg.server.id) {
+									found = true;
+									for(q = 0; q < r[i].pm_array.length; q++) {
+										if (r[i].pm_array[q] == msg.author.id) {
+											bot.sendMessage(msg.channel, "You are already tracking ``" + args + "``. All new chapters will continue to be linked to you in a PM.");
+											pmfound = true
+										}
+										console.log(pmfound);
+										if (pmfound == false && q == r[i].pm_array.length-1 ) {
+											mangaDB.addToPM(r[i]._id, msg.author);
+											bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM.");
+										}
+									}
+								}
+								console.log(found);
+								if (found == false && i == r.length-1 ) {
+									mangaDB.trackManga(args, body.substr(begin, end), 0, msg.server.id, false);
+									mangaDB.getAll().then(function(res) {
+										for(j = 0; j < res.length; j++) {
+											if (res[j].url == args && res[j].server_id == msg.server.id) {
+												mangaDB.addToPM(res[j]._id, msg.author);
+												bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM.");
+											}
+										}
+									})
+								}
+							}
+						} else {
+							mangaDB.trackManga(args, body.substr(begin, end), 0, msg.server.id, false);
+							mangaDB.getAll().then(function(res) {
+								for(j = 0; j < res.length; j++) {
+									if (res[j].url == args && res[j].server_id == msg.server.id) {
+										mangaDB.addToPM(res[j]._id, msg.author);
+										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM.");
+									}
+								}
+							})
+						}
+					})
+				} else {
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+				}
+			} else {
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+		})
+	}
+};
+
+Commands.unmangatrack = {
+	name: "unmangatrack",
 	help: "tbd",
 	type: "weeb",
 	lvl: 3,
 	func: function(bot, msg, args) {
-		var url = args;
-		var mangatag = url.substr(29);
-		request(url, function(error, response, body) {
-			if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
-				var n = body.search( 'http://mangastream.com/r/' + mangatag + '/')
-				mangaDB.trackManga(url, body.substr(n+35, 3), msg);
+		var found = false;
+		var pmfound = false;
+		if (args.indexOf(" ") > 0) {
+			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			return;
+		}
+		request(args, function(error, response, body) {
+			if (error) {
+				console.log(error);
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
+				var temptag = args.substr(29);
+				var mangatag = 0
+				if (temptag.indexOf('/') >= 0) {
+					mangatag = temptag.slice(0, temptag.indexOf('/'))
+				} else {
+					mangatag = temptag
+				}
+				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
+					var temp = ('http://mangastream.com/r/' + mangatag + '/').length
+					var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
+					var othertemp = body.substr(begin)
+					var end = othertemp.indexOf("/")
+					mangaDB.getAll().then(function(r) {
+						if (r.length != 0) {
+							for(i = 0; i < r.length; i++) {
+								if (r[i].url == args && r[i].server_id == msg.server.id) {
+									found = true;
+									if (r[i].pm_array.length == 1 && r[i].mention == false) {
+										mangaDB.deleteTrack(r[i]._id);
+										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "``.");
+									} else {
+										for(q = 0; q < r[i].pm_array.length; q++) {
+											if (r[i].pm_array[q] == msg.author.id) {
+												mangaDB.removeFromPM(r[i]._id, msg.author);
+												bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "``.");
+												pmfound = true
+											}
+											console.log(pmfound);
+											if (pmfound == false && q == r[i].pm_array.length-1 ) {
+												bot.sendMessage(msg.channel, "You are not tracking this manga.");
+											}
+										}
+									}
+								}
+								if (found == false && i == r.length-1 ) {
+									bot.sendMessage(msg.channel, "You were not tracking this manga.");
+								}
+							}
+						} else {
+							bot.sendMessage(msg.channel, "You are not tracking this manga.");
+						}
+					})
+				} else {
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+				}
+			} else {
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+		})
+  }
+};
+
+Commands.servermangatrack = {
+	name: "mangatrack",
+	help: "tbd",
+	type: "weeb",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		if (args.indexOf(" ") > 0) {
+			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			return;
+		}
+		request(args, function(error, response, body) {
+			if (error) {
+				console.log(error);
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
+				var temptag = args.substr(29);
+				var mangatag = 0
+				if (temptag.indexOf('/') >= 0) {
+					mangatag = temptag.slice(0, temptag.indexOf('/'))
+				} else {
+					mangatag = temptag
+				}
+				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
+					var found = false;
+					var temp = ('http://mangastream.com/r/' + mangatag + '/').length
+					var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
+					var othertemp = body.substr(begin)
+					var end = othertemp.indexOf("/")
+					mangaDB.getAll().then(function(r) {
+						if (r.length != 0) {
+							for(i = 0; i < r.length; i++) {
+								if (r[i].url == args && r[i].server_id == msg.server.id) {
+									if (r[i].mention) {
+										bot.sendMessage(msg.channel, "You are already tracking ``" + args + "`` in this server.");
+									} else {
+										mangaDB.updateChannel(r[i]._id, msg.channel.id);
+										mangaDB.updateMention(r[i]._id, true);
+										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone.");
+									}
+									found = true
+								}
+								if (found == false && i == r.length-1 ) {
+									mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.server.id, true);
+									bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone.");
+								}
+							}
+						} else {
+							mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.server.id, true);
+							bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone.");
+						}
+					})
+				} else {
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+				}
+			} else {
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+		})
+	}
+};
+
+Commands.unservermangatrack = {
+	name: "mangatrack",
+	help: "tbd",
+	type: "weeb",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		if (args.indexOf(" ") > 0) {
+			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			return;
+		}
+		request(args, function(error, response, body) {
+			if (error) {
+				console.log(error);
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
+				var temptag = args.substr(29);
+				var mangatag = 0
+				if (temptag.indexOf('/') >= 0) {
+					mangatag = temptag.slice(0, temptag.indexOf('/'))
+				} else {
+					mangatag = temptag
+				}
+				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
+					var found = false;
+					var temp = ('http://mangastream.com/r/' + mangatag + '/').length
+					var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
+					var othertemp = body.substr(begin)
+					var end = othertemp.indexOf("/")
+					mangaDB.getAll().then(function(r) {
+						if (r.length != 0) {
+							for(i = 0; i < r.length; i++) {
+								if (r[i].url == args && r[i].server_id == msg.server.id) {
+									if (r[i].mention) {
+										if (r[i].pm_array.length < 1) {
+											mangaDB.deleteTrack(r[i]._id);
+										} else {
+											mangaDB.updateChannel(r[i]._id, 0);
+											mangaDB.updateMention(r[i]._id, false);
+										}
+										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` in this server.");
+									} else {
+										bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
+									}
+									found = true
+								}
+								if (found == false && i == r.length-1 ) {
+									bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
+								}
+							}
+						} else {
+							bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
+						}
+					})
+				} else {
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+				}
+			} else {
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of 'http://mangastream.com/manga/<manga name>'. Go to http://mangastream.com/manga to find a list.");
+			}
+		})
+	}
+};
+
+Commands.createcommand = {
+	name: "createcommand",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		var comexists = false
+		var specific_lvl = 0;
+		if (!args) {
+			bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+			return;
+		}
+		if (args.indexOf(" | ") < 0) {
+			bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+			return;
+		}
+		if (/---[0-3]|---6/.test(args)) {
+			if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
+				bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+				return;
+			} else {
+				specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
+			}
+		}
+		var comname = args.split(" ")[0].toLowerCase().trim();
+		if (args.split(" ")[1] != "|") {
+			bot.sendMessage(msg.channel, "Command name cannot contain spaces.");
+			return;
+		}
+		var comcontent = args.replace(comname + " | ", "").replace("---" + specific_lvl, "").trim();
+		if (Commands[comname]) {
+			bot.sendMessage(msg.channel, "Cannot overwrite core bot commands.");
+			return;
+		}
+		customcommands.getAllHere(msg.server).then(function(r) {
+			for (i = 0; i < r.length; i++) {
+				if (r[i].name === comname) {
+				 comexists = true
+				}
+			}
+			if (comexists) {
+				customcommands.deleteCommand(msg.server, comname);
+				customcommands.createNewCommand(comname, msg.server, comcontent, specific_lvl);
+				bot.sendMessage(msg.channel, "Command `" + comname + "` has been overwritten with new response: " + comcontent);
+			}	else {
+				customcommands.createNewCommand(comname, msg.server, comcontent, specific_lvl);
+				bot.sendMessage(msg.channel, "Command `" + comname + "` has been created with response: " + comcontent);
+			}
+		});
+	}
+};
+
+Commands.deletecommand = {
+	name: "deletecommand",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		if (!args) {
+			bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!delete <command name>. Command name cannot contain spaces.");
+			return;
+		}
+		customcommands.deleteCommand(msg.server, args).then(function(r) {
+			bot.sendMessage(msg.channel, r)
+		}).catch(function(e) {
+			bot.sendMessage(msg.channel, e)
+		})
+	}
+};
+
+Commands.eval = {
+	name: "eval",
+	help: "tbd",
+	type: "admin",
+	lvl: 6,
+	func: function(bot, msg, args) {
+		if (msg.author.id == 159704938283401216) {
+			try {
+	        bot.sendMessage(msg.channel, eval(args));
+	    }
+	    catch (err) {
+	        bot.sendMessage(msg.channel, "Eval failed :(");
+	        bot.sendMessage(msg.channel, "`" + err + "`");
+	    }
+		}
+  }
+};
+
+Commands.nsfw = {
+	name: "nsfw",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		serverDB.nsfwChannel(msg.channel).then(function(r) {
+			bot.reply(msg, r);
+		}).catch(function(e) {
+			bot.reply(msg, e);
+		})
+  }
+};
+
+Commands.unnsfw = {
+	name: "unnsfw",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		serverDB.unNSFWChannel(msg.channel).then(function(r) {
+			bot.reply(msg, r);
+		}).catch(function(e) {
+			bot.reply(msg, e);
+		})
+  }
+};
+
+Commands.rule34 = {
+	name: "rule34",
+	help: "tbd",
+	type: "nsfw",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
+		    if (!error && response.statusCode == 200) {
+					if (body.length < 1) {
+						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						return;
+					}
+					if (args.length < 1) {
+						args = "<no tags specified>";
+					}
+		      parseString(body, function (err, result) {
+						bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+							bot.sendMessage(msg.channel, 'http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+							bot.sendMessage(msg.channel, 'http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+							bot.sendMessage(msg.channel, 'http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+						});
+		      });
+		    }
+		})
+  }
+};
+
+Commands.konachan = {
+	name: "konachan",
+	help: "tbd",
+	type: "nsfw",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		if (args.split(" ").length > 5) {
+			bot.sendMessage(msg.channel, "Konachan only supports upto 6 tags.");
+			return;
+		}
+		request('https://konachan.net/post/index.json?limit=300&tags=' + args, function (error, response, body) {
+		    if (!error && response.statusCode == 200) {
+					var result = JSON.parse(body);
+					if (result.length < 1) {
+						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						return;
+					}
+					if (args.length < 1) {
+						args = "<no tags specified>";
+					}
+					if ((args.toString().toLowerCase().indexOf("gaping") > -1
+						|| args.toString().toLowerCase().indexOf("gape") > -1)
+						|| args.toString().toLowerCase().indexOf("prolapse") > -1
+						|| args.toString().toLowerCase().indexOf("toddlercon") > -1
+						|| args.toString().toLowerCase().indexOf("scat") > -1
+						|| args.toString().toLowerCase().indexOf("gore") > -1) {
+							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending images in a pm...", function(err, mesg) {
+								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+							});
+					} else {
+							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+							});
+					}
+		    }
+		  })
+  }
+};
+
+Commands.danbooru = {
+	name: "danbooru",
+	help: "tbd",
+	type: "nsfw",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		if (args.split(" ").length > 2) {
+			bot.sendMessage(msg.channel, "Danbooru only supports upto 2 tags.");
+			return;
+		}
+		request('https://danbooru.donmai.us/posts.json?limit=300&tags=' + args, function (error, response, body) {
+		    if (!error && response.statusCode == 200) {
+					var result = JSON.parse(body);
+					if (result.length < 1) {
+						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						return;
+					}
+					if (args.length < 1) {
+						args = "<no tags specified>";
+					}
+					if ((args.toString().toLowerCase().indexOf("gaping") > -1
+						|| args.toString().toLowerCase().indexOf("gape") > -1)
+						|| args.toString().toLowerCase().indexOf("prolapse") > -1
+						|| args.toString().toLowerCase().indexOf("toddlercon") > -1
+						|| args.toString().toLowerCase().indexOf("scat") > -1
+						|| args.toString().toLowerCase().indexOf("gore") > -1) {
+							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending images in a pm...", function(err, mesg) {
+								bot.sendMessage(msg.author, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.author, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.author, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+							});
+					} else {
+							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+								bot.sendMessage(msg.channel, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.channel, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.channel, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+							});
+					}
+		    }
+		  })
+  }
+};
+
+Commands.yandere = {
+	name: "yandere",
+	help: "tbd",
+	type: "nsfw",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		request('https://yande.re/post/index.json?limit=500&tags=' + args, function (error, response, body) {
+		    if (!error && response.statusCode == 200) {
+					var result = JSON.parse(body);
+					if (result.length < 1) {
+						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						return;
+					}
+					if (args.length < 1) {
+						args = "<no tags specified>";
+					}
+					if ((args.toString().toLowerCase().indexOf("gaping") > -1
+						|| args.toString().toLowerCase().indexOf("gape") > -1)
+						|| args.toString().toLowerCase().indexOf("prolapse") > -1
+						|| args.toString().toLowerCase().indexOf("toddlercon") > -1
+						|| args.toString().toLowerCase().indexOf("scat") > -1
+						|| args.toString().toLowerCase().indexOf("gore") > -1) {
+							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending images in a pm...", function(err, mesg) {
+								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+							});
+					} else {
+							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+							});
+					}
+		    }
+		  })
+  }
+};
+
+Commands.reddit = {
+	name: "reddit",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		if (args.indexOf(" ") > 0) {
+			bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'https://www.reddit.com/r/<subreddit name>'.");
+			return;
+		}
+		request(args, function(error, response, body) {
+			if (error) {
+				console.log(error);
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'https://www.www.reddit.com/r/<subreddit name>'.");
+			}
+			if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && args.indexOf('www.reddit.com') >= 0 ) {
+				temp = args.substr(args.indexOf('/r/')+3);
+				if (temp.indexOf("/") >= 0) {
+					name = temp.slice(0, temp.indexOf('/'));
+				} else {
+					name = temp;
+				}
+				redditDB.trackSubreddit(name, msg);
+				bot.sendMessage(msg.channel, "/r/" + name + " Is now being tracked in ``" + msg.channel.name + "``. All new posts will be sent as messages here.");
+			} else {
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'https://www.www.reddit.com/r/<subreddit name>'.");
+			}
+		})
+  }
+};
+
+Commands.unreddit = {
+	name: "unreddit",
+	help: "tbd",
+	type: "admin",
+	lvl: 3,
+	func: function(bot, msg, args) {
+		if (args.indexOf(" ") > 0) {
+			bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'reddit.com/r/<subreddit name>'.");
+			return;
+		}
+		request(args, function(error, response, body) {
+			if (error) {
+				console.log(error);
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
+			}
+			if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && args.indexOf('www.reddit.com') >= 0 ) {
+				temp = args.substr(args.indexOf('/r/')+3);
+				if (temp.indexOf("/") >= 0) {
+					name = temp.slice(0, temp.indexOf('/'));
+				} else {
+					name = temp;
+				}
+				redditDB.deleteTrack(msg.server, name);
+				bot.sendMessage(msg.channel, "/r/" + name + " Is now not being tracked in ``" + msg.channel.name + "``");
+			} else {
+				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
 			}
 		})
   }

@@ -4,6 +4,7 @@ var serverDB = require("./server_rt.js");
 var permissionDB = require("./permission_rt.js");
 var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
+var redditDB = require("./reddit_rt.js");
 
 var aniscrape = require("aniscrape");
 var kissanime = require("aniscrape-kissanime")
@@ -16,79 +17,120 @@ var ytdl = require("ytdl-core");
 var reddit = require('redwrap');
 var lastID = 0
 
-exports.checkManga = function(bot, channel) {
+exports.checkManga = function(bot) {
 	var timercheck = 20000;
 	var check = function() {
 	mangaDB.getAll().then(function(mangaArray) {
-		for (m of mangaArray) {
-			var mangatag = m.url.substr(29);
-			request(m.url, function(error, response, body) {
-				console.log("checking");
-				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
-					var n = body.search('http://mangastream.com/r/' + mangatag + '/')
-					bot.sendMessage(channel, "@everyone, " + body.substr(n, 45));
-					mangaDB.updateChapter(m._id, body.substr(n+35, 3));
-					//timercheck = 345600000;
-				}
-			})
+		for (manga of mangaArray) {
+			(function(m) {
+				var request = require("request");
+				var mangatag = m.url.substr(29);
+				request(m.url, function(error, response, body) {
+						if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
+							var temp = ('http://mangastream.com/r/' + mangatag + '/').length
+							var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
+							var othertemp = body.substr(begin)
+							var linktemp = othertemp.indexOf('"')
+							var end = othertemp.indexOf("/")
+							if (m.mention == true) {
+								bot.sendMessage(bot.channels.get("id", m.channel_id), "@everyone, New chapter of: " + body.substr(begin-temp, temp+linktemp));
+							}
+							mangaDB.updateChapter(m._id, body.substr(begin, end));
+							for (i = 0; i < m.pm_array.length; i++) {
+								(function(x) {
+									bot.sendMessage(bot.users.get("id", m.pm_array[x]), "New chapter of: " + body.substr(begin-temp, temp+linktemp));
+								})(i)
+							}
+						}
+				})
+			})(manga)
 		}
 	});
 	}
 	var timer = setInterval(check, timercheck);
 };
 
-exports.checkReddit = function(bot, channel) {
+exports.checkReddit = function(bot) {
 	var checkR = function() {
-		console.log("checking reddit");
-		console.log(lastID);
-		if (lastID == 0) {
-			reddit.r('OnePiece').new().limit(25, function(err, data, res) {
-				if (err) {
-					console.log(err);
-				} else {
-					var msgArray = [];
-					msgArray.push('\n\n\n────────────────────────────────────────────────────────────────────────\n');
-					msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/OnePiece*');
-					if (data.data.children[0].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
-						msgArray.push('*https://redd.it/' + data.data.children[0].data.id + '*\n');
-						msgArray.push('**' + data.data.children[0].data.title + '**:');
-						msgArray.push(data.data.children[0].data.selftext + "\n\n\n\n");
-					} else {
-						msgArray.push('\n**' + data.data.children[0].data.title + '**');
-						msgArray.push(data.data.children[0].data.url + '\n');
-					}
-					bot.sendMessage(channel, msgArray)
-					lastID = data.data.children[0].data.name
-				}
-			});
-		} else {
-			reddit.r('OnePiece').new().before(lastID).limit(25, function(err, data, res) {
-				console.log(lastID);
-				if (err) {
-					console.log(err);
-				} else {
-					for (i = 0; i < data.data.children.length; i++) {
-						if (data.data.children[i].data.name != lastID) {
+		redditDB.getAll().then(function(redditArray) {
+			for (reddit of redditArray) {
+				(function(red) {
+				var reddit = require('redwrap');
+				var itempos = 0
+				if (red.last_id == 0) {
+					reddit.r(red.subreddit_name).new().limit(25, function(err, data, res) {
+						if (err) {
+							console.log(err);
+						} else {
 							var msgArray = [];
-							msgArray.push('\n\n\n────────────────────────────────────────────────────────────────────────\n');
-							msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/OnePiece*');
-							if (data.data.children[i].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
-								msgArray.push('*https://redd.it/' + data.data.children[i].data.id + '*\n');
-								msgArray.push('**' + data.data.children[i].data.title + '**:');
-								msgArray.push(data.data.children[i].data.selftext + "\n\n\n\n");
+							msgArray.push('\n────────────────────────────────────────────────────────────────────────\n');
+							msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/' + red.subreddit_name + '*');
+							if (data.data.children[0].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
+								msgArray.push('*https://redd.it/' + data.data.children[0].data.id + '*\n');
+								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&") + '**:');
+								if (data.data.children[0].data.selftext.length >= 1500) {
+									for (i = 0; i < Math.ceil(data.data.children[0].data.selftext.length/1500); i++) {
+										(function (x) {
+											msgArray.push(data.data.children[0].data.selftext.substr(1500*i, 1500).replace(/&amp;/g, "&"));
+											bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray);
+											msgArray = [];
+										})(i)
+									}
+								} else {
+									msgArray.push(data.data.children[0].data.selftext.replace(/&amp;/g, "&") + "\n");
+								}
 							} else {
-								msgArray.push('\n**' + data.data.children[i].data.title + '**');
-								msgArray.push(data.data.children[i].data.url)+ '\n';
+								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&") + '**');
+								msgArray.push(data.data.children[0].data.url.replace(/&amp;/g, "&") + '\n');
 							}
-							bot.sendMessage(channel, msgArray)
-							lastID = data.data.children[0].data.name
-							console.log(data.data.children[i].data.name);
+							bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray)
+							redditDB.updateLastPost(red._id, data.data.children[0].data.name);
 						}
-						console.log(data.data.children[i].data.name);
-					}
+					});
+				} else {
+					reddit.r(red.subreddit_name).new().limit(25, function(err, data, res) {
+						if (err) {
+							console.log(err);
+						} else {
+							if (data.data.children[0].data.name != red.last_id) {
+								for (i = 0; i < data.data.children.length; i++) {
+									if (data.data.children[i].data.name == red.last_id) {
+										itempos = i;
+									}
+								}
+								for (i = 0; i < itempos; i++) {
+									var msgArray = [];
+									msgArray.push('\n────────────────────────────────────────────────────────────────────────\n');
+									msgArray.push('*Posted by /u/' + data.data.children[i].data.author + ' in /r/' + red.subreddit_name + '*');
+									if (data.data.children[i].data.url == 'https://www.reddit.com' + data.data.children[i].data.permalink) {
+										msgArray.push('*https://redd.it/' + data.data.children[i].data.id + '*\n');
+										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&") + '**:');
+										if (data.data.children[i].data.selftext.length >= 1500) {
+											for (j = 0; j < Math.ceil(data.data.children[i].data.selftext.length/1500); j++) {
+												(function (x) {
+													msgArray.push(data.data.children[i].data.selftext.substr(1500*j, 1500).replace(/&amp;/g, "&"));
+													bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray);
+													msgArray = [];
+												})(j)
+											}
+										} else {
+											msgArray.push(data.data.children[i].data.selftext.replace(/&amp;/g, "&") + "\n");
+										}
+									} else {
+										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&") + '**');
+										msgArray.push(data.data.children[i].data.url.replace(/&amp;/g, "&"))+ '\n';
+									}
+									bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray)
+									console.log(data.data.children[i].data.name);
+								}
+								redditDB.updateLastPost(red._id, data.data.children[0].data.name);
+							}
+						}
+					});
 				}
-			});
-		}
+			})(reddit);
+			}
+		})
 	}
 	var timer = setInterval(checkR, 20000);
 };
