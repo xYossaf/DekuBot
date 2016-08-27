@@ -67,21 +67,21 @@ exports.checkReddit = function(bot) {
 							msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/' + red.subreddit_name + '*');
 							if (data.data.children[0].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
 								msgArray.push('*https://redd.it/' + data.data.children[0].data.id + '*\n');
-								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&") + '**:');
+								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**:');
 								if (data.data.children[0].data.selftext.length >= 1500) {
 									for (i = 0; i < Math.ceil(data.data.children[0].data.selftext.length/1500); i++) {
 										(function (x) {
-											msgArray.push(data.data.children[0].data.selftext.substr(1500*i, 1500).replace(/&amp;/g, "&"));
+											msgArray.push(data.data.children[0].data.selftext.substr(1500*i, 1500).replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"));
 											bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray);
 											msgArray = [];
 										})(i)
 									}
 								} else {
-									msgArray.push(data.data.children[0].data.selftext.replace(/&amp;/g, "&") + "\n");
+									msgArray.push(data.data.children[0].data.selftext.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + "\n");
 								}
 							} else {
-								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&") + '**');
-								msgArray.push(data.data.children[0].data.url.replace(/&amp;/g, "&") + '\n');
+								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**');
+								msgArray.push(data.data.children[0].data.url.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '\n');
 							}
 							bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray)
 							redditDB.updateLastPost(red._id, data.data.children[0].data.name);
@@ -104,21 +104,21 @@ exports.checkReddit = function(bot) {
 									msgArray.push('*Posted by /u/' + data.data.children[i].data.author + ' in /r/' + red.subreddit_name + '*');
 									if (data.data.children[i].data.url == 'https://www.reddit.com' + data.data.children[i].data.permalink) {
 										msgArray.push('*https://redd.it/' + data.data.children[i].data.id + '*\n');
-										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&") + '**:');
+										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**:');
 										if (data.data.children[i].data.selftext.length >= 1500) {
 											for (j = 0; j < Math.ceil(data.data.children[i].data.selftext.length/1500); j++) {
 												(function (x) {
-													msgArray.push(data.data.children[i].data.selftext.substr(1500*j, 1500).replace(/&amp;/g, "&"));
+													msgArray.push(data.data.children[i].data.selftext.substr(1500*j, 1500).replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"));
 													bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray);
 													msgArray = [];
 												})(j)
 											}
 										} else {
-											msgArray.push(data.data.children[i].data.selftext.replace(/&amp;/g, "&") + "\n");
+											msgArray.push(data.data.children[i].data.selftext.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + "\n");
 										}
 									} else {
-										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&") + '**');
-										msgArray.push(data.data.children[i].data.url.replace(/&amp;/g, "&"))+ '\n';
+										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**');
+										msgArray.push(data.data.children[i].data.url.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"))+ '\n';
 									}
 									bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray)
 									console.log(data.data.children[i].data.name);
