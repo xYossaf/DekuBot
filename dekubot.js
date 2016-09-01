@@ -91,6 +91,10 @@ if (message.author.id == dekubot.user.id) {
 		permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
 			authorpermissionlvl = r;
 			var command = firstWord.slice(1);
+			// if (command == '8ball') {
+			// 	command = 'eightball'
+			// 	console.log(command)
+			// }
 			customcommands.getAllHere(message.server).then(function(r) {
 				for (i = 0; i < r.length; i++) {
 					if (r[i].name == command && message.server.id == r[i].server_id && authorpermissionlvl >= r[i].lvl) {
@@ -171,7 +175,7 @@ dekubot.on("serverNewMember", function(server, user) {
 			}
 		});
 	});
-
+			//Need to make the factions general. Make it search through the factions here and give a response
 			var msgArray = [];
 			msgArray.push("Hi! Welcome to the " + server.name + " server");
 			msgArray.push("Im the servers bot, DekuBot. I help with a bunch of things which you can check out by doing `!help`");
@@ -217,11 +221,11 @@ dekubot.on('presence', function(olduser, newuser) {
 	if (newuser.id == dekubot.user.id) {
 		return;
 	} else {
-//	userDB.check(newuser).catch(function() {
-//    userDB.trackUser(newuser).catch(function(e) {
-//        console.log(e);
-//      });
-//	});
+	// userDB.check(newuser).catch(function() {
+  //  userDB.trackUser(newuser).catch(function(e) {
+  //      console.log(e);
+  //    });
+	// });
     if (olduser.username === newuser.username) {
       return;
     } else try {

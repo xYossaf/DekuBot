@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "aniscrape": "^0.1.1",
-    "aniscrape-kissanime": "^0.1.0",
     "discord.js": "^8.0.0",
     "jimp": "^0.2.27",
     "nani": "^1.2.0",

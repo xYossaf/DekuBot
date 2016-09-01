@@ -9,9 +9,8 @@ var functions = require("./functions.js");
 var battle = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
 
+var jimp = require("jimp");
 var parseString = require('xml2js').parseString;
-var aniscrape = require("aniscrape");
-var kissanime = require("aniscrape-kissanime")
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
 var nedb = require("nedb")
 var request = require("request");
@@ -25,7 +24,7 @@ Commands.help = {
 	type: "general",
 	lvl: 0,
 	func: function(bot, msg) {
-  	bot.reply(msg, "https://github.com/RoddersGH/DekuBot/wiki/General-Commands");
+  	bot.reply(msg, " 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 ");
   }
 };
 
@@ -35,7 +34,7 @@ Commands.ping = {
 	type: "general",
 	lvl: 0,
 	func: function(bot, msg) {
-  	bot.reply(msg, "pong");
+  	bot.reply(msg, ":ping_pong:");
   }
 };
 
@@ -46,28 +45,28 @@ Commands.purge = {
 	lvl: 1,
 	func: function(bot, msg, args) {
     if (!msg.channel.server) {
-      bot.sendMessage(msg.channel, "You can't do that in a DM you silly silly person!");
+      bot.sendMessage(msg.channel, "```diff\n- You can't do that in a DM you silly silly person!```");
       return;
     }
     if (!args || isNaN(args)) {
-      bot.sendMessage(msg.channel, "Please define an amount of messages for me to delete!");
+      bot.sendMessage(msg.channel, "```diff\n- Please define an amount of messages for me to delete!```");
       return;
     }
     if (!msg.channel.permissionsOf(msg.sender).hasPermission("manageMessages")) {
-      bot.sendMessage(msg.channel, "Your role in this server does not have enough permissions.");
+      bot.sendMessage(msg.channel, "```diff\n- Your role in this server does not have enough permissions.```");
       return;
     }
     if (!msg.channel.permissionsOf(bot.user).hasPermission("manageMessages")) {
-      bot.sendMessage(msg.channel, "I don't have permission to do that!");
+      bot.sendMessage(msg.channel, "```diff\n- I don't have permission to do that!```");
       return;
     }
-    if (args > 50) {
-      bot.sendMessage(msg.channel, "The maximum is 50.");
+    if (args > 100) {
+      bot.sendMessage(msg.channel, "```diff\n- The maximum is 100.```");
       return;
     }
     bot.getChannelLogs(msg.channel, args, function(error, messages) {
       if (error) {
-        bot.sendMessage(msg.channel, "Something went wrong while getting logs thing.");
+        bot.sendMessage(msg.channel, "```diff\n- Something went wrong while getting logs thing.```");
         return;
       } else {
         var msgsleft = messages.length,
@@ -77,7 +76,7 @@ Commands.purge = {
           msgsleft--;
           delcount++;
           if (msgsleft === 0) {
-            bot.sendMessage(msg.channel, "Done! Deleted " + delcount + " messages.");
+            bot.sendMessage(msg.channel, "Done ✔ Deleted " + delcount + " messages.");
             return;
           }
         }
@@ -93,17 +92,17 @@ Commands.namechanges = {
 	lvl: 0,
 	func: function(bot, msg) {
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.sendMessage(msg.channel, "Please mention a single user.");
+			bot.sendMessage(msg.channel, "```diff\n- Please mention a single user.```");
 		} else {
 			msg.mentions.map(function(user) {
 	      userDB.returnNamechanges(user).then(function(reply) {
 	        bot.sendMessage(msg.channel, reply.join(', '));
 	      }).catch(function(err) {
 	        if (err === 'No changes found!') {
-	          bot.sendMessage(msg.channel, "I don't have any changes registered.");
+	          bot.sendMessage(msg.channel, "I don't have any changes registered 📒");
 	          return;
 	        }
-	        bot.sendMessage(msg.channel, 'Something went wrong, try again later.');
+	        bot.sendMessage(msg.channel, '❌ Something went wrong, try again later.');
 	      });
 	    });
 		}
@@ -129,9 +128,9 @@ Commands.botstatus = {
 			};
 		};
 
-		finalstring.push("Hi! Im DekuBot.");
-		finalstring.push("Im currently used in " + bot.servers.length + " server(s), in " + channelcount + " channels used by " + usercount + " users.");
-		finalstring.push("I've been up and ready for " + (Math.round(bot.uptime / (1000 * 60 * 60))) + " hours, " + (Math.round(bot.uptime / (1000 * 60)) % 60) + " minutes, and " + (Math.round(bot.uptime / 1000) % 60 + ".") + " seconds.");
+		finalstring.push("Hi! Im DekuBot :robot:");
+		finalstring.push("Im currently used in ``" + bot.servers.length + "`` server(s), in ``" + channelcount + "`` channels used by ``" + usercount + "`` users.");
+		finalstring.push("I've been up and ready for ``" + (Math.round(bot.uptime / (1000 * 60 * 60))) + "`` hours, ``" + (Math.round(bot.uptime / (1000 * 60)) % 60) + "`` minutes, and ``" + (Math.round(bot.uptime / 1000) % 60 + ".") + "`` seconds.");
 	  finalstring.push("If you have any questions or need some help, contact **RoddersGH#4702**")
 		finalstring.push("```         __    __");
 		finalstring.push("        /  |  | |'-.");
@@ -147,20 +146,6 @@ Commands.botstatus = {
   }
 };
 
-Commands.serverspoilertoggle = {//USELESS
-	name: "serverspoilertoggle",
-	help: "tbd",
-	type: "admin",
-	lvl: 3,
-	func: function(bot, msg, args) {
-	  if (msg.channel.permissionsOf(msg.sender).hasPermission("manageServer")) {
-			serverDB.togglespoiler(msg.channel.server.id);
-	  } else {
-			bot.sendMessage(msg.channel, "Your role in this server does not have enough permissions.")
-	  }
-  }
-};
-
 Commands.getpermissionlvl = {
 	name: "getpermissionlvl",
 	help: "tbd",
@@ -168,7 +153,7 @@ Commands.getpermissionlvl = {
 	lvl: 1,
 	func: function(bot, msg, args) {
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.reply(msg, "Please mention a user");
+			bot.reply(msg, "```diff\n- Please mention a user```");
 		} else {
 			permissionDB.getPermission(msg.channel.server.id, msg.mentions[0].id).then(function(r) {
 				bot.sendMessage(msg.channel, r);
@@ -186,11 +171,11 @@ Commands.setpermissionlvl = {
 		var num = args.substr(args.indexOf(" ") + 1)
 		var isnum = /^\d+$/.test(num);
 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.reply(msg, "Please mention a user");
+			bot.reply(msg, "```diff\n- Please mention a user```");
 			return;
 		} else {
 			if (!num || isnum == false || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
-				bot.sendMessage(msg.channel, "Please define the permission level you wish to set for the user.");
+				bot.sendMessage(msg.channel, "```diff\n- Please define the permission level you wish to set for the user.```");
 				return;
 			} else {
 				permissionDB.check(msg.channel.server.id, msg.mentions[0].id).catch(function(e) {
@@ -219,17 +204,16 @@ Commands.createfaction = {
 	type: "admin",
 	lvl: 3,
 	func: function(bot, msg, args) {
-		var name = args.substr(0, args.indexOf("#") - 1)
+		var name = args.substr(0, args.indexOf("#") - 1).toLowerCase();
 		var hex = args.substr(args.indexOf("#"))
 		var isHex = /^#[0-9A-F]{6}$/i.test(hex);
 
 		if (isHex == false) {
-			bot.sendMessage(msg.channel, "Please enter a valid Hex value of the format #<six digit hex number>.");
+			bot.sendMessage(msg.channel, "```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
 			return;
 		};
 		factionDB.checkNameClash(msg.channel.server, name).then(function() {
 			var hex_int = parseInt("0x" + hex.substr(hex.indexOf("#") + 1), 16);
-			factionDB.createNewFaction(msg.channel.server, name, hex);
 			bot.createRole(msg.server, {
 				color : hex_int,
 				hoist : false,
@@ -241,9 +225,11 @@ Commands.createfaction = {
 			}, function(err, role) {
 				if (err) {
 					bot.sendMessage(msg.channel, err);
+					return;
 				}
+				factionDB.createNewFaction(role.id, role.server, role.name, hex_int, role.permissions);
+				bot.sendMessage(msg.channel, "The faction " + role.name + " has been created ✔");
 			});
-			bot.sendMessage(msg.channel, "The faction " + name + " has been created.");
 		}).catch(function(e) {
 			bot.sendMessage(msg.channel, e);
 			return;
@@ -251,115 +237,115 @@ Commands.createfaction = {
   }
 };
 
-Commands.manualjoinfaction = {
-	name: "manualjoinfaction",
-	help: "tbd",
-	type: "admin",
-	lvl: 3,
-	func: function(bot, msg, args) {
-		var name = args.substr(args.indexOf(" ") + 1)
-		var exitloop2 = false;
-		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.reply(msg, "Please mention a user");
-			return;
-		} else {
-			if (!name) {
-				bot.sendMessage(msg.channel, "Please define the faction you wish the user to join.");
-				return;
-			} else {
-				factionDB.getFactionsHere(msg.channel.server).then(function(r) {     //r is servers factions
-					for (factionid of r) {
-						if (exitloop2 == true) {
-							break;
-						};
-						factionDB.getFactionName(factionid).then(function(v) {
-							if (v == name) {
-								userDB.getFactionIDs(msg.mentions[0]).then(function(q){
-									for (facid of q) {
-										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
-										if ((j == facid) || (facid = r[0]) || (facid = r[1]) || (facid = r[2])) {
-											bot.sendMessage(msg.channel, "The user is already in a faction on this server.");
-											return;
-										} else {
-											userDB.addToFaction(msg.mentions[0], j);
-											bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
-										};
-										});
-									};
-								}).catch(function(e) {
-									if (e == 'No factions found!') {
-											factionDB.getFactionID(msg.channel.server.id, v).then(function(m) {
-												userDB.addToFaction(msg.mentions[0], m);
-												bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
-											});
-									}
-								});
-								exitloop2 = true;
-							};
-						});
-					}
-
-				}).catch(function(e) {
-					bot.sendMessage(msg.channel, e);
-				});
-			}
-	  }
-  }
-};
-
-Commands.manualleavefaction = {
-	name: "manualleavefaction",
-	help: "tbd",
-	type: "admin",
-	lvl: 3,
-	func: function(bot, msg, args) {
-		var name = args.substr(args.indexOf(" ") + 1)
-		exitloop = false;
-		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.reply(msg, "Please mention a user");
-			return;
-		} else {
-			if (!name) {
-				bot.sendMessage(msg.channel, "Please define the faction you wish the user to leave.");
-				return;
-			} else {
-				factionDB.getFactionsHere(msg.channel.server).then(function(r) {
-					for (factionid of r) {
-						factionDB.getFactionName(factionid).then(function(v) {
-							if (v == name) {
-								userDB.getFactionIDs(msg.mentions[0]).then(function(q){
-									for (facid of q) {
-										if (exitloop = true) {
-											break;
-										};
-										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
-										if (j == facid) {
-											userDB.removeFromFaction(msg.mentions[0], j);
-											bot.sendMessage(msg.channel, "The user has successfully been removed from " + name);
-
-											exitloop = true;
-											return;
-										};
-										});
-									};
-								}).catch(function(e) {
-									if (e == 'No factions found!') {
-										bot.sendMessage(msg.channel, "The user is not in any faction");
-										exitloop = true;
-									}
-								})
-
-							}
-						})
-					}
-					if (exitloop == false) {
-						bot.sendMessage(msg.channel, "The user is not a member of the faction " + name);
-					}
-				})
-			}
-	  }
-  }
-};
+// Commands.manualjoinfaction = {
+// 	name: "manualjoinfaction",
+// 	help: "tbd",
+// 	type: "admin",
+// 	lvl: 3,
+// 	func: function(bot, msg, args) {
+// 		var name = args.substr(args.indexOf(" ") + 1)
+// 		var exitloop2 = false;
+// 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
+// 			bot.reply(msg, "Please mention a user");
+// 			return;
+// 		} else {
+// 			if (!name) {
+// 				bot.sendMessage(msg.channel, "Please define the faction you wish the user to join.");
+// 				return;
+// 			} else {
+// 				factionDB.getFactionsHere(msg.channel.server).then(function(r) {     //r is servers factions
+// 					for (factionid of r) {
+// 						if (exitloop2 == true) {
+// 							break;
+// 						};
+// 						factionDB.getFactionName(factionid).then(function(v) {
+// 							if (v == name) {
+// 								userDB.getFactionIDs(msg.mentions[0]).then(function(q) {
+// 									for (facid of q) {
+// 										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
+// 										if ((j == facid) || (facid = r[0]) || (facid = r[1]) || (facid = r[2])) {
+// 											bot.sendMessage(msg.channel, "The user is already in a faction on this server.");
+// 											return;
+// 										} else {
+// 											userDB.addToFaction(msg.mentions[0], j);
+// 											bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
+// 										};
+// 										});
+// 									};
+// 								}).catch(function(e) {
+// 									if (e == 'No factions found!') {
+// 											factionDB.getFactionID(msg.channel.server.id, v).then(function(m) {
+// 												userDB.addToFaction(msg.mentions[0], m);
+// 												bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
+// 											});
+// 									}
+// 								});
+// 								exitloop2 = true;
+// 							};
+// 						});
+// 					}
+//
+// 				}).catch(function(e) {
+// 					bot.sendMessage(msg.channel, e);
+// 				});
+// 			}
+// 	  }
+//   }
+// };
+//
+// Commands.manualleavefaction = {
+// 	name: "manualleavefaction",
+// 	help: "tbd",
+// 	type: "admin",
+// 	lvl: 3,
+// 	func: function(bot, msg, args) {
+// 		var name = args.substr(args.indexOf(" ") + 1)
+// 		exitloop = false;
+// 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
+// 			bot.reply(msg, "Please mention a user");
+// 			return;
+// 		} else {
+// 			if (!name) {
+// 				bot.sendMessage(msg.channel, "Please define the faction you wish the user to leave.");
+// 				return;
+// 			} else {
+// 				factionDB.getFactionsHere(msg.channel.server).then(function(r) {
+// 					for (factionid of r) {
+// 						factionDB.getFactionName(factionid).then(function(v) {
+// 							if (v == name) {
+// 								userDB.getFactionIDs(msg.mentions[0]).then(function(q){
+// 									for (facid of q) {
+// 										if (exitloop = true) {
+// 											break;
+// 										};
+// 										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
+// 										if (j == facid) {
+// 											userDB.removeFromFaction(msg.mentions[0], j);
+// 											bot.sendMessage(msg.channel, "The user has successfully been removed from " + name);
+//
+// 											exitloop = true;
+// 											return;
+// 										};
+// 										});
+// 									};
+// 								}).catch(function(e) {
+// 									if (e == 'No factions found!') {
+// 										bot.sendMessage(msg.channel, "The user is not in any faction");
+// 										exitloop = true;
+// 									}
+// 								})
+//
+// 							}
+// 						})
+// 					}
+// 					if (exitloop == false) {
+// 						bot.sendMessage(msg.channel, "The user is not a member of the faction " + name);
+// 					}
+// 				})
+// 			}
+// 	  }
+//   }
+// };
 
 Commands.faction = {
 	name: "faction",
@@ -369,59 +355,37 @@ Commands.faction = {
 	func: function(bot, msg, args) {
 	  var msgArray = [];
 	  var serverFactions = [];
-	  var userFactions = [];
+		var found = false;
 	  factionDB.getFactionsHere(msg.server).then(function(serverFactions) {
-		  userDB.getFactionIDs(msg.author).then(function(userFactions) {
-				for (m of serverFactions) {
-						for (n of userFactions) {
-								if (m == n) {
-									bot.sendMessage(msg.author, "Sorry, you are already in a faction :heart:", {}, function(err, sentmsg) {
-										if (err) {
-											console.log(err);
-										}
-									});
-									return;
-								} else {
-									msgArray.push("Hello member of the " + msg.channel.server.name + " server");
-								    msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
-									msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
-									msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
-									msgArray.push(" ");
-									msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
-									msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
-									msgArray.push("The factions are:" );
-									msgArray.push("1. Pirates" );
-									msgArray.push("2. Marines" );
-									msgArray.push("3. Revolutionary Army" );
+				for (i = 0; i < serverFactions.length; i++) {
+					if (bot.memberHasRole(msg.author, msg.server.roles.get("id", serverFactions[i]))) {
+						bot.sendMessage(msg.author, "❌ Sorry, you are already in a faction. If you really want to change faction though, message RoddersGH#4702");
+						found = true;
+					}
+					if (found == false && i == serverFactions.length-1) {
+						msgArray.push("Hello member of the " + msg.channel.server.name + " server");
+						msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
+						msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
+						msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
+						msgArray.push(" ");
+						msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
+						msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
+						msgArray.push("The factions are:" );
+						msgArray.push("1. Pirates" );
+						msgArray.push("2. Marines" );
+						msgArray.push("3. Revolutionary Army" );
 
-									bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
-										sentmsg.author = msg.author
-										functions.responseHandling(bot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
-									});
-								}
-						}
+						bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
+							sentmsg.author = msg.author
+							functions.responseHandling(bot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
+						});
+					}
 				}
-		  }).catch (function(e) {
-			  if (e == 'No factions found!') {
-					msgArray.push("Hello member of the " + msg.channel.server.name + " server");
-					msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
-					msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
-					msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
-					msgArray.push(" ");
-					msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
-					msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
-					msgArray.push("The factions are:" );
-					msgArray.push("1. Pirates" );
-					msgArray.push("2. Marines" );
-					msgArray.push("3. Revolutionary Army" );
-
-					bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
-						sentmsg.author = msg.author
-						functions.responseHandling(bot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
-					});
-			  }
-		  });
-	  });
+	  }).catch(function(e) {
+			if (e == 'No factions found') {
+				bot.sendMessage(msg.channel, 'This server has no factions in it at the moment. Message an admin if you wish for them to create factions for the server.' )
+			}
+		})
   }
 };
 
@@ -459,9 +423,10 @@ Commands.anime = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
+		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
 		nani.get('anime/search/' + args).then(function(r) {
 			if (r.length == 0) {
-				bot.reply(msg, "Nothing found");
+				bot.reply(msg, "❌ Nothing found ");
 				return
 			} else {
 				nani.get('anime/' + r[0].id).then(function(data) {
@@ -489,6 +454,7 @@ Commands.anime = {
 			}
 		}).catch(function(e) {
 			console.log(e);
+			bot.reply(msg, "❌ Nothing found ");
 		});
   }
 };
@@ -499,9 +465,10 @@ Commands.manga = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
+		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
 		nani.get('manga/search/' + args).then(function(r) {
 			if (r.length == 0) {
-				bot.reply(msg, "Nothing found");
+				bot.reply(msg, "❌ Nothing found ");
 				return
 			} else {
 				nani.get('manga/' + r[0].id).then(function(data) {
@@ -529,6 +496,7 @@ Commands.manga = {
 			}
 		}).catch(function(e) {
 			console.log(e);
+			bot.reply(msg, "❌ Nothing found ");
 		});
   }
 };
@@ -539,9 +507,10 @@ Commands.character = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
+		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
 		nani.get('character/search/' + args).then(function(r) {
 			if (r.length == 0) {
-				bot.reply(msg, "Nothing found");
+				bot.reply(msg, "❌ Nothing found ");
 				return
 			} else {
 				var msgArray1 = [];
@@ -612,9 +581,10 @@ Commands.animesearch = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
+		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
 		nani.get('anime/search/' + args).then(function(r) {
 			if (r.length == 0) {
-				bot.reply(msg, "Nothing found");
+				bot.reply(msg, "❌ Nothing found ");
 				return
 			} else {
 				var msgArray1 = [];
@@ -704,9 +674,10 @@ Commands.mangasearch = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
+		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
 		nani.get('manga/search/' + args).then(function(r) {
 			if (r.length == 0) {
-				bot.reply(msg, "Nothing found");
+				bot.reply(msg, "❌ Nothing found ");
 				return
 			} else {
 				var msgArray1 = [];
@@ -783,6 +754,7 @@ Commands.animeairdate = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
+		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
 		nani.get('anime/search/' + args).then(function(r) {
 			if (r.length == 0) {
 				bot.reply(msg, "Nothing found");
@@ -860,7 +832,7 @@ Commands.mangatrack = {
 										console.log(pmfound);
 										if (pmfound == false && q == r[i].pm_array.length-1 ) {
 											mangaDB.addToPM(r[i]._id, msg.author);
-											bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM.");
+											bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
 										}
 									}
 								}
@@ -871,7 +843,7 @@ Commands.mangatrack = {
 										for(j = 0; j < res.length; j++) {
 											if (res[j].url == args && res[j].server_id == msg.server.id) {
 												mangaDB.addToPM(res[j]._id, msg.author);
-												bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM.");
+												bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
 											}
 										}
 									})
@@ -883,14 +855,14 @@ Commands.mangatrack = {
 								for(j = 0; j < res.length; j++) {
 									if (res[j].url == args && res[j].server_id == msg.server.id) {
 										mangaDB.addToPM(res[j]._id, msg.author);
-										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM.");
+										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
 									}
 								}
 							})
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
 				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
@@ -937,12 +909,12 @@ Commands.unmangatrack = {
 									found = true;
 									if (r[i].pm_array.length == 1 && r[i].mention == false) {
 										mangaDB.deleteTrack(r[i]._id);
-										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "``.");
+										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` ✔.");
 									} else {
 										for(q = 0; q < r[i].pm_array.length; q++) {
 											if (r[i].pm_array[q] == msg.author.id) {
 												mangaDB.removeFromPM(r[i]._id, msg.author);
-												bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "``.");
+												bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` ✔");
 												pmfound = true
 											}
 											console.log(pmfound);
@@ -961,7 +933,7 @@ Commands.unmangatrack = {
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
 				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
@@ -1009,22 +981,22 @@ Commands.servermangatrack = {
 									} else {
 										mangaDB.updateChannel(r[i]._id, msg.channel.id);
 										mangaDB.updateMention(r[i]._id, true);
-										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone.");
+										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
 									}
 									found = true
 								}
 								if (found == false && i == r.length-1 ) {
 									mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.server.id, true);
-									bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone.");
+									bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
 								}
 							}
 						} else {
 							mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.server.id, true);
-							bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone.");
+							bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
 				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
@@ -1074,7 +1046,7 @@ Commands.unservermangatrack = {
 											mangaDB.updateChannel(r[i]._id, 0);
 											mangaDB.updateMention(r[i]._id, false);
 										}
-										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` in this server.");
+										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` in this server ✔");
 									} else {
 										bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
 									}
@@ -1089,7 +1061,7 @@ Commands.unservermangatrack = {
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https** . Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
 				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
@@ -1125,12 +1097,12 @@ Commands.createcommand = {
 		var tempname = args.split(" ")[0].trim();
 		var comname = args.split(" ")[0].toLowerCase().trim();
 		if (args.split(" ")[1] != "|") {
-			bot.sendMessage(msg.channel, "Command name cannot contain spaces.");
+			bot.sendMessage(msg.channel, "```diff\n- Command name cannot contain spaces.```");
 			return;
 		}
 		var comcontent = args.replace(tempname + " | ", "").replace("---" + specific_lvl, "").trim();
 		if (Commands[comname]) {
-			bot.sendMessage(msg.channel, "Cannot overwrite core bot commands.");
+			bot.sendMessage(msg.channel, "```diff\n- Cannot overwrite core bot commands.```");
 			return;
 		}
 		customcommands.getAllHere(msg.server).then(function(r) {
@@ -1142,10 +1114,10 @@ Commands.createcommand = {
 			if (comexists) {
 				customcommands.deleteCommand(msg.server, comname);
 				customcommands.createNewCommand(comname, msg.server, comcontent, specific_lvl);
-				bot.sendMessage(msg.channel, "Command `" + comname + "` has been overwritten with new response: " + comcontent);
+				bot.sendMessage(msg.channel, "📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
 			}	else {
 				customcommands.createNewCommand(comname, msg.server, comcontent, specific_lvl);
-				bot.sendMessage(msg.channel, "Command `" + comname + "` has been created with response: " + comcontent);
+				bot.sendMessage(msg.channel, "📝 Command `" + comname + "` has been created with response: " + comcontent);
 			}
 		});
 	}
@@ -1390,7 +1362,7 @@ Commands.reddit = {
 				} else {
 					name = temp;
 				}
-				if (name == 'all' || name == 'mod' || name == 'friends' || name == 'dashboard' || name == '' || name == 'random') {
+				if (name.toLowerCase() == 'all' || name.toLowerCase() == 'mod' || name.toLowerCase() == 'friends' || name.toLowerCase() == 'dashboard' || name.toLowerCase() == '' || name.toLowerCase() == 'random') {
 					bot.sendMessage(msg.channel, "nono <3");
 					return;
 				}
@@ -1465,7 +1437,7 @@ Commands.unreddit = {
   }
 };
 
-Commands.eightball = {
+Commands["8ball"] = {
 	name: "8ball",
 	help: "tbd",
 	type: "general",
@@ -1499,6 +1471,96 @@ Commands.eightball = {
 		msgArray.push(response[responsenum]);
 		bot.sendMessage(msg.channel, msgArray);
 
+  }
+};
+
+Commands.dice = {
+	name: "dice",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		if (args) {
+      dice = args
+    } else {
+      dice = 'd6'
+    }
+		request('https://rolz.org/api/?' + dice + '.json', function (error, response, body) {
+			if (!error && response.statusCode === 200) {
+        try {
+          JSON.parse(body)
+        } catch (e) {
+          msg.channel.sendMessage('```diff\n- The API returned an unexpected response.\n```')
+          return
+        }
+        var result = JSON.parse(body)
+        msg.reply(' :game_die: ``' + result.input + '`` rolled and the result was... `` ' + result.result + ' ' + result.details + ' ``:game_die:')
+			}
+		})
+  }
+};
+
+Commands.rip = {
+	name: "rip",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		var url = ""
+		if (msg.mentions.length > 0) {
+			url = msg.mentions[0].avatarURL
+		} else {
+			url = msg.author.avatarURL
+		}
+		jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
+			jimp.read(url, function (err, avatar) {
+				avatar.resize(90, 90).sepia().opacity(0.5);
+				image.composite(avatar, 100, 68);
+				var path = './runtime/jimprepo/gravepic.png'
+				image.write(path, function(err) {
+					bot.sendFile(msg.channel, path)
+				})
+			})
+		});
+  }
+};
+
+Commands.update = {
+	name: "update",
+	help: "tbd",
+	type: "admin",
+	lvl: 6,
+	func: function(bot, msg, args) {
+		if (msg.author.id == 159704938283401216) {
+			userDB.update();
+			serverDB.update();
+		}
+  }
+};
+
+Commands.triggered = {
+	name: "triggered",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg, args) {
+		var url = ""
+		if (msg.mentions.length > 0) {
+			url = msg.mentions[0].avatarURL
+		} else {
+			url = msg.author.avatarURL
+		}
+		jimp.read(url, function (err, avatar) {
+			jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
+				avatar.resize(150, 150);
+				triggered.resize(150, jimp.AUTO);
+				avatar.composite(triggered, 0, 123);
+				var path = './runtime/jimprepo/trigpic.png'
+				avatar.write(path, function(err) {
+					bot.sendFile(msg.channel, path)
+				})
+			})
+		});
   }
 };
 

@@ -12,8 +12,6 @@ exports.newServer = function(server) {
   var serverdoc = {
     _id: server.id,
     superuser_id: server.owner.id,
-    nsfw: false,
-	spoiler: false,
 	joinmsg: 'default',
 	leavemsg: 'default',
 	announcmentchannel: server.defaultChannel.name,
@@ -235,7 +233,7 @@ exports.ignoreChannel = function(channel) {
 			db.update({
 				_id: channel.server.id
 			}, {
-				$push: {
+				$addToSet: {
 					ignoredchannels: channel.id
 				}
 			}, {});
@@ -321,11 +319,11 @@ exports.nsfwChannel = function(channel) {
 			db.update({
 				_id: channel.server.id
 			}, {
-				$push: {
+				$addToSet: {
 					nsfwchannels: channel.id
 				}
 			}, {});
-          resolve('Channel now nsfw');
+          resolve('This channel is now nsfw 😳');
         }
       });
     } catch (e) {
@@ -353,7 +351,7 @@ exports.unNSFWChannel = function(channel) {
 					nsfwchannels: channel.id
 				}
 			}, {});
-          resolve('Channel now not nsfw');
+          resolve('This channel is now sfw ✔');
         }
       });
     } catch (e) {
@@ -383,7 +381,7 @@ exports.checkNSFW = function(channel) {
 					})(channel, m)
 				};
 			}
-          resolve('Channel is not nsfw');
+          resolve('This channel is not nsfw sorry 😳');
         }
       });
     } catch (e) {
@@ -391,3 +389,26 @@ exports.checkNSFW = function(channel) {
     }
   });
 };
+
+exports.update = function() {
+	db.find({
+		_id: /[0-9]/
+	}, function(err, result) {
+		if (err) {
+			return reject(err);
+		}
+		if (result) {
+			if (result.length === 0) {
+				return reject('Nothing found!');
+			}
+			for (i = 0; i < result.length; i++) {
+				db.update({ _id: result[i]._id }, { $unset: { nsfw: true } }, {}, function () {
+					console.log('here')
+				});
+				db.update({ _id: result[i]._id }, { $unset: { spoiler: false } }, {}, function () {
+					console.log('here1')
+				});
+			}
+		}
+	});
+}

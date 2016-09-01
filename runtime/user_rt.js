@@ -9,10 +9,10 @@ var db = new Datastore({
 db.persistence.setAutocompactionInterval(30000);
 
 exports.trackUser = function(user) {
-  var userdoc = {
+  var userdoc = {//need to get rid of the factions parameter entirely. Pointless. Replace with the blacklist parameter
     _id: user.id,
     known_names: [user.username],
-    factions: []
+    blacklisted: false
   };
   db.insert(userdoc, function(err, result) {
     if (err) {
@@ -101,122 +101,25 @@ exports.check = function(user) {
   });
 };
 
-exports.getFactionIDs = function(user) {
-  return new Promise(function(resolve, reject) {
-    try {
-      db.find({
-        _id: user.id
-      }, function(err, result) {
-        if (err) {
-          return reject(err);
-        }
-        if (result) {
-          if (result.length === 0) {
-            return reject('Nothing found!');
-          }
-          if (result[0].factions.length > 0) {
-            resolve(result[0].factions);
-          } else {
-            return reject('No factions found!');
-          }
-        }
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
-
-exports.getJoinPmSent = function(user) {
-  return new Promise(function(resolve, reject) {
-    try {
-      db.find({
-        _id: user.id
-      }, function(err, result) {
-        if (err) {
-          return reject(err);
-        }
-        if (result) {
-          if (result.length === 0) {
-            return reject('Nothing found!');
-          } else {
-            resolve(result[0].joinPMsent);
-          }
-        }
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
-
-exports.addToFaction = function(user, factionid) {
-  db.update({
-    _id: user.id
-  }, {
-    $push: {
-      factions: factionid
-    }
-  }, {});
-};
-
-exports.removeFromFaction = function(user, factionid) {
-  db.update({
-    _id: user.id
-  }, {
-    $pull: {
-      factions: factionid
-    }
-  }, {});
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//= function(user, factionID) {
-//  return new Promise(function(resolve, reject) {
-//    try {
-//      db.find({
-//        _id: user.id
-//      }, function(err, result) {
-//        if (err) {
-//          return reject(err);
-//        }
-//        if (result) {
-//          if (result.length === 0) {
-//            return reject('Nothing found!');
-//          }
-//          for (faction of result[0].factions) {
-//			  if (faction == factionID) {
-//				  return reject('This user is already a member of this faction');
-//			  };
-//		  };
-//		  db.update({
-//			_id: user.id
-//		  }, {
-//			$push: {
-//				factions: factionID
-//			}
-//		  }, {});
- //       }
- //     });
-  //  } catch (e) {
-   //   reject(e);
-    //}
- /// })//;
-//};
+exports.update = function() {
+	db.find({
+		_id: /[0-9]/
+	}, function(err, result) {
+		if (err) {
+			return reject(err);
+		}
+		if (result) {
+			if (result.length === 0) {
+				return reject('Nothing found!');
+			}
+			for (i = 0; i < result.length; i++) {
+				db.update({ _id: result[i]._id }, { $unset: { factions: true } }, {}, function () {
+					console.log('here')
+				});
+				db.update({ _id: result[i]._id }, { $set: { blacklisted: false } }, {}, function () {
+					console.log('here1')
+				});
+			}
+		}
+	});
+}

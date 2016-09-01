@@ -6,8 +6,6 @@ var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
 var redditDB = require("./reddit_rt.js");
 
-var aniscrape = require("aniscrape");
-var kissanime = require("aniscrape-kissanime")
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
 var nedb = require("nedb")
 var request = require("request");
@@ -17,7 +15,7 @@ var ytdl = require("ytdl-core");
 var reddit = require('redwrap');
 var lastID = 0
 
-exports.checkManga = function(bot) {
+exports.checkManga = function(bot) {//need to switch this to check the rss feed instead of the url
 	var timercheck = 20000;
 	var check = function() {
 	mangaDB.getAll().then(function(mangaArray) {
@@ -160,7 +158,6 @@ exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
 };
 
 exports.responseHandling = function(bot, msg, promptmsg, user, server) {
-	console.log("here");
 	bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
 		if (error) {
 			bot.sendMessage(msg.author, error);
@@ -182,44 +179,40 @@ exports.responseHandling = function(bot, msg, promptmsg, user, server) {
 exports.choice = function (bot, user, server, response, responsechannel) {
 	if (response === "1" || response === "one" || response === "pirate" || response === "pirates") {
 		factionDB.getFactionID(server.id, "pirate").then(function(r) {
-			userDB.addToFaction(user, r);
+			var currentrole = server.roles.get("id", r)
+			bot.addUserToRole(user, currentrole, function(err) {
+				if (err) {
+					console.log(err);
+				}
+				bot.sendMessage(responsechannel, "Thanks for choosing the Pirates!");
+			});
 		});
-		var currentrole = server.roles.get("name", "pirate")
-		bot.addUserToRole(user, currentrole, function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		bot.sendMessage(responsechannel, "Thanks for choosing the Pirates!");
 	}
 	else if (response === "2" || response === "two" || response === "marine" || response === "marines") {
 		factionDB.getFactionID(server.id, "marine").then(function(r) {
-			userDB.addToFaction(user, r);
+			var currentrole = server.roles.get("id", r)
+			bot.addUserToRole(user, currentrole, function(err) {
+				if (err) {
+					console.log(err);
+				}
+				bot.sendMessage(responsechannel, "Thanks for choosing the Marines!");
+			});
 		});
-		var currentrole = server.roles.get("name", "marine")
-		bot.addUserToRole(user, currentrole, function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		bot.sendMessage(responsechannel, "Thanks for choosing the Marines!");
 	}
 	else if (response === "3" || response === "three" || response === "revolutionary" || response === "army" || response === "revolutionary army") {
 		factionDB.getFactionID(server.id, "revolutionary army").then(function(r) {
-			userDB.addToFaction(user, r);
+			var currentrole = server.roles.get("id", r)
+			bot.addUserToRole(user, currentrole, function(err) {
+				if (err) {
+					console.log(err);
+				}
+				bot.sendMessage(responsechannel, "Thanks for choosing the Revolutionary Army!");
+			});
 		});
-		var currentrole = server.roles.get("name", "revolutionary army")
-		bot.addUserToRole(user, currentrole, function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		bot.sendMessage(responsechannel, "Thanks for choosing the Revolutionary Army!");
 	} else {
-		bot.sendMessage(responsechannel, "Im sorry, but that response doesn't match any of the faction options listed above. \nTo choose a faction, type the number next to the faction name you wish to join <3", function(err, message) {
+		bot.sendMessage(responsechannel, "Im sorry, but that response doesn't match any of the faction options listed above. \n**To choose a faction, type the number next to the faction name you wish to join <3 **", function(err, message) {
 			message.author = user;
 			responseHandling(bot, message, " ", user, server.id);
 		});
-
 	}
 };
