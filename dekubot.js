@@ -54,9 +54,7 @@ dekubot.on("serverCreated", function(server) {
 });
 
 dekubot.on("ready", function() {
-	var server = dekubot.servers.get("id", config.server_id)                                        //IDSPECIFIC
-	var channel = server.channels.get("name", "general")
-	functions.checkManga(dekubot, channel);
+	functions.checkManga(dekubot);
 	functions.checkReddit(dekubot);
 });
 
