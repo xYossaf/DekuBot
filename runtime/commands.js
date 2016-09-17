@@ -1,12 +1,12 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
-var serverDB = require("./server_rt.js");
+var guildDB = require("./guild_rt.js");
 var permissionDB = require("./permission_rt.js");
 var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
 var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
-var battle = require("./battle_rt.js");
+var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
 
 var jimp = require("jimp");
@@ -24,7 +24,7 @@ Commands.help = {
 	type: "general",
 	lvl: 0,
 	func: function(bot, msg) {
-  	bot.reply(msg, " 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 ");
+  	msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 ");
   }
 };
 
@@ -34,7 +34,7 @@ Commands.ping = {
 	type: "general",
 	lvl: 0,
 	func: function(bot, msg) {
-  	bot.reply(msg, ":ping_pong:");
+  	msg.reply(":ping_pong:");
   }
 };
 
@@ -44,44 +44,31 @@ Commands.purge = {
 	type: "admin",
 	lvl: 1,
 	func: function(bot, msg, args) {
-    if (!msg.channel.server) {
-      bot.sendMessage(msg.channel, "```diff\n- You can't do that in a DM you silly silly person!```");
+    if (msg.channel.type == 'dm') {
+      msg.channel.sendMessage("```diff\n- You can't do that in a DM you silly silly person!```");
       return;
     }
     if (!args || isNaN(args)) {
-      bot.sendMessage(msg.channel, "```diff\n- Please define an amount of messages for me to delete!```");
+      msg.channel.sendMessage("```diff\n- Please define an amount of messages for me to delete!```");
       return;
     }
-    if (!msg.channel.permissionsOf(msg.sender).hasPermission("manageMessages")) {
-      bot.sendMessage(msg.channel, "```diff\n- Your role in this server does not have enough permissions.```");
+    if (!msg.member.hasPermission("MANAGE_MESSAGES")) {
+      msg.channel.sendMessage("```diff\n- Your role in this guild does not have enough permissions.```");
       return;
     }
-    if (!msg.channel.permissionsOf(bot.user).hasPermission("manageMessages")) {
-      bot.sendMessage(msg.channel, "```diff\n- I don't have permission to do that!```");
+    if (!msg.guild.members.find("id", bot.user.id).hasPermission("MANAGE_MESSAGES")) {
+      msg.channel.sendMessage("```diff\n- I don't have permission to do that!```");
       return;
     }
     if (args > 100) {
-      bot.sendMessage(msg.channel, "```diff\n- The maximum is 100.```");
+      msg.channel.sendMessage("```diff\n- The maximum is 100.```");
       return;
     }
-    bot.getChannelLogs(msg.channel, args, function(error, messages) {
-      if (error) {
-        bot.sendMessage(msg.channel, "```diff\n- Something went wrong while getting logs thing.```");
-        return;
-      } else {
-        var msgsleft = messages.length,
-          delcount = 0;
-        for (msg of messages) {
-          bot.deleteMessage(msg);
-          msgsleft--;
-          delcount++;
-          if (msgsleft === 0) {
-            bot.sendMessage(msg.channel, "Done ✔ Deleted " + delcount + " messages.");
-            return;
-          }
-        }
-      }
-    });
+    msg.channel.fetchMessages({limit: args}).then(messages => {
+      msg.channel.bulkDelete(messages).then(deleted => {
+				msg.channel.sendMessage("Done ✔ Deleted " + deleted.array().length + " messages.");
+			})
+		})
   }
 };
 
@@ -91,18 +78,18 @@ Commands.namechanges = {
 	type: "general",
 	lvl: 0,
 	func: function(bot, msg) {
-		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.sendMessage(msg.channel, "```diff\n- Please mention a single user.```");
+		if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
+			msg.channel.sendMessage("```diff\n- Please mention a single user.```");
 		} else {
-			msg.mentions.map(function(user) {
+			msg.mentions.users.map(function(user) {
 	      userDB.returnNamechanges(user).then(function(reply) {
-	        bot.sendMessage(msg.channel, reply.join(', '));
+	        msg.channel.sendMessage(reply.join(', '));
 	      }).catch(function(err) {
 	        if (err === 'No changes found!') {
-	          bot.sendMessage(msg.channel, "I don't have any changes registered 📒");
+	          msg.channel.sendMessage("I don't have any changes registered 📒");
 	          return;
 	        }
-	        bot.sendMessage(msg.channel, '❌ Something went wrong, try again later.');
+	        msg.channel.sendMessage('❌ Something went wrong, try again later.');
 	      });
 	    });
 		}
@@ -119,17 +106,17 @@ Commands.botstatus = {
 		var usercount = 0;
 		var finalstring = [];
 
-		for (server of bot.servers) {
-			for (channel of server.channels ) {
+		for (guild of bot.guilds.array()) {
+			for (channel of guild.channels.array() ) {
 				channelcount++;
 			};
-			for (member of server.members) {
+			for (member of guild.members.array()) {
 				usercount++;
 			};
 		};
 
 		finalstring.push("Hi! Im DekuBot :robot:");
-		finalstring.push("Im currently used in ``" + bot.servers.length + "`` server(s), in ``" + channelcount + "`` channels used by ``" + usercount + "`` users.");
+		finalstring.push("Im currently used in ``" + bot.guilds.array().length + "`` server(s), in ``" + channelcount + "`` channels used by ``" + usercount + "`` users.");
 		finalstring.push("I've been up and ready for ``" + (Math.round(bot.uptime / (1000 * 60 * 60))) + "`` hours, ``" + (Math.round(bot.uptime / (1000 * 60)) % 60) + "`` minutes, and ``" + (Math.round(bot.uptime / 1000) % 60 + ".") + "`` seconds.");
 	  finalstring.push("If you have any questions or need some help, contact **RoddersGH#4702**")
 		finalstring.push("```         __    __");
@@ -142,7 +129,7 @@ Commands.botstatus = {
 		finalstring.push('   ;"""/ / |         |');
 		finalstring.push("    ) /_/| |.-------.|");
 		finalstring.push("   o  `-`o o         o	```");
-		bot.sendMessage(msg.channel, finalstring);
+		msg.channel.sendMessage(finalstring);
   }
 };
 
@@ -152,11 +139,11 @@ Commands.getpermissionlvl = {
 	type: "admin",
 	lvl: 1,
 	func: function(bot, msg, args) {
-		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.reply(msg, "```diff\n- Please mention a user```");
+		if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
+			msg.reply("```diff\n- Please mention a user```");
 		} else {
-			permissionDB.getPermission(msg.channel.server.id, msg.mentions[0].id).then(function(r) {
-				bot.sendMessage(msg.channel, r);
+			permissionDB.getPermission(msg.channel.guild.id, msg.mentions.users.array()[0].id).then(function(r) {
+				msg.channel.sendMessage(r);
 			});
 		}
   }
@@ -170,25 +157,25 @@ Commands.setpermissionlvl = {
 	func: function(bot, msg, args) {
 		var num = args.substr(args.indexOf(" ") + 1)
 		var isnum = /^\d+$/.test(num);
-		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-			bot.reply(msg, "```diff\n- Please mention a user```");
+		if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
+			msg.reply("```diff\n- Please mention a user```");
 			return;
 		} else {
 			if (!num || isnum == false || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
-				bot.sendMessage(msg.channel, "```diff\n- Please define the permission level you wish to set for the user.```");
+				msg.channel.sendMessage("```diff\n- Please define the permission level you wish to set for the user.```");
 				return;
 			} else {
-				permissionDB.check(msg.channel.server.id, msg.mentions[0].id).catch(function(e) {
+				permissionDB.check(msg.channel.guild.id, msg.mentions.users.array()[0].id).catch(function(e) {
 					console.log(e);
-					if (e == 'Nothing found!') {
-						permissionDB.newPermission(msg.channel.server, msg.mentions[0]);
+					if (e == 'Nothing found!1') {
+						permissionDB.newPermission(msg.channel.guild, msg.mentions.users.array()[0]);
 					};
 				});
-				permissionDB.getPermission(msg.channel.server.id, msg.author.id).then(function(r) {
-					permissionDB.setPermission(r, msg.channel.server, msg.mentions[0], num).then(function(res) {
-						bot.sendMessage(msg.channel, msg.mentions[0] + res);
+				permissionDB.getPermission(msg.channel.guild.id, msg.author.id).then(function(r) {
+					permissionDB.setPermission(r, msg.channel.guild, msg.mentions.users.array()[0], num).then(function(res) {
+						msg.channel.sendMessage(msg.mentions.users.array()[0] + res);
 					}).catch(function(e) {
-						bot.sendMessage(msg.channel, e);
+						msg.channel.sendMessage(e);
 					});
 				}).catch(function(e) {
 					console.log(e);
@@ -209,143 +196,32 @@ Commands.createfaction = {
 		var isHex = /^#[0-9A-F]{6}$/i.test(hex);
 
 		if (isHex == false) {
-			bot.sendMessage(msg.channel, "```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
+			msg.channel.sendMessage("```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
 			return;
 		};
-		factionDB.checkNameClash(msg.channel.server, name).then(function() {
+		factionDB.checkNameClash(msg.channel.guild, name).then(function() {
 			var hex_int = parseInt("0x" + hex.substr(hex.indexOf("#") + 1), 16);
-			bot.createRole(msg.server, {
+			msg.guild.createRole({
 				color : hex_int,
 				hoist : false,
 				name : name,
 				permissions : [
-					"attachFiles", "sendMessages", "readMessages", "embedLinks", "readMessageHistory", "createInstantInvite", "changeNickname", "voiceConnect", "voiceSpeak", "voiceUseVAD"
+					"ATTACH_FILES", "SEND_MESSAGES", "READ_MESSAGES", "EMBED_LINKS", "READ_MESSAGE_HISTORY", "CREATE_INSTANT_INVITE", "CHANGE_NICKNAME", "CONNECT", "SPEAK", "USE_VAD"
 				],
 				mentionable: false
-			}, function(err, role) {
-				if (err) {
-					bot.sendMessage(msg.channel, err);
-					return;
-				}
-				factionDB.createNewFaction(role.id, role.server, role.name, hex_int, role.permissions);
-				bot.sendMessage(msg.channel, "The faction " + role.name + " has been created ✔");
-			});
+			}).then(role => {
+				factionDB.createNewFaction(role.id, role.guild, role.name, hex_int, role.permissions);
+				msg.channel.sendMessage("The faction " + role.name + " has been created ✔");
+			}).catch(function(e) {
+				msg.channel.sendMessage(e);
+				return;
+			})
 		}).catch(function(e) {
-			bot.sendMessage(msg.channel, e);
+			msg.channel.sendMessage(e);
 			return;
 		});
   }
 };
-
-// Commands.manualjoinfaction = {
-// 	name: "manualjoinfaction",
-// 	help: "tbd",
-// 	type: "admin",
-// 	lvl: 3,
-// 	func: function(bot, msg, args) {
-// 		var name = args.substr(args.indexOf(" ") + 1)
-// 		var exitloop2 = false;
-// 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-// 			bot.reply(msg, "Please mention a user");
-// 			return;
-// 		} else {
-// 			if (!name) {
-// 				bot.sendMessage(msg.channel, "Please define the faction you wish the user to join.");
-// 				return;
-// 			} else {
-// 				factionDB.getFactionsHere(msg.channel.server).then(function(r) {     //r is servers factions
-// 					for (factionid of r) {
-// 						if (exitloop2 == true) {
-// 							break;
-// 						};
-// 						factionDB.getFactionName(factionid).then(function(v) {
-// 							if (v == name) {
-// 								userDB.getFactionIDs(msg.mentions[0]).then(function(q) {
-// 									for (facid of q) {
-// 										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
-// 										if ((j == facid) || (facid = r[0]) || (facid = r[1]) || (facid = r[2])) {
-// 											bot.sendMessage(msg.channel, "The user is already in a faction on this server.");
-// 											return;
-// 										} else {
-// 											userDB.addToFaction(msg.mentions[0], j);
-// 											bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
-// 										};
-// 										});
-// 									};
-// 								}).catch(function(e) {
-// 									if (e == 'No factions found!') {
-// 											factionDB.getFactionID(msg.channel.server.id, v).then(function(m) {
-// 												userDB.addToFaction(msg.mentions[0], m);
-// 												bot.sendMessage(msg.channel, "The user has successfully been added to " + name);
-// 											});
-// 									}
-// 								});
-// 								exitloop2 = true;
-// 							};
-// 						});
-// 					}
-//
-// 				}).catch(function(e) {
-// 					bot.sendMessage(msg.channel, e);
-// 				});
-// 			}
-// 	  }
-//   }
-// };
-//
-// Commands.manualleavefaction = {
-// 	name: "manualleavefaction",
-// 	help: "tbd",
-// 	type: "admin",
-// 	lvl: 3,
-// 	func: function(bot, msg, args) {
-// 		var name = args.substr(args.indexOf(" ") + 1)
-// 		exitloop = false;
-// 		if ((msg.mentions.length === 0) || (msg.mentions.length > 1)) {
-// 			bot.reply(msg, "Please mention a user");
-// 			return;
-// 		} else {
-// 			if (!name) {
-// 				bot.sendMessage(msg.channel, "Please define the faction you wish the user to leave.");
-// 				return;
-// 			} else {
-// 				factionDB.getFactionsHere(msg.channel.server).then(function(r) {
-// 					for (factionid of r) {
-// 						factionDB.getFactionName(factionid).then(function(v) {
-// 							if (v == name) {
-// 								userDB.getFactionIDs(msg.mentions[0]).then(function(q){
-// 									for (facid of q) {
-// 										if (exitloop = true) {
-// 											break;
-// 										};
-// 										factionDB.getFactionID(msg.channel.server.id, v).then(function(j) { //j is id of a given server faction
-// 										if (j == facid) {
-// 											userDB.removeFromFaction(msg.mentions[0], j);
-// 											bot.sendMessage(msg.channel, "The user has successfully been removed from " + name);
-//
-// 											exitloop = true;
-// 											return;
-// 										};
-// 										});
-// 									};
-// 								}).catch(function(e) {
-// 									if (e == 'No factions found!') {
-// 										bot.sendMessage(msg.channel, "The user is not in any faction");
-// 										exitloop = true;
-// 									}
-// 								})
-//
-// 							}
-// 						})
-// 					}
-// 					if (exitloop == false) {
-// 						bot.sendMessage(msg.channel, "The user is not a member of the faction " + name);
-// 					}
-// 				})
-// 			}
-// 	  }
-//   }
-// };
 
 Commands.faction = {
 	name: "faction",
@@ -354,31 +230,31 @@ Commands.faction = {
 	lvl: 0,
 	func: function(bot, msg, args) {
 	  var msgArray = [];
-	  var serverFactions = [];
+	  var guildFactions = [];
 		var found = false;
-	  factionDB.getFactionsHere(msg.server).then(function(serverFactions) {
-				for (i = 0; i < serverFactions.length; i++) {
-					if (bot.memberHasRole(msg.author, msg.server.roles.get("id", serverFactions[i]))) {
-						bot.sendMessage(msg.author, "❌ Sorry, you are already in a faction. If you really want to change faction though, message RoddersGH#4702");
+	  factionDB.getFactionsHere(msg.guild).then(function(guildFactions) {
+			console.log('here1')
+				for (i = 0; i < guildFactions.length; i++) {
+					if (msg.member.roles.exists("id", guildFactions[i])) {
+						console.log('Meme')
+						msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message RoddersGH#4702");
 						found = true;
 					}
-					if (found == false && i == serverFactions.length-1) {
-						msgArray.push("Hello member of the " + msg.channel.server.name + " server");
+					if (found == false && i == guildFactions.length-1) {
+						console.log('here')
+						msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
 						msgArray.push("Im a new addition to the server made by the Admin @Rodders. I help with a bunch of things which you can check out by going to the following link ");
 						msgArray.push("I hope you continue to have lots of fun discussing one piece with us!");
 						msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact @Rodders on the server with any issues)");
 						msgArray.push(" ");
 						msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards(still being made )!");
-						msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
+						msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
 						msgArray.push("The factions are:" );
 						msgArray.push("1. Pirates" );
 						msgArray.push("2. Marines" );
 						msgArray.push("3. Revolutionary Army" );
 
-						bot.sendMessage(msg.author, msgArray, {}, function(err, sentmsg) {
-							sentmsg.author = msg.author
-							functions.responseHandling(bot, sentmsg, "**Which faction would you like to join?**", msg.author, msg.server);
-						});
+						functions.responseHandling(bot, msgArray, msg.author, msg.guild)
 					}
 				}
 	  }).catch(function(e) {
@@ -395,10 +271,10 @@ Commands.ignore = {
 	type: "admin",
 	lvl: 3,
 	func: function(bot, msg, args) {
-		serverDB.ignoreChannel(msg.channel).then(function(r) {
-			bot.reply(msg, r);
+		guildDB.ignoreChannel(msg.channel).then(function(r) {
+			msg.reply(r);
 		}).catch(function(e) {
-			bot.reply(msg, e);
+			msg.reply(e);
 		})
   }
 };
@@ -409,10 +285,10 @@ Commands.unignore = {
 	type: "admin",
 	lvl: 3,
 	func: function(bot, msg, args) {
-		serverDB.unignoreChannel(msg.channel).then(function(r) {
-			bot.reply(msg, r);
+		guildDB.unignoreChannel(msg.channel).then(function(r) {
+			msg.reply(r);
 		}).catch(function(e) {
-			bot.reply(msg, e);
+			msg.reply(e);
 		})
   }
 };
@@ -423,14 +299,14 @@ Commands.anime = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
-		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
+		msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
 		nani.get('anime/search/' + args).then(function(r) {
-			if (r.length == 0) {
+			if (r.length == 0 || r == null) {
 				bot.reply(msg, "❌ Nothing found ");
 				return
 			} else {
 				nani.get('anime/' + r[0].id).then(function(data) {
-					bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+					msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
 						var msgArray = [];
 						msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
 						msgArray.push("**Type: **" + data.type);
@@ -446,15 +322,15 @@ Commands.anime = {
 						}
 						var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
 						msgArray.push("**Description: **" + cleanText);
-						bot.sendMessage(msg.channel, msgArray);
-					});
+						msg.channel.sendMessage(msgArray);
+					})
 				}).catch(function(e) {
 					console.log(e);
 				});
 			}
 		}).catch(function(e) {
 			console.log(e);
-			bot.reply(msg, "❌ Nothing found ");
+			msg.reply("❌ Nothing found ");
 		});
   }
 };
@@ -465,14 +341,14 @@ Commands.manga = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
-		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
+		msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
 		nani.get('manga/search/' + args).then(function(r) {
-			if (r.length == 0) {
-				bot.reply(msg, "❌ Nothing found ");
+			if (r.length == 0 || r == null) {
+				msg.reply("❌ Nothing found ");
 				return
 			} else {
 				nani.get('manga/' + r[0].id).then(function(data) {
-					bot.sendMessage(msg.channel, 'http://anilist.co/manga/' + data.id + "   " + data.image_url_lge, function(err, message) {
+					msg.channel.sendMessage('http://anilist.co/manga/' + data.id + "   " + data.image_url_lge).then(message => {
 						var msgArray = [];
 						msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
 						msgArray.push("**Type: **" + data.type);
@@ -488,7 +364,7 @@ Commands.manga = {
 						}
 						var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
 						msgArray.push("**Description: **" + cleanText);
-						bot.sendMessage(msg.channel, msgArray);
+						msg.channel.sendMessage(msgArray);
 					});
 				}).catch(function(e) {
 					console.log(e);
@@ -496,7 +372,7 @@ Commands.manga = {
 			}
 		}).catch(function(e) {
 			console.log(e);
-			bot.reply(msg, "❌ Nothing found ");
+			msg.reply("❌ Nothing found ");
 		});
   }
 };
@@ -507,10 +383,10 @@ Commands.character = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
-		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
+		msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
 		nani.get('character/search/' + args).then(function(r) {
-			if (r.length == 0) {
-				bot.reply(msg, "❌ Nothing found ");
+			if (r.length == 0 || r == null) {
+				msg.reply("❌ Nothing found ");
 				return
 			} else {
 				var msgArray1 = [];
@@ -520,7 +396,7 @@ Commands.character = {
 					}
 				} else if (r.length == 1) {
 				nani.get('character/' + r[0].id).then(function(data) {
-					bot.sendMessage(msg.channel, 'http://anilist.co/character/' + data.id + "   " + data.image_url_lge, function(err, message) {
+					msg.channel.sendMessage('http://anilist.co/character/' + data.id + "   " + data.image_url_lge).then(message => {
 						var msgArray = [];
 						msgArray.push("**Names: **" + data.name_last + " " + data.name_first + ", " + data.name_alt + ", " + data.name_japanese);
 						var a = data.info.replace(/__/g, "**");
@@ -531,20 +407,20 @@ Commands.character = {
 						} else {
 							msgArray.push("**Description: **\n\n" + c);
 						}
-
-						bot.sendMessage(msg.channel, msgArray);
+						msg.channel.sendMessage(msgArray);
 					});
 				}).catch(function(e) {
 					console.log(e);
+					msg.reply("❌ Nothing found ");
 				});
 				return;
 				}
-				bot.sendMessage(msg.channel, "**Please choose one be giving a number:**", function(err, mesg){
+				msg.channel.sendMessage("**Please choose one be giving a number:**").then(mesg => {
 					mesg.author = msg.author
 					functions.responseHandlingREG(bot, mesg, msgArray1, msg.author).then(function(num){
 						if (num > 0 && num <= r.length && num.length <= 2) {
 							nani.get('character/' + r[num-1].id).then(function(data) {
-								bot.sendMessage(msg.channel, 'http://anilist.co/character/' + data.id + "   " + data.image_url_lge, function(err, message) {
+								msg.channel.sendMessage('http://anilist.co/character/' + data.id + "   " + data.image_url_lge).then(message => {
 									var msgArray = [];
 									msgArray.push("**Names: **" + data.name_last + " " + data.name_first + ", " + data.name_alt + ", " + data.name_japanese);
 									var a = data.info.replace(/__/g, "**");
@@ -556,8 +432,7 @@ Commands.character = {
 									} else {
 										msgArray.push("**Description: **\n\n" + d);
 									}
-
-									bot.sendMessage(msg.channel, msgArray);
+									msg.channel.sendMessage(msgArray);
 								});
 							}).catch(function(e) {
 								console.log(e);
@@ -565,11 +440,13 @@ Commands.character = {
 						}
 					}).catch(function(e) {
 						console.log(e);
+						msg.reply("❌ Nothing found ");
 					});
 
 				});
 			}
 		}).catch(function(e) {
+			msg.reply("❌ Nothing found ");
 			console.log(e);
 		});
   }
@@ -581,10 +458,10 @@ Commands.animesearch = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
-		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
+		msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
 		nani.get('anime/search/' + args).then(function(r) {
-			if (r.length == 0) {
-				bot.reply(msg, "❌ Nothing found ");
+			if (r.length == 0 || r == null) {
+				msg.reply("❌ Nothing found ");
 				return
 			} else {
 				var msgArray1 = [];
@@ -594,7 +471,7 @@ Commands.animesearch = {
 					}
 				} else if (r.length == 1) {
 				nani.get('anime/' + r[0].id).then(function(data) {
-					bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+					msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
 						var msgArray = [];
 						msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
 						msgArray.push("**Type: **" + data.type);
@@ -616,19 +493,20 @@ Commands.animesearch = {
 							var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
 							msgArray.push("**Description: **" + cleanText);
 						}
-						bot.sendMessage(msg.channel, msgArray);
+						msg.channel.sendMessage(msgArray);
 					});
 				}).catch(function(e) {
 					console.log(e);
+					msg.reply("❌ Nothing found ");
 				});
 				return;
 				}
-				bot.sendMessage(msg.channel, "**Please choose one be giving a number:**", function(err, mesg){
+				msg.channel.sendMessage("**Please choose one be giving a number:**").then(mesg => {
 					mesg.author = msg.author
 					functions.responseHandlingREG(bot, mesg, msgArray1, msg.author).then(function(num){
 						if (num > 0 && num <= r.length && num.length <= 2) {
 							nani.get('anime/' + r[num-1].id).then(function(data) {
-								bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+								msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
 									var msgArray = [];
 									msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
 									msgArray.push("**Type: **" + data.type);
@@ -650,20 +528,23 @@ Commands.animesearch = {
 										var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
 										msgArray.push("**Description: **" + cleanText);
 									}
-									bot.sendMessage(msg.channel, msgArray);
+									msg.channel.sendMessage(msgArray);
 								});
 							}).catch(function(e) {
 								console.log(e);
+								msg.reply("❌ Nothing found ");
 							});
 						}
 					}).catch(function(e) {
 						console.log(e);
+						msg.reply("❌ Nothing found ");
 					});
 
 				});
 			}
 		}).catch(function(e) {
 			console.log(e);
+			msg.reply("❌ Nothing found ");
 		});
   }
 };
@@ -674,10 +555,10 @@ Commands.mangasearch = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
-		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
+		msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
 		nani.get('manga/search/' + args).then(function(r) {
-			if (r.length == 0) {
-				bot.reply(msg, "❌ Nothing found ");
+			if (r.length == 0 || r == null) {
+				msg.reply("❌ Nothing found ");
 				return
 			} else {
 				var msgArray1 = [];
@@ -687,7 +568,7 @@ Commands.mangasearch = {
 					}
 				} else if (r.length == 1) {
 					nani.get('manga/' + r[0].id).then(function(data) {
-						bot.sendMessage(msg.channel, 'http://anilist.co/manga/' + data.id + "   " + data.image_url_lge, function(err, message) {
+						msg.channel.sendMessage('http://anilist.co/manga/' + data.id + "   " + data.image_url_lge).then(message => {
 							var msgArray = [];
 							msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
 							msgArray.push("**Type: **" + data.type);
@@ -703,19 +584,20 @@ Commands.mangasearch = {
 							}
 							var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
 							msgArray.push("**Description: **" + cleanText);
-							bot.sendMessage(msg.channel, msgArray);
+							msg.channel.sendMessage(msgArray);
 						});
 					}).catch(function(e) {
 						console.log(e);
+						msg.reply("❌ Nothing found ");
 					});
 				return;
 				}
-				bot.sendMessage(msg.channel, "**Please choose one be giving a number:**", function(err, mesg){
+				msg.channel.sendMessage("**Please choose one be giving a number:**").then(mesg => {
 					mesg.author = msg.author
 					functions.responseHandlingREG(bot, mesg, msgArray1, msg.author).then(function(num){
 						if (num > 0 && num <= r.length && num.length <= 2) {
 							nani.get('manga/' + r[num-1].id).then(function(data) {
-								bot.sendMessage(msg.channel, 'http://anilist.co/manga/' + data.id + "   " + data.image_url_lge, function(err, message) {
+								msg.channel.sendMessage('http://anilist.co/manga/' + data.id + "   " + data.image_url_lge).then(message => {
 									var msgArray = [];
 									msgArray.push("**Names: **" + data.title_japanese + ", " + data.title_romaji + ", " + data.title_english);
 									msgArray.push("**Type: **" + data.type);
@@ -731,19 +613,22 @@ Commands.mangasearch = {
 									}
 									var cleanText = data.description.replace(/<\/?[^>]+(>|$)/g, "");
 									msgArray.push("**Description: **" + cleanText);
-									bot.sendMessage(msg.channel, msgArray);
+									msg.channel.sendMessage(msgArray);
 								});
 							}).catch(function(e) {
 								console.log(e);
+								msg.reply("❌ Nothing found ");
 							});
 						}
 					}).catch(function(e) {
 						console.log(e);
+						msg.reply("❌ Nothing found ");
 					});
 				});
 			}
 		}).catch(function(e) {
 			console.log(e);
+			msg.reply("❌ Nothing found ");
 		});
   }
 };
@@ -754,14 +639,14 @@ Commands.animeairdate = {
 	type: "weeb",
 	lvl: 0,
 	func: function(bot, msg, args) {
-		bot.sendMessage(msg.channel, " 🔍 *Searching...* 🔍");
+		msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
 		nani.get('anime/search/' + args).then(function(r) {
-			if (r.length == 0) {
-				bot.reply(msg, "Nothing found");
+			if (r.length == 0 || r == null) {
+				msg.reply("❌ Nothing found ");
 				return
 			} else {
 				nani.get('anime/' + r[0].id).then(function(data) {
-					bot.sendMessage(msg.channel, 'http://anilist.co/anime/' + data.id + "   " + data.image_url_lge, function(err, message) {
+					msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
 						var msgArray = [];
 						console.log(data.airing_status);
 						if (data.airing_status == 'finished airing' || data.airing_status == 'not yet aired') {
@@ -776,14 +661,16 @@ Commands.animeairdate = {
 							msgArray.push("**Countdown: ** :hourglass_flowing_sand: " + formattedDate);
 						}
 
-						bot.sendMessage(msg.channel, msgArray);
+						msg.channel.sendMessage(msgArray);
 					});
 				}).catch(function(e) {
 					console.log(e);
+					msg.reply("❌ Nothing found ");
 				});
 			}
 		}).catch(function(e) {
 			console.log(e);
+			msg.reply("❌ Nothing found ");
 		});
   }
 };
@@ -797,13 +684,13 @@ Commands.mangatrack = {
 		var found = false;
 		var pmfound = false;
 		if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+			msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			return;
 		}
 		request(args, function(error, response, body) {
 			if (error) {
 				console.log(error);
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
 				var temptag = args.substr(args.indexOf('/manga/')+7);
@@ -822,50 +709,48 @@ Commands.mangatrack = {
 					mangaDB.getAll().then(function(r) {
 						if (r.length != 0) {
 							for(i = 0; i < r.length; i++) {
-								if (r[i].url == args && r[i].server_id == msg.server.id) {
+								if (r[i].url == args && r[i].guild_id == msg.guild.id) {
 									found = true;
 									for(q = 0; q < r[i].pm_array.length; q++) {
 										if (r[i].pm_array[q] == msg.author.id) {
-											bot.sendMessage(msg.channel, "You are already tracking ``" + args + "``. All new chapters will continue to be linked to you in a PM.");
+											msg.channel.sendMessage("You are already tracking ``" + args + "``. All new chapters will continue to be linked to you in a PM.");
 											pmfound = true
 										}
-										console.log(pmfound);
 										if (pmfound == false && q == r[i].pm_array.length-1 ) {
 											mangaDB.addToPM(r[i]._id, msg.author);
-											bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
+											msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
 										}
 									}
 								}
-								console.log(found);
 								if (found == false && i == r.length-1 ) {
-									mangaDB.trackManga(args, body.substr(begin, end), 0, msg.server.id, false);
+									mangaDB.trackManga(args, body.substr(begin, end), 0, msg.guild.id, false);
 									mangaDB.getAll().then(function(res) {
 										for(j = 0; j < res.length; j++) {
-											if (res[j].url == args && res[j].server_id == msg.server.id) {
+											if (res[j].url == args && res[j].guild_id == msg.guild.id) {
 												mangaDB.addToPM(res[j]._id, msg.author);
-												bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
+												msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
 											}
 										}
 									})
 								}
 							}
 						} else {
-							mangaDB.trackManga(args, body.substr(begin, end), 0, msg.server.id, false);
+							mangaDB.trackManga(args, body.substr(begin, end), 0, msg.guild.id, false);
 							mangaDB.getAll().then(function(res) {
 								for(j = 0; j < res.length; j++) {
-									if (res[j].url == args && res[j].server_id == msg.server.id) {
+									if (res[j].url == args && res[j].guild_id == msg.guild.id) {
 										mangaDB.addToPM(res[j]._id, msg.author);
-										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
+										msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
 									}
 								}
 							})
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
+					msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 		})
 	}
@@ -880,13 +765,13 @@ Commands.unmangatrack = {
 		var found = false;
 		var pmfound = false;
 		if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+			msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			return;
 		}
 		request(args, function(error, response, body) {
 			if (error) {
 				console.log(error);
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com/manga') >= 0 ) {
 				var temptag = args.substr(args.indexOf('/manga/')+7);
@@ -905,38 +790,37 @@ Commands.unmangatrack = {
 					mangaDB.getAll().then(function(r) {
 						if (r.length != 0) {
 							for(i = 0; i < r.length; i++) {
-								if (r[i].url == args && r[i].server_id == msg.server.id) {
+								if (r[i].url == args && r[i].guild_id == msg.guild.id) {
 									found = true;
 									if (r[i].pm_array.length == 1 && r[i].mention == false) {
 										mangaDB.deleteTrack(r[i]._id);
-										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` ✔.");
+										msg.channel.sendMessage("You are now no longer tracking ``" + args + "`` ✔.");
 									} else {
 										for(q = 0; q < r[i].pm_array.length; q++) {
 											if (r[i].pm_array[q] == msg.author.id) {
 												mangaDB.removeFromPM(r[i]._id, msg.author);
-												bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` ✔");
+												msg.channel.sendMessage("You are now no longer tracking ``" + args + "`` ✔");
 												pmfound = true
 											}
-											console.log(pmfound);
 											if (pmfound == false && q == r[i].pm_array.length-1 ) {
-												bot.sendMessage(msg.channel, "You are not tracking this manga.");
+												msg.channel.sendMessage("You are not tracking this manga.");
 											}
 										}
 									}
 								}
 								if (found == false && i == r.length-1 ) {
-									bot.sendMessage(msg.channel, "You were not tracking this manga.");
+									msg.channel.sendMessage("You were not tracking this manga.");
 								}
 							}
 						} else {
-							bot.sendMessage(msg.channel, "You are not tracking this manga.");
+							msg.channel.sendMessage("You are not tracking this manga.");
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
+					msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 		})
   }
@@ -949,13 +833,13 @@ Commands.servermangatrack = {
 	lvl: 3,
 	func: function(bot, msg, args) {
 		if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+			msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			return;
 		}
 		request(args, function(error, response, body) {
 			if (error) {
 				console.log(error);
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
 				var temptag = args.substr(args.indexOf('/manga/')+7);
@@ -975,31 +859,31 @@ Commands.servermangatrack = {
 					mangaDB.getAll().then(function(r) {
 						if (r.length != 0) {
 							for(i = 0; i < r.length; i++) {
-								if (r[i].url == args && r[i].server_id == msg.server.id) {
+								if (r[i].url == args && r[i].guild_id == msg.guild.id) {
 									if (r[i].mention) {
-										bot.sendMessage(msg.channel, "You are already tracking ``" + args + "`` in this server.");
+										msg.channel.sendMessage("You are already tracking ``" + args + "`` in this server.");
 									} else {
 										mangaDB.updateChannel(r[i]._id, msg.channel.id);
 										mangaDB.updateMention(r[i]._id, true);
-										bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
+										msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
 									}
 									found = true
 								}
 								if (found == false && i == r.length-1 ) {
-									mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.server.id, true);
-									bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
+									mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.guild.id, true);
+									msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
 								}
 							}
 						} else {
-							mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.server.id, true);
-							bot.sendMessage(msg.channel, "You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
+							mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.guild.id, true);
+							msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
+					msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 		})
 	}
@@ -1012,13 +896,13 @@ Commands.unservermangatrack = {
 	lvl: 3,
 	func: function(bot, msg, args) {
 		if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-			bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+			msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			return;
 		}
 		request(args, function(error, response, body) {
 			if (error) {
 				console.log(error);
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 			if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
 				var temptag = args.substr(args.indexOf('/manga/')+7);
@@ -1038,7 +922,7 @@ Commands.unservermangatrack = {
 					mangaDB.getAll().then(function(r) {
 						if (r.length != 0) {
 							for(i = 0; i < r.length; i++) {
-								if (r[i].url == args && r[i].server_id == msg.server.id) {
+								if (r[i].url == args && r[i].guild_id == msg.guild.id) {
 									if (r[i].mention) {
 										if (r[i].pm_array.length < 1) {
 											mangaDB.deleteTrack(r[i]._id);
@@ -1046,25 +930,25 @@ Commands.unservermangatrack = {
 											mangaDB.updateChannel(r[i]._id, 0);
 											mangaDB.updateMention(r[i]._id, false);
 										}
-										bot.sendMessage(msg.channel, "You are now no longer tracking ``" + args + "`` in this server ✔");
+										msg.channel.sendMessage("You are now no longer tracking ``" + args + "`` in this server ✔");
 									} else {
-										bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
+										msg.channel.sendMessage("You are already not tracking ``" + args + "`` in this server.");
 									}
 									found = true
 								}
 								if (found == false && i == r.length-1 ) {
-									bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
+									msg.channel.sendMessage("You are already not tracking ``" + args + "`` in this server.");
 								}
 							}
 						} else {
-							bot.sendMessage(msg.channel, "You are already not tracking ``" + args + "`` in this server.");
+							msg.channel.sendMessage("You are already not tracking ``" + args + "`` in this server.");
 						}
 					})
 				} else {
-					bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https** . Go to <http://mangastream.com/manga> to find a list.");
+					msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https** . Go to <http://mangastream.com/manga> to find a list.");
 				}
 			} else {
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+				msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
 			}
 		})
 	}
@@ -1079,16 +963,16 @@ Commands.createcommand = {
 		var comexists = false
 		var specific_lvl = 0;
 		if (!args) {
-			bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+			msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
 			return;
 		}
 		if (args.indexOf(" | ") < 0) {
-			bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+			msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
 			return;
 		}
 		if (/---[0-3]|---6/.test(args)) {
 			if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
-				bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+				msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
 				return;
 			} else {
 				specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
@@ -1097,27 +981,27 @@ Commands.createcommand = {
 		var tempname = args.split(" ")[0].trim();
 		var comname = args.split(" ")[0].toLowerCase().trim();
 		if (args.split(" ")[1] != "|") {
-			bot.sendMessage(msg.channel, "```diff\n- Command name cannot contain spaces.```");
+			msg.channel.sendMessage("```diff\n- Command name cannot contain spaces.```");
 			return;
 		}
 		var comcontent = args.replace(tempname + " | ", "").replace("---" + specific_lvl, "").trim();
 		if (Commands[comname]) {
-			bot.sendMessage(msg.channel, "```diff\n- Cannot overwrite core bot commands.```");
+			msg.channel.sendMessage("```diff\n- Cannot overwrite core bot commands.```");
 			return;
 		}
-		customcommands.getAllHere(msg.server).then(function(r) {
+		customcommands.getAllHere(msg.guild).then(function(r) {
 			for (i = 0; i < r.length; i++) {
 				if (r[i].name === comname) {
 				 comexists = true
 				}
 			}
 			if (comexists) {
-				customcommands.deleteCommand(msg.server, comname);
-				customcommands.createNewCommand(comname, msg.server, comcontent, specific_lvl);
-				bot.sendMessage(msg.channel, "📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
+				customcommands.deleteCommand(msg.guild, comname);
+				customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+				msg.channel.sendMessage("📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
 			}	else {
-				customcommands.createNewCommand(comname, msg.server, comcontent, specific_lvl);
-				bot.sendMessage(msg.channel, "📝 Command `" + comname + "` has been created with response: " + comcontent);
+				customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+				msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
 			}
 		});
 	}
@@ -1130,13 +1014,13 @@ Commands.deletecommand = {
 	lvl: 3,
 	func: function(bot, msg, args) {
 		if (!args) {
-			bot.sendMessage(msg.channel, "Syntax error. Correct usage: '!delete <command name>. Command name cannot contain spaces.");
+			msg.channel.sendMessage("Syntax error. Correct usage: '!delete <command name>. Command name cannot contain spaces.");
 			return;
 		}
-		customcommands.deleteCommand(msg.server, args).then(function(r) {
-			bot.sendMessage(msg.channel, r)
+		customcommands.deleteCommand(msg.guild, args).then(function(r) {
+			msg.channel.sendMessage(r)
 		}).catch(function(e) {
-			bot.sendMessage(msg.channel, e)
+			msg.channel.sendMessage(e)
 		})
 	}
 };
@@ -1149,11 +1033,11 @@ Commands.eval = {
 	func: function(bot, msg, args) {
 		if (msg.author.id == 159704938283401216) {
 			try {
-	        bot.sendMessage(msg.channel, eval(args));
+	        msg.channel.sendMessage(eval(args));
 	    }
 	    catch (err) {
-	        bot.sendMessage(msg.channel, "Eval failed :(");
-	        bot.sendMessage(msg.channel, "`" + err + "`");
+	        msg.channel.sendMessage("Eval failed :(");
+	        msg.channel.sendMessage("`" + err + "`");
 	    }
 		}
   }
@@ -1165,10 +1049,10 @@ Commands.nsfw = {
 	type: "admin",
 	lvl: 3,
 	func: function(bot, msg, args) {
-		serverDB.nsfwChannel(msg.channel).then(function(r) {
-			bot.reply(msg, r);
+		guildDB.nsfwChannel(msg.channel).then(function(r) {
+			msg.reply(r);
 		}).catch(function(e) {
-			bot.reply(msg, e);
+			msg.reply(e);
 		})
   }
 };
@@ -1179,10 +1063,10 @@ Commands.unnsfw = {
 	type: "admin",
 	lvl: 3,
 	func: function(bot, msg, args) {
-		serverDB.unNSFWChannel(msg.channel).then(function(r) {
-			bot.reply(msg, r);
+		guildDB.unNSFWChannel(msg.channel).then(function(r) {
+			msg.reply(r);
 		}).catch(function(e) {
-			bot.reply(msg, e);
+			msg.reply(e);
 		})
   }
 };
@@ -1196,17 +1080,17 @@ Commands.rule34 = {
 		request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
 		    if (!error && response.statusCode == 200) {
 					if (body.length < 1) {
-						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						msg.channel.sendMessage("Sorry, nothing found.");
 						return;
 					}
 					if (args.length < 1) {
 						args = "<no tags specified>";
 					}
 		      parseString(body, function (err, result) {
-						bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
-							bot.sendMessage(msg.channel, 'http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
-							bot.sendMessage(msg.channel, 'http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
-							bot.sendMessage(msg.channel, 'http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+						msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
+							msg.channel.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+							msg.channel.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+							msg.channel.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
 						});
 		      });
 		    }
@@ -1221,14 +1105,14 @@ Commands.konachan = {
 	lvl: 0,
 	func: function(bot, msg, args) {
 		if (args.split(" ").length > 5) {
-			bot.sendMessage(msg.channel, "Konachan only supports upto 6 tags.");
+			msg.channel.sendMessage("Konachan only supports upto 6 tags.");
 			return;
 		}
 		request('https://konachan.net/post/index.json?limit=300&tags=' + args, function (error, response, body) {
 		    if (!error && response.statusCode == 200) {
 					var result = JSON.parse(body);
 					if (result.length < 1) {
-						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						msg.channel.sendMessage("Sorry, nothing found.");
 						return;
 					}
 					if (args.length < 1) {
@@ -1240,16 +1124,16 @@ Commands.konachan = {
 						|| args.toString().toLowerCase().indexOf("toddlercon") > -1
 						|| args.toString().toLowerCase().indexOf("scat") > -1
 						|| args.toString().toLowerCase().indexOf("gore") > -1) {
-							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending images in a pm...", function(err, mesg) {
-								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+							msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+								msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
 							});
 					} else {
-							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
-								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+							msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
+								msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
 							});
 					}
 		    }
@@ -1264,14 +1148,14 @@ Commands.danbooru = {
 	lvl: 0,
 	func: function(bot, msg, args) {
 		if (args.split(" ").length > 2) {
-			bot.sendMessage(msg.channel, "Danbooru only supports upto 2 tags.");
+			msg.channel.sendMessage("Danbooru only supports upto 2 tags.");
 			return;
 		}
 		request('https://danbooru.donmai.us/posts.json?limit=300&tags=' + args, function (error, response, body) {
 		    if (!error && response.statusCode == 200) {
 					var result = JSON.parse(body);
 					if (result.length < 1) {
-						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						msg.channel.sendMessage("Sorry, nothing found.");
 						return;
 					}
 					if (args.length < 1) {
@@ -1283,16 +1167,16 @@ Commands.danbooru = {
 						|| args.toString().toLowerCase().indexOf("toddlercon") > -1
 						|| args.toString().toLowerCase().indexOf("scat") > -1
 						|| args.toString().toLowerCase().indexOf("gore") > -1) {
-							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending images in a pm...", function(err, mesg) {
-								bot.sendMessage(msg.author, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.author, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.author, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+							msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+								msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
 							});
 					} else {
-							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
-								bot.sendMessage(msg.channel, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.channel, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.channel, 'https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+							msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg =>  {
+								msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+								msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
 							});
 					}
 		    }
@@ -1310,7 +1194,7 @@ Commands.yandere = {
 		    if (!error && response.statusCode == 200) {
 					var result = JSON.parse(body);
 					if (result.length < 1) {
-						bot.sendMessage(msg.channel, "Sorry, nothing found.");
+						msg.channel.sendMessage("Sorry, nothing found.");
 						return;
 					}
 					if (args.length < 1) {
@@ -1322,16 +1206,16 @@ Commands.yandere = {
 						|| args.toString().toLowerCase().indexOf("toddlercon") > -1
 						|| args.toString().toLowerCase().indexOf("scat") > -1
 						|| args.toString().toLowerCase().indexOf("gore") > -1) {
-							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending images in a pm...", function(err, mesg) {
-								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.author, result[Math.floor((Math.random() * result.length))].file_url);
+							msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+								msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
 							});
 					} else {
-							bot.sendMessage(msg.channel, "You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
-								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
-								bot.sendMessage(msg.channel, result[Math.floor((Math.random() * result.length))].file_url);
+							msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+								msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+								msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
 							});
 					}
 		    }
@@ -1347,13 +1231,13 @@ Commands.reddit = {
 	func: function(bot, msg, args) {
 		var found = false;
 		if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-			bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
+			msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
 			return;
 		}
 		request(args, function(error, response, body) {
 			if (error) {
 				console.log(error);
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.www.reddit.com/r/><subreddit name>'.");
+				msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.www.reddit.com/r/><subreddit name>'.");
 			}
 			if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && body.search('<h3>You must be a Reddit Gold member to view this super secret community</h3>') == -1 && body.search('<h3>This community has been banned</h3>') == -1 && args.indexOf('www.reddit.com/r/') >= 0 ) {
 				temp = args.substr(args.indexOf('/r/')+3);
@@ -1363,7 +1247,7 @@ Commands.reddit = {
 					name = temp;
 				}
 				if (name.toLowerCase() == 'all' || name.toLowerCase() == 'mod' || name.toLowerCase() == 'friends' || name.toLowerCase() == 'dashboard' || name.toLowerCase() == '' || name.toLowerCase() == 'random') {
-					bot.sendMessage(msg.channel, "nono <3");
+					msg.channel.sendMessage("nono <3");
 					return;
 				}
 				redditDB.getAll().then(function(r) {
@@ -1373,18 +1257,18 @@ Commands.reddit = {
 					} else {
 						for (i = 0; i < r.length; i++) {
 							if (r[i].channel_id == msg.channel.id && r[i].subreddit_name == name) {
-									bot.sendMessage(msg.channel, "You are already tracking /r/" + name + ` in <#${msg.channel.id}>. All new posts are sent as messages here.`);
+									msg.channel.sendMessage("You are already tracking /r/" + name + ` in <#${msg.channel.id}>. All new posts are sent as messages here.`);
 									found = true
 							}
 							if (found == false && i == r.length-1) {
 								redditDB.trackSubreddit(name, msg);
-								bot.sendMessage(msg.channel, "/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
+								msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
 							}
 						}
 					}
 				})
 			} else {
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.www.reddit.com/r/><subreddit name>'.");
+				msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.www.reddit.com/r/><subreddit name>'.");
 			}
 		})
   }
@@ -1398,13 +1282,13 @@ Commands.unreddit = {
 	func: function(bot, msg, args) {
 		var found = false;
 		if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-			bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'reddit.com/r/<subreddit name>'.");
+			msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'reddit.com/r/<subreddit name>'.");
 			return;
 		}
 		request(args, function(error, response, body) {
 			if (error) {
 				console.log(error);
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
+				msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
 			}
 			if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && args.indexOf('www.reddit.com/r/') >= 0 ) {
 				temp = args.substr(args.indexOf('/r/')+3);
@@ -1420,18 +1304,18 @@ Commands.unreddit = {
 					} else {
 						for (i = 0; i < r.length; i++) {
 							if (r[i].channel_id == msg.channel.id && r[i].subreddit_name == name) {
-									redditDB.deleteTrack(msg.server, name);
-									bot.sendMessage(msg.channel, `/r/` + name + ` Is now not being tracked in <#${msg.channel.id}>`);
+									redditDB.deleteTrack(msg.guild, name);
+									msg.channel.sendMessage(`/r/` + name + ` Is now not being tracked in <#${msg.channel.id}>`);
 									found = true
 							}
 							if (found == false && i == r.length-1) {
-								bot.sendMessage(msg.channel, `/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
+								msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
 							}
 						}
 					}
 				})
 			} else {
-				bot.sendMessage(msg.channel, "Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
+				msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
 			}
 		})
   }
@@ -1469,7 +1353,7 @@ Commands["8ball"] = {
 		msgArray.push(':8ball: *"' + args +  '"* :8ball:');
 		var responsenum = Math.floor((Math.random())*20)
 		msgArray.push(response[responsenum]);
-		bot.sendMessage(msg.channel, msgArray);
+		msg.channel.sendMessage(msgArray);
 
   }
 };
@@ -1507,33 +1391,25 @@ Commands.rip = {
 	lvl: 0,
 	func: function(bot, msg, args) {
 		var url = ""
-		if (msg.mentions.length > 0) {
-			url = msg.mentions[0].avatarURL
+		if (msg.mentions.users.array().length > 0) {
+			url = msg.mentions.users.array()[0].avatarURL
 		} else {
 			url = msg.author.avatarURL
 		}
-		jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
-			jimp.read(url, function (err, avatar) {
-				avatar.resize(90, 90).sepia().opacity(0.5);
-				image.composite(avatar, 100, 68);
-				var path = './runtime/jimprepo/gravepic.png'
-				image.write(path, function(err) {
-					bot.sendFile(msg.channel, path)
+		if (url == null) {
+			msg.reply("Sorry, you need a profile picture to use this command.")
+			return;
+		} else {
+			jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
+				jimp.read(url, function (err, avatar) {
+					avatar.resize(90, 90).sepia().opacity(0.5);
+					image.composite(avatar, 100, 68);
+					var path = './runtime/jimprepo/gravepic.png'
+					image.write(path, function(err) {
+						msg.channel.sendFile(path)
+					})
 				})
-			})
-		});
-  }
-};
-
-Commands.update = {
-	name: "update",
-	help: "tbd",
-	type: "admin",
-	lvl: 6,
-	func: function(bot, msg, args) {
-		if (msg.author.id == 159704938283401216) {
-			userDB.update();
-			serverDB.update();
+			});
 		}
   }
 };
@@ -1545,23 +1421,55 @@ Commands.triggered = {
 	lvl: 0,
 	func: function(bot, msg, args) {
 		var url = ""
-		if (msg.mentions.length > 0) {
-			url = msg.mentions[0].avatarURL
+		if (msg.mentions.users.array().length > 0) {
+			url = msg.mentions.users.array()[0].avatarURL
 		} else {
 			url = msg.author.avatarURL
 		}
-		jimp.read(url, function (err, avatar) {
-			jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
-				avatar.resize(150, 150);
-				triggered.resize(150, jimp.AUTO);
-				avatar.composite(triggered, 0, 123);
-				var path = './runtime/jimprepo/trigpic.png'
-				avatar.write(path, function(err) {
-					bot.sendFile(msg.channel, path)
+		if (url == null) {
+			msg.reply("Sorry, you need a profile picture to use this command.")
+			return;
+		} else {
+			jimp.read(url, function (err, avatar) {
+				jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
+					avatar.resize(150, 150);
+					triggered.resize(150, jimp.AUTO);
+					avatar.composite(triggered, 0, 123);
+					var path = './runtime/jimprepo/trigpic.png'
+					avatar.write(path, function(err) {
+						msg.channel.sendFile(path)
+					})
 				})
-			})
-		});
+			});
+		}
   }
 };
+
+// Commands.battle = {
+// 	name: "battle",
+// 	help: "tbd",
+// 	type: "rpg",
+// 	lvl: 0,
+// 	func: function(bot, msg, args) {
+// 		battleDB.getBattleRecord(msg.author, msg.server).then(function(r) {
+//
+// 		}).catch(function(e) {
+// 			if (e == 'No battle record found') {
+// 				battleDB.createNewBattle(msg.author, msg.server);
+// 				battleDB.getBattleRecord(msg.author, msg.server).then(function(r) {
+//
+// 				}
+// 			}
+// 		})
+//
+//
+//
+//
+//
+//
+//
+//
+//   }
+// };
 
 exports.Commands = Commands;

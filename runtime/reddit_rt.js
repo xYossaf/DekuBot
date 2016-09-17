@@ -11,7 +11,7 @@ db.persistence.setAutocompactionInterval(30000);
 exports.trackSubreddit = function(name, msg) {
   var redditdoc = {
     subreddit_name: name,
-	  server_id: msg.server.id,
+	  guild_id: msg.guild.id,
 	  channel_id: msg.channel.id,
     last_id: 0
   };
@@ -68,12 +68,12 @@ exports.updateLastPost = function(id, postid) {
   });
 };
 
-exports.deleteTrack = function(server, name) {
+exports.deleteTrack = function(guild, name) {
 	return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
 	  [{
-        server_id: server.id
+        guild_id: guild.id
       }, {
 		subreddit_name: name
 	  }] }, function(err, res) {

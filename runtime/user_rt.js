@@ -65,7 +65,7 @@ exports.returnNamechanges = function(user) {
         }
         if (result) {
           if (result.length === 0) {
-            return reject('Nothing found!');
+            return reject('Nothing found!12');
           }
           if (result[0].known_names.length > 1) {
             resolve(result[0].known_names);
@@ -90,7 +90,7 @@ exports.check = function(user) {
           return reject(err);
         }
         if (res.length === 0) {
-          return reject('Nothing found!');
+          return reject('Nothing found!13');
         } else {
           resolve('This user is known to the database.');
         }
@@ -110,7 +110,7 @@ exports.update = function() {
 		}
 		if (result) {
 			if (result.length === 0) {
-				return reject('Nothing found!');
+				return reject('Nothing found!14');
 			}
 			for (i = 0; i < result.length; i++) {
 				db.update({ _id: result[i]._id }, { $unset: { factions: true } }, {}, function () {

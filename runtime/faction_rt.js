@@ -8,10 +8,10 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.createNewFaction = function(id, server, name, colour, permissions) {//need to add an _id field whihc is the id of the role. make it all based on roles.
+exports.createNewFaction = function(id, guild, name, colour, permissions) {//need to add an _id field whihc is the id of the role. make it all based on roles.
   var factiondoc = {
     _id: id,
-    server_id: server.id,
+    guild_id: guild.id,
 	  faction_name: name,
     faction_colour: colour,
     permissions: permissions
@@ -46,12 +46,12 @@ exports.getFactionName = function(factionid) {
   });
 };
 
-exports.getFactionID = function(serverid, name) {
+exports.getFactionID = function(guild_id, name) {
 	return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
 	  [{
-        server_id: serverid
+        guild_id: guild_id
       }, {
 		faction_name: name
 	  }] }, function(err, res) {
@@ -70,12 +70,12 @@ exports.getFactionID = function(serverid, name) {
   });
 };
 
-exports.getFactionsHere = function(server) {
+exports.getFactionsHere = function(guild) {
 	var finalarray = [];
 	return new Promise(function(resolve, reject) {
     try {
       db.find({
-        server_id: server.id
+        guild_id: guild.id
       }, function(err, res) {
         if (err) {
           return reject(err);
@@ -95,11 +95,11 @@ exports.getFactionsHere = function(server) {
   });
 };
 
-exports.checkNameClash = function(server, name) {
+exports.checkNameClash = function(guild, name) {
 	return new Promise(function(resolve, reject) {
     try {
       db.find({
-        server_id: server.id
+        guild_id: guild.id
       }, function(err, res) {
         if (err) {
           return reject(err);

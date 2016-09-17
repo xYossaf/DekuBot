@@ -8,9 +8,9 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.createNewCommand = function(name, server, text, lvl) {
+exports.createNewCommand = function(name, guild, text, lvl) {
   var commanddoc = {
-    server_id: server.id,
+    guild_id: guild.id,
     name: name,
     text: text,
     lvl: lvl
@@ -24,12 +24,12 @@ exports.createNewCommand = function(name, server, text, lvl) {
   });
 };
 
-exports.getAllHere = function(server) {
+exports.getAllHere = function(guild) {
 	return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
 	  [{
-        server_id: server.id
+        guild_id: guild.id
       }, {
 		_id: /[0-9]/
 	  }] }, function(err, res) {
@@ -48,12 +48,12 @@ exports.getAllHere = function(server) {
   });
 };
 
-exports.deleteCommand = function(server, name) {
+exports.deleteCommand = function(guild, name) {
 	return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
 	  [{
-        server_id: server.id
+        guild_id: guild.id
       }, {
 		name: name
 	  }] }, function(err, res) {

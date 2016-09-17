@@ -1,6 +1,6 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
-var serverDB = require("./server_rt.js");
+var guildDB = require("./guild_rt.js");
 var permissionDB = require("./permission_rt.js");
 var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
@@ -23,20 +23,28 @@ exports.checkManga = function(bot) {//need to switch this to check the rss feed 
 			(function(m) {
 				var request = require("request");
 				var mangatag = m.url.substr(29);
+				console.log(m.url.substr(29))
 				request(m.url, function(error, response, body) {
-						if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
+						if ((parseInt(m.chapter)+1) < 10) {
+							chapnum = '00' + (parseInt(m.chapter)+1).toString()
+						} else if ((parseInt(m.chapter)+1) < 100) {
+							chapnum = '0' + (parseInt(m.chapter)+1).toString()
+						} else {
+							chapnum = (parseInt(m.chapter)+1).toString()
+						}
+						if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + chapnum) !== -1) {
 							var temp = ('http://mangastream.com/r/' + mangatag + '/').length
 							var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
 							var othertemp = body.substr(begin)
 							var linktemp = othertemp.indexOf('"')
 							var end = othertemp.indexOf("/")
 							if (m.mention == true) {
-								bot.sendMessage(bot.channels.get("id", m.channel_id), "@everyone, New chapter of: " + body.substr(begin-temp, temp+linktemp));
+								bot.channels.find("id", m.channel_id).sendMessage("@everyone, New chapter of: " + body.substr(begin-temp, temp+linktemp));
 							}
 							mangaDB.updateChapter(m._id, body.substr(begin, end));
 							for (i = 0; i < m.pm_array.length; i++) {
 								(function(x) {
-									bot.sendMessage(bot.users.get("id", m.pm_array[x]), "New chapter of: " + body.substr(begin-temp, temp+linktemp));
+									bot.users.find("id", m.pm_array[x]).sendMessage("New chapter of: " + body.substr(begin-temp, temp+linktemp));
 								})(i)
 							}
 						}
@@ -70,7 +78,7 @@ exports.checkReddit = function(bot) {
 									for (i = 0; i < Math.ceil(data.data.children[0].data.selftext.length/1500); i++) {
 										(function (x) {
 											msgArray.push(data.data.children[0].data.selftext.substr(1500*i, 1500).replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"));
-											bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray);
+											bot.channels.find("id", red.channel_id).sendMessage(msgArray);
 											msgArray = [];
 										})(i)
 									}
@@ -81,7 +89,7 @@ exports.checkReddit = function(bot) {
 								msgArray.push('**' + data.data.children[0].data.title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**');
 								msgArray.push(data.data.children[0].data.url.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '\n');
 							}
-							bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray)
+							bot.channels.find("id", red.channel_id).sendMessage(msgArray)
 							redditDB.updateLastPost(red._id, data.data.children[0].data.name);
 						}
 					});
@@ -107,7 +115,7 @@ exports.checkReddit = function(bot) {
 											for (j = 0; j < Math.ceil(data.data.children[i].data.selftext.length/1500); j++) {
 												(function (x) {
 													msgArray.push(data.data.children[i].data.selftext.substr(1500*j, 1500).replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"));
-													bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray);
+													bot.channels.find("id", red.channel_id).sendMessage(msgArray);
 													msgArray = [];
 												})(j)
 											}
@@ -118,7 +126,7 @@ exports.checkReddit = function(bot) {
 										msgArray.push('**' + data.data.children[i].data.title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**');
 										msgArray.push(data.data.children[i].data.url.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"))+ '\n';
 									}
-									bot.sendMessage(bot.channels.get("id", red.channel_id), msgArray)
+									bot.channels.find("id", red.channel_id).sendMessage(msgArray)
 									console.log(data.data.children[i].data.name);
 								}
 								redditDB.updateLastPost(red._id, data.data.children[0].data.name);
@@ -136,83 +144,95 @@ exports.checkReddit = function(bot) {
 exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
   return new Promise(function(resolve, reject) {
     try {
-      bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
-				if (error) {
-					bot.sendMessage(msg.channel, error);
-					return;
+			msg.channel.sendMessage(promptmsg);
+
+			var id = 0;
+			var responseCollector = msg.channel.createCollector(
+				function(message, collector) {
+				  if (message.author.id == msg.author.id) {
+				    return true; // passed the filter test
+				  }
+				  return false; // failed the filter test
+				}, {time: 300000});
+
+			responseCollector.on('message', (message, collector) => {
+				id = message.id
+				collector.stop('recieved');
+			});
+
+			responseCollector.on('end', (collection, reason) => {
+  			if (reason == 'recieved') {
+					resolve(collection.find("id", id).content);
 				}
-				bot.getChannelLogs(msg.channel, 100, {after: msg}, function(error, messages) {
-					for (var i = 0; i < 100; i++) {
-						if (messages[i].author.id == user.id) {
-							var response = messages[i].content.toLowerCase();
-							resolve(response);
-							break;
-						}
-					}
-				})
-	  	});
+				if (reason == 'time') {
+					resolve('A message was not recieved');
+				}
+			});
     } catch (e) {
       reject(e);
     }
   });
 };
 
-exports.responseHandling = function(bot, msg, promptmsg, user, server) {
-	bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
-		if (error) {
-			bot.sendMessage(msg.author, error);
-			return;
-		}
-		bot.getChannelLogs(msg.author, 100, {after: msg}, function(error, messages) {
-			for (var i = 0; i < 100; i++) {
-				if (messages[i].author.id == user.id) {
-					var response = messages[i].content.toLowerCase();
-					var responsechannel = messages[i].channel;
-					exports.choice(bot, user, server, response, responsechannel);
-					break;
+exports.responseHandling = function(bot, msg, user, guild) {
+	user.sendMessage(msg).then(mesg => {
+		var id = 0;
+		var response = "";
+		var responsechannel = "";
+		var responseCollector = mesg.channel.createCollector(
+			function(message, collector) {
+				if (message.author.id == user.id) {
+					return true; // passed the filter test
 				}
+				return false; // failed the filter test
+			}, {time: 300000});
+
+		responseCollector.on('message', (message, collector) => {
+			id = message.id
+			collector.stop('recieved');
+		});
+
+		responseCollector.on('end', (collection, reason) => {
+			if (reason == 'recieved') {
+				response = collection.find("id", id).content
+				responsechannel = collection.find("id", id).channel
+				console.log(response)
+				console.log(responsechannel)
+				exports.choice(bot, user, guild, response, responsechannel);
 			}
-		})
-	});
+		});
+	})
 };
 
-exports.choice = function (bot, user, server, response, responsechannel) {
+exports.choice = function (bot, user, guild, response, responsechannel) {
 	if (response === "1" || response === "one" || response === "pirate" || response === "pirates") {
-		factionDB.getFactionID(server.id, "pirate").then(function(r) {
-			var currentrole = server.roles.get("id", r)
-			bot.addUserToRole(user, currentrole, function(err) {
-				if (err) {
-					console.log(err);
-				}
-				bot.sendMessage(responsechannel, "Thanks for choosing the Pirates!");
-			});
+		factionDB.getFactionID(guild.id, "pirate").then(function(r) {
+			var currentrole = guild.roles.find("id", r)
+			guild.members.find("id", user.id).addRole(currentrole).then(member => {
+				member.sendMessage("Thanks for choosing the Pirates!");
+			})
 		});
 	}
 	else if (response === "2" || response === "two" || response === "marine" || response === "marines") {
-		factionDB.getFactionID(server.id, "marine").then(function(r) {
-			var currentrole = server.roles.get("id", r)
-			bot.addUserToRole(user, currentrole, function(err) {
-				if (err) {
-					console.log(err);
-				}
-				bot.sendMessage(responsechannel, "Thanks for choosing the Marines!");
-			});
+		factionDB.getFactionID(guild.id, "marine").then(function(r) {
+			var currentrole = guild.roles.find("id", r)
+			guild.members.find("id", user.id).addRole(currentrole).then(member => {
+				member.sendMessage("Thanks for choosing the Marines!");
+			})
 		});
 	}
 	else if (response === "3" || response === "three" || response === "revolutionary" || response === "army" || response === "revolutionary army") {
-		factionDB.getFactionID(server.id, "revolutionary army").then(function(r) {
-			var currentrole = server.roles.get("id", r)
-			bot.addUserToRole(user, currentrole, function(err) {
-				if (err) {
-					console.log(err);
-				}
-				bot.sendMessage(responsechannel, "Thanks for choosing the Revolutionary Army!");
-			});
+		factionDB.getFactionID(guild.id, "revolutionary army").then(function(r) {
+			var currentrole = guild.roles.find("id", r)
+			guild.members.find("id", user.id).addRole(currentrole).then(member => {
+				member.sendMessage("Thanks for choosing the Revolutionary Army!");
+			})
 		});
 	} else {
-		bot.sendMessage(responsechannel, "Im sorry, but that response doesn't match any of the faction options listed above. \n**To choose a faction, type the number next to the faction name you wish to join <3 **", function(err, message) {
-			message.author = user;
-			responseHandling(bot, message, " ", user, server.id);
+		responsechannel.sendMessage("Im sorry, but that response doesn't match any of the faction options listed above.").then(message => {
+			console.log('W2')
+			exports.responseHandling(bot, "**To choose a faction, type the number next to the faction name you wish to join <3 **", user, guild)
+			console.log('W3')
 		});
 	}
 };

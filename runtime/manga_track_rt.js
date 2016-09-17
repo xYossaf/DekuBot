@@ -8,11 +8,11 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.trackManga = function(urls, chap, channel, server, mention) {
+exports.trackManga = function(urls, chap, channel, guild, mention) {
   var mangadoc = {
     url: urls,
     chapter: chap,
-		server_id: server,
+		guild_id: guild,
 		channel_id: channel,
 		mention: mention,
 		pm_array: []
@@ -21,7 +21,7 @@ exports.trackManga = function(urls, chap, channel, server, mention) {
     if (err) {
       console.log('Error making manga document! ' + err);
     } else if (result) {
-	  console.log('Sucess making an manga doc');
+	  console.log('Sucess making a manga doc');
     }
   });
 };
@@ -132,7 +132,7 @@ exports.addToPM = function(id, user) {
           return reject(err);
         }
         if (res.length === 0) {
-          return reject('Nothing found!');
+          return reject('Nothing found!9');
         } else {
 			db.update({
 				_id: id
@@ -160,7 +160,7 @@ exports.removeFromPM = function(id, user) {
           return reject(err);
         }
         if (res.length === 0) {
-          return reject('Nothing found!');
+          return reject('Nothing found!10');
         } else {
 			db.update({
 				_id: id
