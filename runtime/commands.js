@@ -38,6 +38,16 @@ Commands.ping = {
   }
 };
 
+Commands.pong = {
+	name: "pong",
+	help: "tbd",
+	type: "general",
+	lvl: 0,
+	func: function(bot, msg) {
+  	msg.reply("Received command in--- wait, hold on, you're supposed to *ping* me! I haven't the slightest clue how to respond to this *pong* nonsense.");
+  }
+};
+
 Commands.purge = {
 	name: "purge",
 	help: "tbd",
