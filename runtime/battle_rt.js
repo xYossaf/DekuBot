@@ -59,7 +59,7 @@ exports.createNewBattle = function(user, guild) {
     user_id: user.id,
     guild_id: guild.id,
     rp_name: "",
-  	rp_desc: "",
+    rp_desc: "",
     strength: 1,
     vitality: 1,
     agility: 1,
@@ -69,31 +69,31 @@ exports.createNewBattle = function(user, guild) {
     exp: 0,
     inventory: []
   };
-	db.insert(battledoc, function (err, result){
+  db.insert(battledoc, function (err, result){
     if (err) {
       console.log('Error making battle document! ' + err);
     } else if (result) {
-	  console.log('Sucess making a battle doc');
+    console.log('Sucess making a battle doc');
     }
   });
 };
 
 exports.getBattleRecord = function(user, guild) {
-	return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
-	  [{
+    [{
         guild_id: guild.id
       }, {
-		user_id: user.id
-	  }] }, function(err, res) {
+    user_id: user.id
+    }] }, function(err, res) {
         if (err) {
           return reject(err);
         }
         if (res.length === 0) {
           return reject('No battle record found');
         } else {
-			       resolve(res[0]);
+             resolve(res[0]);
         }
       });
     } catch (e) {
@@ -103,7 +103,7 @@ exports.getBattleRecord = function(user, guild) {
 };
 
 // exports.getEnemy = function(record) {
-// 	return new Promise(function(resolve, reject) {
+//   return new Promise(function(resolve, reject) {
 //     var val = false
 //     try {
 //       var check = function(level) {

@@ -1,5 +1,5 @@
 var config = require("../config.json"),
-	Datastore = require('nedb');
+  Datastore = require('nedb');
 
 var db = new Datastore({
   filename: './runtime/databases/user_store',
@@ -18,27 +18,27 @@ exports.trackUser = function(user) {
     if (err) {
       console.log('Error making user document! ' + err);
     } else if (result) {
-	  console.log('Sucess making an UserDB doc');
+    console.log('Sucess making an UserDB doc');
     }
   });
 };
 
 exports.nameChange = function(user) {
 try {
-	db.find({
+  db.find({
     _id: user.id
   }, function(err, result) {
-	  if(!err && result.length > 0) {
-		if (result[0].known_names.length > 20) {
-			db.update({
-			  _id: user.id
-			}, {
-			  $pop: {
-				known_names: 1
-			  }
-			}, {});
+    if(!err && result.length > 0) {
+    if (result[0].known_names.length > 20) {
+      db.update({
+        _id: user.id
+      }, {
+        $pop: {
+        known_names: 1
         }
-	  }
+      }, {});
+        }
+    }
 
    });
   db.update({
@@ -49,7 +49,7 @@ try {
     }
   }, {});
 } catch (e) {
-	console.log(e);
+  console.log(e);
 }
 
 };
@@ -65,7 +65,7 @@ exports.returnNamechanges = function(user) {
         }
         if (result) {
           if (result.length === 0) {
-            return reject('Nothing found!12');
+            return reject('Nothing found!');
           }
           if (result[0].known_names.length > 1) {
             resolve(result[0].known_names);
@@ -90,7 +90,7 @@ exports.check = function(user) {
           return reject(err);
         }
         if (res.length === 0) {
-          return reject('Nothing found!13');
+          return reject('Nothing found!');
         } else {
           resolve('This user is known to the database.');
         }
@@ -100,26 +100,3 @@ exports.check = function(user) {
     }
   });
 };
-
-exports.update = function() {
-	db.find({
-		_id: /[0-9]/
-	}, function(err, result) {
-		if (err) {
-			return reject(err);
-		}
-		if (result) {
-			if (result.length === 0) {
-				return reject('Nothing found!14');
-			}
-			for (i = 0; i < result.length; i++) {
-				db.update({ _id: result[i]._id }, { $unset: { factions: true } }, {}, function () {
-					console.log('here')
-				});
-				db.update({ _id: result[i]._id }, { $set: { blacklisted: false } }, {}, function () {
-					console.log('here1')
-				});
-			}
-		}
-	});
-}

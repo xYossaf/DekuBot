@@ -1,11 +1,10 @@
 {
-  "email": "",
-  "pass": "",
+  "bot_client_id":"",
   "youtube": "",
-  "join_on_launch": "",
   "token_mode": true,
   "token": "",
   "anilistID": "",
   "anilist_Secret": "",
-  "server_id": ""
+  "guild_id": "",
+  "dev_id": ""
 }

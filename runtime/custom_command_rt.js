@@ -15,31 +15,32 @@ exports.createNewCommand = function(name, guild, text, lvl) {
     text: text,
     lvl: lvl
   };
-	db.insert(commanddoc, function (err, result) {
+  db.insert(commanddoc, function (err, result) {
     if (err) {
       console.log('Error making command document! ' + err);
     } else if (result) {
-	  console.log('Sucess making a command doc');
+    console.log('Sucess making a command doc');
     }
   });
 };
 
 exports.getAllHere = function(guild) {
-	return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
-	  [{
+    [{
         guild_id: guild.id
       }, {
-		_id: /[0-9]/
-	  }] }, function(err, res) {
+    _id: /[0-9]/
+    }] }, function(err, res) {
         if (err) {
           return reject(err);
         }
+
         if (res.length === 0) {
-          resolve('No custom commands found');
+          return reject('No custom commands found');
         } else {
-			       resolve(res);
+             resolve(res);
         }
       });
     } catch (e) {
@@ -49,14 +50,14 @@ exports.getAllHere = function(guild) {
 };
 
 exports.deleteCommand = function(guild, name) {
-	return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     try {
       db.find({ $and:
-	  [{
+    [{
         guild_id: guild.id
       }, {
-		name: name
-	  }] }, function(err, res) {
+    name: name
+    }] }, function(err, res) {
         if (err) {
           return reject(err);
         }
@@ -75,6 +76,31 @@ exports.deleteCommand = function(guild, name) {
           });
         }
       });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.deleteAllHere = function(guild) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        guild_id: guild.id
+      }, function(err, result) {
+        if (!err || result.length > 0) {
+          for (i = 0; i < result.length; i++ ) {
+            db.remove({
+              _id: result[i]._id
+            }, {}, function(err, nr) {
+
+              if (err) {
+                return reject(err);
+              }
+            });
+          }
+        }
+       });
     } catch (e) {
       reject(e);
     }
