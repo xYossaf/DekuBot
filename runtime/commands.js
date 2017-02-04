@@ -18,6 +18,8 @@ var youtubeNode = require("youtube-node");
 var ytdl = require("ytdl-core");
 var Commands = [];
 
+
+// GENERAL COMMANDS
 Commands.help = {
   name: "help",
   help: "tbd",
@@ -39,46 +41,12 @@ Commands.ping = {
 };
 
 Commands.pong = {
-	name: "pong",
-	help: "tbd",
-	type: "general",
-	lvl: 0,
-	func: function(bot, msg) {
-  	msg.reply("Received command in--- wait, hold on, you're supposed to *ping* me! I haven't the slightest clue how to respond to this *pong* nonsense.");
-  }
-};
-
-Commands.purge = {
-  name: "purge",
+  name: "pong",
   help: "tbd",
-  type: "admin",
-  lvl: 1,
-  func: function(bot, msg, args) {
-    if (msg.channel.type == 'dm') {
-      msg.channel.sendMessage("```diff\n- You can't do that in a DM you silly silly person!```");
-      return;
-    }
-    if (!args || isNaN(args)) {
-      msg.channel.sendMessage("```diff\n- Please define an amount of messages for me to delete!```");
-      return;
-    }
-    if (!msg.member.hasPermission("MANAGE_MESSAGES")) {
-      msg.channel.sendMessage("```diff\n- Your role in this guild does not have enough permissions.```");
-      return;
-    }
-    if (!msg.guild.members.get(bot.user.id).hasPermission("MANAGE_MESSAGES")) {
-      msg.channel.sendMessage("```diff\n- I don't have permission to do that!```");
-      return;
-    }
-    if (args > 100) {
-      msg.channel.sendMessage("```diff\n- The maximum is 100.```");
-      return;
-    }
-    msg.channel.fetchMessages({limit: args}).then(messages => {
-      msg.channel.bulkDelete(messages).then(deleted => {
-        msg.channel.sendMessage("Done ✔ Deleted " + deleted.array().length + " messages.");
-      })
-    })
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg) {
+    msg.reply("Received command in--- wait, hold on, you're supposed to *ping* me! I haven't the slightest clue how to respond to this *pong* nonsense.");
   }
 };
 
@@ -140,6 +108,236 @@ Commands.botstatus = {
     finalstring.push("    ) /_/| |.-------.|");
     finalstring.push("   o  `-`o o         o  ```");
     msg.channel.sendMessage(finalstring);
+  }
+};
+
+Commands.faction = {
+  name: "faction",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    var msgArray = [];
+    var guildFactions = [];
+    var found = false;
+    factionDB.getFactionsHere(msg.guild).then(function(guildFactions) {
+        for (i = 0; i < guildFactions.length; i++) {
+          if (msg.member.roles.has(guildFactions[i])) {
+            msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message a member of staff.");
+            found = true;
+          }
+          if (found == false && i == guildFactions.length-1) {
+            msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
+            msgArray.push("Im one of the bots on this server made by RoddersGH#4702. I help with a bunch of things which you can check out by going to the following link: https://github.com/RoddersGH/DekuBot/wiki");
+            msgArray.push(" ");
+            msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact RoddersGH#4702 with any issues)");
+            msgArray.push(" ");
+            msgArray.push("We have different factions on the server that give you a coloured name and put you on the faction leaderboards(still being made).");
+            msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
+            msgArray.push("The factions are:" );
+            for (j = 0; j < guildFactions.length; j++) {
+              msgArray.push(`${j+1}. ${msg.guild.roles.get(guildFactions[j]).name}` );
+            }
+            functions.responseHandling(bot, msgArray, msg.author, msg.guild, guildFactions)
+          }
+        }
+    }).catch(function(e) {
+      if (e == 'No factions found') {
+        msg.channel.sendMessage('This server has no factions in it at the moment. Message an admin if you wish for them to create factions for the server.' )
+      }
+    })
+  }
+};
+
+Commands.customcommands = {
+  name: "customcommands",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    customcommands.getAllHere(msg.guild).then(function(r) {
+      var msgarray = [];
+      for (i = 0; i < r.length; i++) {
+        console.log(r[i].name);
+        msgarray.push(r[i].name);
+      }
+      msg.author.sendMessage(msgarray, {split: true});
+    }).catch(function(e) {
+      msg.author.sendMessage(e);
+    });
+  }
+};
+
+//*TODO* Use new library http://www.graphicsmagick.org/GraphicsMagick.html#details-compose so we can handle gifs
+Commands.rip = {
+  name: "rip",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    var url = ""
+    if (msg.mentions.users.array().length > 0) {
+      url = msg.mentions.users.array()[0].displayAvatarURL
+    } else {
+      url = msg.author.displayAvatarURL
+    }
+    if (url == null) {
+      msg.reply("Sorry, you need a profile picture to use this command.")
+      return;
+    } else if (url.search("gif") === -1) {
+      jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
+        jimp.read(url, function (err, avatar) {
+          avatar.resize(90, 90).sepia().opacity(0.5);
+          image.composite(avatar, 100, 68);
+          var path = './runtime/jimprepo/gravepic.png'
+          image.write(path, function(err) {
+            msg.channel.sendFile(path)
+          })
+        })
+      });
+    }
+  }
+};
+
+Commands["8ball"] = {
+  name: "8ball",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    var response = [];
+    response.push('```diff\n+ It is certain```');
+    response.push('```diff\n+ It is decidedly so```');
+    response.push('```diff\n+ Without a doubt```');
+    response.push('```diff\n+ Yes, definitely```');
+    response.push('```diff\n+ You may rely on it```');
+    response.push('```diff\n+ As I see it, yes```');
+    response.push('```diff\n+ Most likely```');
+    response.push('```diff\n+ Outlook good```');
+    response.push('```diff\n+ Yes```');
+    response.push('```diff\n+ Signs point to yes```');
+    response.push('```fix\nReply hazy try again```');
+    response.push('```fix\nAsk again later```');
+    response.push('```fix\nBetter not tell you now```');
+    response.push('```fix\nCannot predict now```');
+    response.push('```fix\nConcentrate and ask again```');
+    response.push("```diff\n- Don't count on it```");
+    response.push('```diff\n- My reply is no```');
+    response.push('```diff\n- My sources say no```');
+    response.push('```diff\n- Outlook not so good```');
+    response.push('```diff\n- Very doubtful```');
+
+    var msgArray = [];
+    msgArray.push(':8ball: *"' + args.replace(/@/g, " @ ") +  '"* :8ball:');
+    var responsenum = Math.floor((Math.random())*20)
+    msgArray.push(response[responsenum]);
+    msg.channel.sendMessage(msgArray);
+
+  }
+};
+
+Commands.dice = {
+  name: "dice",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    if (args) {
+      dice = args
+    } else {
+      dice = 'd6'
+    }
+    request('https://rolz.org/api/?' + dice + '.json', function (error, response, body) {
+      if (!error && response.statusCode === 200) {
+        try {
+          JSON.parse(body)
+        } catch (e) {
+          msg.channel.sendMessage('```diff\n- The API returned an unexpected response.\n```')
+          return
+        }
+        var result = JSON.parse(body)
+        msg.reply(' :game_die: ``' + result.input + '`` rolled and the result was... `` ' + result.result + ' ' + result.details + ' ``:game_die:')
+      }
+    })
+  }
+};
+
+Commands.triggered = {
+  name: "triggered",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    var url = ""
+    if (msg.mentions.users.array().length > 0) {
+      url = msg.mentions.users.array()[0].displayAvatarURL
+    } else {
+      url = msg.author.displayAvatarURL
+    }
+    if (url == null) {
+      msg.reply("Sorry, you need a profile picture to use this command.")
+      return;
+    } else if (url.search("gif") === -1) {
+      jimp.read(url, function (err, avatar) {
+        jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
+          avatar.resize(150, 150);
+          triggered.resize(150, jimp.AUTO);
+          avatar.composite(triggered, 0, 123);
+          var path = './runtime/jimprepo/trigpic.png'
+          avatar.write(path, function(err) {
+            msg.channel.sendFile(path)
+          })
+        })
+      });
+    }
+  }
+};
+
+Commands.invite = {
+  name: "invite",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg) {
+    msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146958359\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
+  }
+};
+
+
+
+
+// ADMIN COMMANDS 
+Commands.purge = {
+  name: "purge",
+  help: "tbd",
+  type: "admin",
+  lvl: 1,
+  func: function(bot, msg, args) {
+    if (msg.channel.type == 'dm') {
+      msg.channel.sendMessage("```diff\n- You can't do that in a DM you silly silly person!```");
+      return;
+    }
+    if (!args || isNaN(args)) {
+      msg.channel.sendMessage("```diff\n- Please define an amount of messages for me to delete!```");
+      return;
+    }
+    if (!msg.member.hasPermission("MANAGE_MESSAGES")) {
+      msg.channel.sendMessage("```diff\n- Your role in this guild does not have enough permissions.```");
+      return;
+    }
+    if (!msg.guild.members.get(bot.user.id).hasPermission("MANAGE_MESSAGES")) {
+      msg.channel.sendMessage("```diff\n- I don't have permission to do that!```");
+      return;
+    }
+    if (args > 100) {
+      msg.channel.sendMessage("```diff\n- The maximum is 100.```");
+      return;
+    }
+    msg.channel.fetchMessages({limit: args}).then(messages => {
+      msg.channel.bulkDelete(messages).then(deleted => {
+        msg.channel.sendMessage("Done ✔ Deleted " + deleted.array().length + " messages.");
+      })
+    })
   }
 };
 
@@ -257,44 +455,6 @@ Commands.deletefaction = {
   }
 };
 
-Commands.faction = {
-  name: "faction",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg, args) {
-    var msgArray = [];
-    var guildFactions = [];
-    var found = false;
-    factionDB.getFactionsHere(msg.guild).then(function(guildFactions) {
-        for (i = 0; i < guildFactions.length; i++) {
-          if (msg.member.roles.has(guildFactions[i])) {
-            msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message a member of staff.");
-            found = true;
-          }
-          if (found == false && i == guildFactions.length-1) {
-            msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
-            msgArray.push("Im one of the bots on this server made by RoddersGH#4702. I help with a bunch of things which you can check out by going to the following link: https://github.com/RoddersGH/DekuBot/wiki");
-            msgArray.push(" ");
-            msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact RoddersGH#4702 with any issues)");
-            msgArray.push(" ");
-            msgArray.push("We have different factions on the server that give you a coloured name and put you on the faction leaderboards(still being made).");
-            msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
-            msgArray.push("The factions are:" );
-            for (j = 0; j < guildFactions.length; j++) {
-              msgArray.push(`${j+1}. ${msg.guild.roles.get(guildFactions[j]).name}` );
-            }
-            functions.responseHandling(bot, msgArray, msg.author, msg.guild, guildFactions)
-          }
-        }
-    }).catch(function(e) {
-      if (e == 'No factions found') {
-        msg.channel.sendMessage('This server has no factions in it at the moment. Message an admin if you wish for them to create factions for the server.' )
-      }
-    })
-  }
-};
-
 Commands.ignore = {
   name: "ignore",
   help: "tbd",
@@ -323,6 +483,266 @@ Commands.unignore = {
   }
 };
 
+Commands.createcommand = {
+  name: "createcommand",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    var comexists = false
+    var specific_lvl = 0;
+    if (!args) {
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      return;
+    }
+    if (args.indexOf(" | ") < 0) {
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      return;
+    }
+    if (/---[0-3]|---6/.test(args)) {
+      if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
+        msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+        return;
+      } else {
+        specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
+      }
+    }
+    var tempname = args.split(" ")[0].trim();
+    var comname = args.split(" ")[0].toLowerCase().trim();
+    if (args.split(" ")[1] != "|") {
+      msg.channel.sendMessage("```diff\n- Command name cannot contain spaces.```");
+      return;
+    }
+    var comcontent = args.replace(tempname + " | ", "").replace("---" + specific_lvl, "").trim();
+    if (Commands[comname]) {
+      msg.channel.sendMessage("```diff\n- Cannot overwrite core bot commands.```");
+      return;
+    }
+    customcommands.getAllHere(msg.guild).then(function(r) {
+      for (i = 0; i < r.length; i++) {
+        if (r[i].name === comname) {
+         comexists = true
+        }
+      }
+      if (comexists) {
+        customcommands.deleteCommand(msg.guild, comname);
+        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        msg.channel.sendMessage("📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
+      }  else {
+        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
+      }
+    });
+  }
+};
+
+Commands.deletecommand = {
+  name: "deletecommand",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    if (!args) {
+      msg.channel.sendMessage("Syntax error. Correct usage: '!delete <command name>. Command name cannot contain spaces.");
+      return;
+    }
+    customcommands.deleteCommand(msg.guild, args).then(function(r) {
+      msg.channel.sendMessage(r)
+    }).catch(function(e) {
+      msg.channel.sendMessage(e)
+    })
+  }
+};
+
+//*TODO* Remove this for master
+Commands.eval = {
+  name: "eval",
+  help: "tbd",
+  type: "admin",
+  lvl: 6,
+  func: function(bot, msg, args) {
+    if (msg.author.id == config.dev_id) {
+      try {
+          msg.channel.sendMessage(eval(args));
+      }
+      catch (err) {
+          msg.channel.sendMessage("Eval failed :(");
+          msg.channel.sendMessage("`" + err + "`");
+      }
+    }
+  }
+};
+
+Commands.nsfw = {
+  name: "nsfw",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    guildDB.nsfwChannel(msg.channel).then(function(r) {
+      msg.reply(r);
+    }).catch(function(e) {
+      msg.reply(e);
+    })
+  }
+};
+
+Commands.unnsfw = {
+  name: "unnsfw",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    guildDB.unNSFWChannel(msg.channel).then(function(r) {
+      msg.reply(r);
+    }).catch(function(e) {
+      msg.reply(e);
+    })
+  }
+};
+
+Commands.reddit = {
+  name: "reddit",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    var found = false;
+    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
+      msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
+      return;
+    }
+    request(args, function(error, response, body) {
+      if (error) {
+        console.log(error);
+        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
+      }
+      if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && body.search('<h3>You must be a Reddit Gold member to view this super secret community</h3>') == -1 && body.search('<h3>This community has been banned</h3>') == -1 && args.indexOf('www.reddit.com/r/') >= 0 ) {
+        temp = args.substr(args.indexOf('/r/')+3);
+        if (temp.indexOf("/") >= 0) {
+          name = temp.slice(0, temp.indexOf('/'));
+        } else {
+          name = temp;
+        }
+        if (name.toLowerCase() == 'all' || name.toLowerCase() == 'mod' || name.toLowerCase() == 'friends' || name.toLowerCase() == 'dashboard' || name.toLowerCase() == '' || name.toLowerCase() == 'random') {
+          msg.channel.sendMessage("nono <3");
+          return;
+        }
+        redditDB.getAll().then(function(r) {
+          if (r.length < 1) {
+            redditDB.trackSubreddit(name, msg);
+            msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
+          } else {
+            for (i = 0; i < r.length; i++) {
+              if (r[i].channel_id == msg.channel.id && r[i].subreddit_name == name) {
+                  msg.channel.sendMessage("You are already tracking /r/" + name + ` in <#${msg.channel.id}>. All new posts are sent as messages here.`);
+                  found = true
+              }
+              if (found == false && i == r.length-1) {
+                redditDB.trackSubreddit(name, msg);
+                msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
+              }
+            }
+          }
+        })
+      } else {
+        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
+      }
+    })
+  }
+};
+
+Commands.unreddit = {
+  name: "unreddit",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    var found = false;
+    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
+      msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'reddit.com/r/<subreddit name>'.");
+      return;
+    }
+    request(args, function(error, response, body) {
+      if (error) {
+        console.log(error);
+        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
+      }
+      if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && args.indexOf('www.reddit.com/r/') >= 0 ) {
+        temp = args.substr(args.indexOf('/r/')+3);
+        if (temp.indexOf("/") >= 0) {
+          name = temp.slice(0, temp.indexOf('/'));
+        } else {
+          name = temp;
+        }
+        redditDB.getAll().then(function(r) {
+          if (r.length < 1) {
+            redditDB.trackSubreddit(name, msg);
+            msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
+          } else {
+            for (i = 0; i < r.length; i++) {
+              if (r[i].channel_id == msg.channel.id && r[i].subreddit_name == name) {
+                  redditDB.deleteTrack(msg.guild, name);
+                  msg.channel.sendMessage(`/r/` + name + ` Is now not being tracked in <#${msg.channel.id}>`);
+                  found = true
+              }
+              if (found == false && i == r.length-1) {
+                msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
+              }
+            }
+          }
+        })
+      } else {
+        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
+      }
+    })
+  }
+};
+
+Commands.setprefix = {
+  name: "setprefix",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    var eargs = args.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere");
+    if (eargs.length > 140) {
+      msg.channel.sendMessage("This prefix is too long :|");
+    } else {
+      guildDB.setPrefix(msg.guild.id, eargs);
+      msg.channel.sendMessage("New prefix `" + eargs + "` set.");
+    }
+  }
+};
+
+Commands.togglewelcomepm = {
+  name: "togglewelcomepm",
+  help: "tbd",
+  type: "general",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    guildDB.toggleWelcomePM(msg.guild.id).then(function(r) {
+      msg.channel.sendMessage(r);
+    })
+  }
+};
+
+Commands.togglefactionpm = {
+  name: "togglefactionpm",
+  help: "tbd",
+  type: "general",
+  lvl: 3,
+  func: function(bot, msg, args) {
+    guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
+      msg.channel.sendMessage(r);
+    })
+  }
+};
+
+
+
+
+// WEEB COMMANDS
 Commands.anime = {
   name: "anime",
   help: "tbd",
@@ -992,143 +1412,10 @@ Commands.unservermangatrack = {
   }
 };
 
-Commands.createcommand = {
-  name: "createcommand",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    var comexists = false
-    var specific_lvl = 0;
-    if (!args) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
-      return;
-    }
-    if (args.indexOf(" | ") < 0) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
-      return;
-    }
-    if (/---[0-3]|---6/.test(args)) {
-      if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
-        msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
-        return;
-      } else {
-        specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
-      }
-    }
-    var tempname = args.split(" ")[0].trim();
-    var comname = args.split(" ")[0].toLowerCase().trim();
-    if (args.split(" ")[1] != "|") {
-      msg.channel.sendMessage("```diff\n- Command name cannot contain spaces.```");
-      return;
-    }
-    var comcontent = args.replace(tempname + " | ", "").replace("---" + specific_lvl, "").trim();
-    if (Commands[comname]) {
-      msg.channel.sendMessage("```diff\n- Cannot overwrite core bot commands.```");
-      return;
-    }
-    customcommands.getAllHere(msg.guild).then(function(r) {
-      for (i = 0; i < r.length; i++) {
-        if (r[i].name === comname) {
-         comexists = true
-        }
-      }
-      if (comexists) {
-        customcommands.deleteCommand(msg.guild, comname);
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
-        msg.channel.sendMessage("📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
-      }  else {
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
-        msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
-      }
-    });
-  }
-};
 
-Commands.deletecommand = {
-  name: "deletecommand",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    if (!args) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!delete <command name>. Command name cannot contain spaces.");
-      return;
-    }
-    customcommands.deleteCommand(msg.guild, args).then(function(r) {
-      msg.channel.sendMessage(r)
-    }).catch(function(e) {
-      msg.channel.sendMessage(e)
-    })
-  }
-};
 
-Commands.customcommands = {
-  name: "createcommand",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    customcommands.getAllHere(msg.guild).then(function(r) {
-      var msgarray = [];
-      for (i = 0; i < r.length; i++) {
-        console.log(r[i].name);
-        msgarray.push('!' + r[i].name);
-      }
-      msg.author.sendMessage(msgarray, {split: true});
-    }).catch(function(e) {
-      msg.author.sendMessage(e);
-    });
-  }
-};
 
-//*TODO* Remove this for master
-Commands.eval = {
-  name: "eval",
-  help: "tbd",
-  type: "admin",
-  lvl: 6,
-  func: function(bot, msg, args) {
-    if (msg.author.id == config.dev_id) {
-      try {
-          msg.channel.sendMessage(eval(args));
-      }
-      catch (err) {
-          msg.channel.sendMessage("Eval failed :(");
-          msg.channel.sendMessage("`" + err + "`");
-      }
-    }
-  }
-};
-
-Commands.nsfw = {
-  name: "nsfw",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    guildDB.nsfwChannel(msg.channel).then(function(r) {
-      msg.reply(r);
-    }).catch(function(e) {
-      msg.reply(e);
-    })
-  }
-};
-
-Commands.unnsfw = {
-  name: "unnsfw",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    guildDB.unNSFWChannel(msg.channel).then(function(r) {
-      msg.reply(r);
-    }).catch(function(e) {
-      msg.reply(e);
-    })
-  }
-};
-
+// NSFW COMMANDS
 Commands.rule34 = {
   name: "rule34",
   help: "tbd",
@@ -1281,277 +1568,6 @@ Commands.yandere = {
   }
 };
 
-Commands.reddit = {
-  name: "reddit",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    var found = false;
-    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-      msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
-      return;
-    }
-    request(args, function(error, response, body) {
-      if (error) {
-        console.log(error);
-        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
-      }
-      if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && body.search('<h3>You must be a Reddit Gold member to view this super secret community</h3>') == -1 && body.search('<h3>This community has been banned</h3>') == -1 && args.indexOf('www.reddit.com/r/') >= 0 ) {
-        temp = args.substr(args.indexOf('/r/')+3);
-        if (temp.indexOf("/") >= 0) {
-          name = temp.slice(0, temp.indexOf('/'));
-        } else {
-          name = temp;
-        }
-        if (name.toLowerCase() == 'all' || name.toLowerCase() == 'mod' || name.toLowerCase() == 'friends' || name.toLowerCase() == 'dashboard' || name.toLowerCase() == '' || name.toLowerCase() == 'random') {
-          msg.channel.sendMessage("nono <3");
-          return;
-        }
-        redditDB.getAll().then(function(r) {
-          if (r.length < 1) {
-            redditDB.trackSubreddit(name, msg);
-            msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
-          } else {
-            for (i = 0; i < r.length; i++) {
-              if (r[i].channel_id == msg.channel.id && r[i].subreddit_name == name) {
-                  msg.channel.sendMessage("You are already tracking /r/" + name + ` in <#${msg.channel.id}>. All new posts are sent as messages here.`);
-                  found = true
-              }
-              if (found == false && i == r.length-1) {
-                redditDB.trackSubreddit(name, msg);
-                msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
-              }
-            }
-          }
-        })
-      } else {
-        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of '<https://www.reddit.com/r/><subreddit name>'.");
-      }
-    })
-  }
-};
 
-Commands.unreddit = {
-  name: "unreddit",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    var found = false;
-    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-      msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'reddit.com/r/<subreddit name>'.");
-      return;
-    }
-    request(args, function(error, response, body) {
-      if (error) {
-        console.log(error);
-        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
-      }
-      if (body.search('<p id="noresults" class="error">there doesn' + "'" + 't seem to be anything here</p>') == -1 && args.indexOf('www.reddit.com/r/') >= 0 ) {
-        temp = args.substr(args.indexOf('/r/')+3);
-        if (temp.indexOf("/") >= 0) {
-          name = temp.slice(0, temp.indexOf('/'));
-        } else {
-          name = temp;
-        }
-        redditDB.getAll().then(function(r) {
-          if (r.length < 1) {
-            redditDB.trackSubreddit(name, msg);
-            msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
-          } else {
-            for (i = 0; i < r.length; i++) {
-              if (r[i].channel_id == msg.channel.id && r[i].subreddit_name == name) {
-                  redditDB.deleteTrack(msg.guild, name);
-                  msg.channel.sendMessage(`/r/` + name + ` Is now not being tracked in <#${msg.channel.id}>`);
-                  found = true
-              }
-              if (found == false && i == r.length-1) {
-                msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
-              }
-            }
-          }
-        })
-      } else {
-        msg.channel.sendMessage("Syntax error: Not a valid subreddit link. Please give the link in the form of 'www.reddit.com/r/<subreddit name>'.");
-      }
-    })
-  }
-};
-
-Commands["8ball"] = {
-  name: "8ball",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg, args) {
-    var response = [];
-    response.push('```diff\n+ It is certain```');
-    response.push('```diff\n+ It is decidedly so```');
-    response.push('```diff\n+ Without a doubt```');
-    response.push('```diff\n+ Yes, definitely```');
-    response.push('```diff\n+ You may rely on it```');
-    response.push('```diff\n+ As I see it, yes```');
-    response.push('```diff\n+ Most likely```');
-    response.push('```diff\n+ Outlook good```');
-    response.push('```diff\n+ Yes```');
-    response.push('```diff\n+ Signs point to yes```');
-    response.push('```fix\nReply hazy try again```');
-    response.push('```fix\nAsk again later```');
-    response.push('```fix\nBetter not tell you now```');
-    response.push('```fix\nCannot predict now```');
-    response.push('```fix\nConcentrate and ask again```');
-    response.push("```diff\n- Don't count on it```");
-    response.push('```diff\n- My reply is no```');
-    response.push('```diff\n- My sources say no```');
-    response.push('```diff\n- Outlook not so good```');
-    response.push('```diff\n- Very doubtful```');
-
-    var msgArray = [];
-    msgArray.push(':8ball: *"' + args.replace(/@/g, " @ ") +  '"* :8ball:');
-    var responsenum = Math.floor((Math.random())*20)
-    msgArray.push(response[responsenum]);
-    msg.channel.sendMessage(msgArray);
-
-  }
-};
-
-Commands.dice = {
-  name: "dice",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg, args) {
-    if (args) {
-      dice = args
-    } else {
-      dice = 'd6'
-    }
-    request('https://rolz.org/api/?' + dice + '.json', function (error, response, body) {
-      if (!error && response.statusCode === 200) {
-        try {
-          JSON.parse(body)
-        } catch (e) {
-          msg.channel.sendMessage('```diff\n- The API returned an unexpected response.\n```')
-          return
-        }
-        var result = JSON.parse(body)
-        msg.reply(' :game_die: ``' + result.input + '`` rolled and the result was... `` ' + result.result + ' ' + result.details + ' ``:game_die:')
-      }
-    })
-  }
-};
-
-//*TODO* Use new library http://www.graphicsmagick.org/GraphicsMagick.html#details-compose so we can handle gifs
-Commands.rip = {
-  name: "rip",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg, args) {
-    var url = ""
-    if (msg.mentions.users.array().length > 0) {
-      url = msg.mentions.users.array()[0].displayAvatarURL
-    } else {
-      url = msg.author.displayAvatarURL
-    }
-    if (url == null) {
-      msg.reply("Sorry, you need a profile picture to use this command.")
-      return;
-    } else if (url.search("gif") === -1) {
-      jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
-        jimp.read(url, function (err, avatar) {
-          avatar.resize(90, 90).sepia().opacity(0.5);
-          image.composite(avatar, 100, 68);
-          var path = './runtime/jimprepo/gravepic.png'
-          image.write(path, function(err) {
-            msg.channel.sendFile(path)
-          })
-        })
-      });
-    }
-  }
-};
-
-Commands.triggered = {
-  name: "triggered",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg, args) {
-    var url = ""
-    if (msg.mentions.users.array().length > 0) {
-      url = msg.mentions.users.array()[0].displayAvatarURL
-    } else {
-      url = msg.author.displayAvatarURL
-    }
-    if (url == null) {
-      msg.reply("Sorry, you need a profile picture to use this command.")
-      return;
-    } else if (url.search("gif") === -1) {
-      jimp.read(url, function (err, avatar) {
-        jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
-          avatar.resize(150, 150);
-          triggered.resize(150, jimp.AUTO);
-          avatar.composite(triggered, 0, 123);
-          var path = './runtime/jimprepo/trigpic.png'
-          avatar.write(path, function(err) {
-            msg.channel.sendFile(path)
-          })
-        })
-      });
-    }
-  }
-};
-
-Commands.invite = {
-  name: "invite",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg) {
-    msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146958359\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
-  }
-};
-
-Commands.setprefix = {
-  name: "setprefix",
-  help: "tbd",
-  type: "general",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    var eargs = args.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere");
-    if (eargs.length > 140) {
-      msg.channel.sendMessage("This prefix is too long :|");
-    } else {
-      guildDB.setPrefix(msg.guild.id, eargs);
-      msg.channel.sendMessage("New prefix `" + eargs + "` set.");
-    }
-  }
-};
-
-Commands.togglewelcomepm = {
-  name: "togglewelcomepm",
-  help: "tbd",
-  type: "general",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    guildDB.toggleWelcomePM(msg.guild.id).then(function(r) {
-      msg.channel.sendMessage(r);
-    })
-  }
-};
-
-Commands.togglefactionpm = {
-  name: "togglefactionpm",
-  help: "tbd",
-  type: "general",
-  lvl: 3,
-  func: function(bot, msg, args) {
-    guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
-      msg.channel.sendMessage(r);
-    })
-  }
-};
 
 exports.Commands = Commands;
