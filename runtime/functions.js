@@ -40,10 +40,17 @@ exports.checkManga = function(bot) {
                 var othertemp = b.substr(begin)
                 var linktemp = othertemp.indexOf('<')
                 var end = othertemp.indexOf("/")
-                if (m.mention == true) {
-                  bot.channels.get(m.channel_id).sendMessage("@everyone, New chapter of: " + b.substr(begin-temp, temp+linktemp));
-                }
+
                 mangaDB.updateChapter(m._id, b.substr(begin, end));
+                for (j = 0; j < m.guild_channel_array.length; j++) {
+                  (function(x) {
+                    if (m.guild_channel_array[x].mention != "") {
+                      bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage(`@${m.guild_channel_array[x].mention} New chapter of: ` + b.substr(begin-temp, temp+linktemp));
+                    } else {
+                      bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
+                    }
+                  })(j)
+                }
                 for (i = 0; i < m.pm_array.length; i++) {
                   (function(x) {
                     bot.users.get(m.pm_array[x]).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
@@ -59,6 +66,36 @@ exports.checkManga = function(bot) {
   check();
   var timer = setInterval(check, timercheck);
 };
+
+exports.initMangaDB = function() {
+  request('http://mangastream.com/manga', function(error, response, body) {
+    var start = body.indexOf('<table class="table table-striped">')
+    var end = body.indexOf('</table>')
+
+    var urlArray = body.substring(start, end).match(/http:[/]{2}mangastream[.]com[/]r[/]\w+[/][^/]+[/]/g);
+    var altUrlArray = body.substring(start, end).match(/http:[/]{2}mangastream[.]com[/]manga[/]\w+/g);
+    
+    for (i=0; i < urlArray.length; i++) {
+      (function(url, altUrl) {
+        var temp = url.substring(25, url.length-1)
+        var chapter = temp.substring(temp.indexOf("/")+1)
+        var name = temp.substring(0, temp.indexOf("/"))
+
+        mangaDB.check(altUrl).then(function(r) {
+          if (r == "No doc found" ) {
+            mangaDB.trackManga(altUrl, chapter, name)
+          }
+        })
+      })(urlArray[i], altUrlArray[i])
+    }
+  })
+};
+
+
+
+
+
+
 //*TODO* Create embeds instead of sending formatted messages.
 exports.checkReddit = function(bot) {
   var rID = null;

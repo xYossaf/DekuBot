@@ -303,6 +303,16 @@ Commands.invite = {
   }
 };
 
+Commands.test = {
+  name: "test",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg) {
+
+    functions.initMangaDB()
+  }
+};
 
 
 
@@ -529,6 +539,11 @@ Commands.createcommand = {
         customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
       }  else {
+        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
+      }
+    }).catch(function(e) {
+      if (e == "No custom commands found") {
         customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
       }
@@ -1126,222 +1141,78 @@ Commands.animeairdate = {
   }
 };
 
+Commands.mangalist= {
+  name: "mangalist",
+  help: "tbd",
+  type: "weeb",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    mangaDB.getAll().then(function(r) {
+      var msgarray = [];
+      msgarray.push("This is a list of all of the manga tracked on mangastream");
+      for (i = 0; i < r.length; i++) {
+        msgarray.push(`<${r[i].url}> Aliases: ${r[i].aliases}`);
+      }
+      msg.author.sendMessage(msgarray, {split: true});
+    })
+  }  
+};
+
 Commands.mangatrack = {
   name: "mangatrack",
   help: "tbd",
   type: "weeb",
   lvl: 0,
   func: function(bot, msg, args) {
-    var found = false;
-    var pmfound = false;
-    //*TODO* Figure out this I think I botched
-    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-      msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      return;
-    }
-    request(args, function(error, response, body) {
-      if (error) {
-        console.log(error);
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      }
-      if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
-        var temptag = args.substr(args.indexOf('/manga/')+7);
-        var mangatag = 0
-        if (temptag.indexOf('/') >= 0) {
-          mangatag = temptag.slice(0, temptag.indexOf('/'))
-          args = args.slice(0, args.indexOf('/manga/')+7+mangatag.length)
-        } else {
-          mangatag = temptag
-        }
-        if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
-          var temp = ('http://mangastream.com/r/' + mangatag + '/').length
-          var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
-          var othertemp = body.substr(begin)
-          var end = othertemp.indexOf("/")
-          mangaDB.getAll().then(function(r) {
-            if (r.length != 0) {
-              for(i = 0; i < r.length; i++) {
-                if (r[i].url == args && r[i].guild_id == msg.guild.id) {
-                  found = true;
-                  if (r[i].pm_array.length == 0) {
-                    mangaDB.addToPM(r[i]._id, msg.author);
-                    msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
-                  } else {
-                    for(q = 0; q < r[i].pm_array.length; q++) {
-
-                      if (r[i].pm_array[q] == msg.author.id) {
-                        msg.channel.sendMessage("You are already tracking ``" + args + "``. All new chapters will continue to be linked to you in a PM.");
-                        pmfound = true
-                      }
-                      if (pmfound == false && q == r[i].pm_array.length-1 ) {
-                        mangaDB.addToPM(r[i]._id, msg.author);
-                        msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
-                      }
-                    }
-                  }
-                }
-                if (found == false && i == r.length-1 ) {
-                  mangaDB.trackManga(args, body.substr(begin, end), 0, msg.guild.id, false);
-                  mangaDB.getAll().then(function(res) {
-                    for(j = 0; j < res.length; j++) {
-                      if (res[j].url == args && res[j].guild_id == msg.guild.id) {
-                        mangaDB.addToPM(res[j]._id, msg.author);
-                        msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
-                      }
-                    }
-                  })
-                }
-              }
-            } else {
-              mangaDB.trackManga(args, body.substr(begin, end), 0, msg.guild.id, false);
-              mangaDB.getAll().then(function(res) {
-                for(j = 0; j < res.length; j++) {
-                  if (res[j].url == args && res[j].guild_id == msg.guild.id) {
-                    mangaDB.addToPM(res[j]._id, msg.author);
-                    msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked to you in a PM ✔");
-                  }
-                }
-              })
-            }
-          })
-        } else {
-          msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
-        }
-      } else {
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+    mangaDB.checkAlias(args).then(function(record) {
+      mangaDB.addToPM(record._id, msg.author);
+      msg.author.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked to you in a Private Message ✔");
+    }).catch(function(e) {
+      if (e == "Nothing found") {
+        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
-  }
+  }  
 };
 
 Commands.unmangatrack = {
   name: "unmangatrack",
   help: "tbd",
   type: "weeb",
-  lvl: 3,
+  lvl: 0,
   func: function(bot, msg, args) {
-    var found = false;
-    var pmfound = false;
-    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-      msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      return;
-    }
-    request(args, function(error, response, body) {
-      if (error) {
-        console.log(error);
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      }
-      if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com/manga') >= 0 ) {
-        var temptag = args.substr(args.indexOf('/manga/')+7);
-        var mangatag = 0
-        if (temptag.indexOf('/') >= 0) {
-          mangatag = temptag.slice(0, temptag.indexOf('/'))
-          args = args.slice(0, args.indexOf('/manga/')+7+mangatag.length)
-        } else {
-          mangatag = temptag
-        }
-        if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
-          var temp = ('http://mangastream.com/r/' + mangatag + '/').length
-          var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
-          var othertemp = body.substr(begin)
-          var end = othertemp.indexOf("/")
-          mangaDB.getAll().then(function(r) {
-            if (r.length != 0) {
-              for(i = 0; i < r.length; i++) {
-                if (r[i].url == args && r[i].guild_id == msg.guild.id) {
-                  found = true;
-                  if (r[i].pm_array.length == 1 && r[i].mention == false) {
-                    mangaDB.deleteTrack(r[i]._id);
-                    msg.channel.sendMessage("You are now no longer tracking ``" + args + "`` ✔.");
-                  } else {
-                    for(q = 0; q < r[i].pm_array.length; q++) {
-                      if (r[i].pm_array[q] == msg.author.id) {
-                        mangaDB.removeFromPM(r[i]._id, msg.author);
-                        msg.channel.sendMessage("You are now no longer tracking ``" + args + "`` ✔");
-                        pmfound = true
-                      }
-                      if (pmfound == false && q == r[i].pm_array.length-1 ) {
-                        msg.channel.sendMessage("You are not tracking this manga.");
-                      }
-                    }
-                  }
-                }
-                if (found == false && i == r.length-1 ) {
-                  msg.channel.sendMessage("You were not tracking this manga.");
-                }
-              }
-            } else {
-              msg.channel.sendMessage("You are not tracking this manga.");
-            }
-          })
-        } else {
-          msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
-        }
-      } else {
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+    mangaDB.checkAlias(args).then(function(record) {
+      mangaDB.removeFromPM(record._id, msg.author);
+      msg.author.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` ✔");
+    }).catch(function(e) {
+      if (e == "Nothing found") {
+        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }
 };
-
+//*TODO* Make sure that a deleted channel is reflected properly in all db stuff
 Commands.servermangatrack = {
   name: "mangatrack",
   help: "tbd",
   type: "weeb",
   lvl: 3,
   func: function(bot, msg, args) {
-    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-      msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      return;
-    }
-    request(args, function(error, response, body) {
-      if (error) {
-        console.log(error);
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      }
-      if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
-        var temptag = args.substr(args.indexOf('/manga/')+7);
-        var mangatag = 0
-        if (temptag.indexOf('/') >= 0) {
-          mangatag = temptag.slice(0, temptag.indexOf('/'))
-          args = args.slice(0, args.indexOf('/manga/')+7+mangatag.length)
-        } else {
-          mangatag = temptag
+    mangaDB.checkAlias(args).then(function(record) {
+      mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
+        msg.channel.sendMessage("You are already tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
+      }).catch(function(e) {
+        var obj = {
+          guild_id: msg.guild.id,
+          channel_id: msg.channel.id,
+          mention: ""
         }
-        if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
-          var found = false;
-          var temp = ('http://mangastream.com/r/' + mangatag + '/').length
-          var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
-          var othertemp = body.substr(begin)
-          var end = othertemp.indexOf("/")
-          mangaDB.getAll().then(function(r) {
-            if (r.length != 0) {
-              for(i = 0; i < r.length; i++) {
-                if (r[i].url == args && r[i].guild_id == msg.guild.id) {
-                  if (r[i].mention) {
-                    msg.channel.sendMessage("You are already tracking ``" + args + "`` in this server.");
-                  } else {
-                    mangaDB.updateChannel(r[i]._id, msg.channel.id);
-                    mangaDB.updateMention(r[i]._id, true);
-                    msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
-                  }
-                  found = true
-                }
-                if (found == false && i == r.length-1 ) {
-                  mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.guild.id, true);
-                  msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
-                }
-              }
-            } else {
-              mangaDB.trackManga(args, body.substr(begin, end), msg.channel.id, msg.guild.id, true);
-              msg.channel.sendMessage("You are now tracking ``" + args + "``. All new chapters will be linked in this channel with an @ everyone ✔");
-            }
-          })
-        } else {
-          msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https**. Go to <http://mangastream.com/manga> to find a list.");
-        }
-      } else {
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+        mangaDB.addGuildChannel(record._id, obj);
+        msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked in this channel ✔");
+      })      
+    }).catch(function(e) {
+      if (e == "Nothing found") {
+        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }
@@ -1353,60 +1224,16 @@ Commands.unservermangatrack = {
   type: "weeb",
   lvl: 3,
   func: function(bot, msg, args) {
-    if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
-      msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      return;
-    }
-    request(args, function(error, response, body) {
-      if (error) {
-        console.log(error);
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
-      }
-      if (body.search("<p>We tried our best but couldn't find the page you're looking for. We moved things around in July of 2013 which resulted in a lot of URLs changing, sorry for the inconvenience! The following pages might help you find what you're looking for:</p>") == -1 && args.indexOf('mangastream.com') >= 0 ) {
-        var temptag = args.substr(args.indexOf('/manga/')+7);
-        var mangatag = 0
-        if (temptag.indexOf('/') >= 0) {
-          mangatag = temptag.slice(0, temptag.indexOf('/'))
-          args = args.slice(0, args.indexOf('/manga/')+7+mangatag.length)
-        } else {
-          mangatag = temptag
-        }
-        if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/') !== -1) {
-          var found = false;
-          var temp = ('http://mangastream.com/r/' + mangatag + '/').length
-          var begin = body.search( 'http://mangastream.com/r/' + mangatag + '/') + temp
-          var othertemp = body.substr(begin)
-          var end = othertemp.indexOf("/")
-          mangaDB.getAll().then(function(r) {
-            if (r.length != 0) {
-              for(i = 0; i < r.length; i++) {
-                if (r[i].url == args && r[i].guild_id == msg.guild.id) {
-                  if (r[i].mention) {
-                    if (r[i].pm_array.length < 1) {
-                      mangaDB.deleteTrack(r[i]._id);
-                    } else {
-                      mangaDB.updateChannel(r[i]._id, 0);
-                      mangaDB.updateMention(r[i]._id, false);
-                    }
-                    msg.channel.sendMessage("You are now no longer tracking ``" + args + "`` in this server ✔");
-                  } else {
-                    msg.channel.sendMessage("You are already not tracking ``" + args + "`` in this server.");
-                  }
-                  found = true
-                }
-                if (found == false && i == r.length-1 ) {
-                  msg.channel.sendMessage("You are already not tracking ``" + args + "`` in this server.");
-                }
-              }
-            } else {
-              msg.channel.sendMessage("You are already not tracking ``" + args + "`` in this server.");
-            }
-          })
-        } else {
-          msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>' **MUST BE http NOT https** . Go to <http://mangastream.com/manga> to find a list.");
-        }
-      } else {
-        msg.channel.sendMessage("Syntax error: Not a valid mangastream link. Please give the link in the form of '<http://mangastream.com/manga/><manga name>'. Go to <http://mangastream.com/manga> to find a list.");
+    mangaDB.checkAlias(args).then(function(record) {
+      mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
+        mangaDB.removeGuildChannel(record._id, r);
+        msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` In this server.");
+      }).catch(function(e) {
+        msg.channel.sendMessage("You are already not tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
+      })      
+    }).catch(function(e) {
+      if (e == "Nothing found") {
+        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }

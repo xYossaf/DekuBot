@@ -10,20 +10,87 @@ db.persistence.setAutocompactionInterval(30000);
 
 //*TODO*
 //Change storage system so that it doesn't rely on a server
-exports.trackManga = function(urls, chap, channel, guild, mention) {
+exports.trackManga = function(url, chap, name) {
   var mangadoc = {
-    url: urls,
+    url: url,
     chapter: chap,
-    guild_id: guild,
-    channel_id: channel,
-    mention: mention,
-    pm_array: []
+    aliases: [name],
+    pm_array: [],
+    guild_channel_array: []
   };
   db.insert(mangadoc, function(err, result) {
     if (err) {
       console.log('Error making manga document! ' + err);
     } else if (result) {
     console.log('Sucess making a manga doc');
+    }
+  });
+};
+
+exports.check = function(url) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+      url: url
+      }, function(err, result) {
+        if (err) {
+          console.log(err)
+        } else if (result = []) {
+          resolve("No doc found")
+        } else {
+          resolve("Doc found")
+        }
+       });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.checkAlias = function(name) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+      _id: /[0-9]/
+      }, function(err, result) {
+        if(!err || result.length > 0) {
+          returnArray = [];
+          for (i = 0; i < result.length; i++ ) {
+            for (j = 0; j < result[i].aliases.length; j++) {
+              if (result[i].aliases[j] == name) {
+                resolve(result[i]);
+              }
+            }
+          }
+          reject("Nothing found");
+        }
+       });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.checkGuildChannel = function(id) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+      _id: /[0-9]/
+      }, function(err, result) {
+        if(!err || result.length > 0) {
+          returnArray = [];
+          for (i = 0; i < result.length; i++ ) {
+            for (j = 0; j < result[i].guild_channel_array.length; j++) {
+              if (result[i].guild_channel_array[j].guild_id == id) {
+                resolve(result[i].guild_channel_array[j]);
+              }
+            }
+          }
+          reject("Nothing found");
+        }
+       });
+    } catch (e) {
+      reject(e);
     }
   });
 };
@@ -74,25 +141,56 @@ exports.updateChapter = function(id, chap) {
   });
 };
 
-exports.updateChannel = function(id, channel) {
+exports.addGuildChannel = function(id, guild_channel) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
-    _id: id
-    }, function(err, result) {
-      if(!err && result.length > 0) {
-      if (result[0].channel_id != channel) {
-        db.update({
-          _id: id
-        }, {
-          $set: {
-          channel_id: channel
-          }
-        }, {});
-      }
-      }
+        _id: id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!9');
+        } else {
+      db.update({
+        _id: id
+      }, {
+        $addToSet: {
+          guild_channel_array: guild_channel
+        }
+      }, {});
+          resolve('User now tracking');
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
-     });
+exports.removeGuildChannel = function(id, guild_channel) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found!');
+        } else {
+          db.update({
+            _id: id
+          }, {
+            $pull: {
+              guild_channel_array: guild_channel
+            }
+          }, {});
+          resolve('User now not tracking');
+        }
+      });
     } catch (e) {
       reject(e);
     }
@@ -139,7 +237,7 @@ exports.addToPM = function(id, user) {
       db.update({
         _id: id
       }, {
-        $push: {
+        $addToSet: {
           pm_array: user.id
         }
       }, {});
