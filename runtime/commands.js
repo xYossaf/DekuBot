@@ -50,6 +50,48 @@ Commands.pong = {
   }
 };
 
+Commands.rps = {
+  name: "rockpaperscissors",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    args = args.toLowerCase();
+    if (!args || args != "rock" && args != "paper" && args != "scissors") {
+      bot.reply(msg, "Please enter either rock, paper or scissors");
+    } else {
+      var response = [];
+      response.push("rock");
+      response.push("paper");
+      response.push("scissors");
+
+      var responsenum = Math.floor((Math.random())*3)
+      var botJanken = response[responsenum]; //Bot's choice
+
+      var msgArray = [];
+      msgArray.push('Player: ' + args +  ' VS DekuBot: ' + botJanken);
+
+      //Check who wins
+      if (botJanken == args) {
+        msgArray.push("\n Draw!");
+      }
+      else if (args == "rock" && botJanken == "scissors" ||
+               args == "paper" && botJanken == "rock" ||
+               args == "scissors" && botJanken == "paper") {
+        msgArray.push("\n You Win!");
+      }
+      else if (args == "rock" && botJanken == "paper" ||
+               args == "paper" && botJanken == "scissors" ||
+               args == "scissors" && botJanken == "rock") {
+        msgArray.push("\n You Lose!");
+      }
+      else msgArray.push("\n Something went wrong! Try again!");
+
+      bot.sendMessage(msg.channel, msgArray); //Send message
+    }
+  }
+};
+
 Commands.namechanges = {
   name: "namechanges",
   help: "tbt",
@@ -316,7 +358,7 @@ Commands.test = {
 
 
 
-// ADMIN COMMANDS 
+// ADMIN COMMANDS
 Commands.purge = {
   name: "purge",
   help: "tbd",
@@ -1155,7 +1197,7 @@ Commands.mangalist= {
       }
       msg.author.sendMessage(msgarray, {split: true});
     })
-  }  
+  }
 };
 
 Commands.mangatrack = {
@@ -1172,7 +1214,7 @@ Commands.mangatrack = {
         msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
-  }  
+  }
 };
 
 Commands.unmangatrack = {
@@ -1209,7 +1251,7 @@ Commands.servermangatrack = {
         }
         mangaDB.addGuildChannel(record._id, obj);
         msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked in this channel ✔");
-      })      
+      })
     }).catch(function(e) {
       if (e == "Nothing found") {
         msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
@@ -1230,7 +1272,7 @@ Commands.unservermangatrack = {
         msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` In this server.");
       }).catch(function(e) {
         msg.channel.sendMessage("You are already not tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
-      })      
+      })
     }).catch(function(e) {
       if (e == "Nothing found") {
         msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
