@@ -50,46 +50,45 @@ Commands.pong = {
   }
 };
 
-Commands.janken = {
-    name: "janken",
-    help: "tbd",
-    type: "general",
-    lvl: 0,
-    func: function(bot, msg, args) {
-        args = args.toLowerCase();
-        if (!args || args != "stone" && args != "paper" && args != "scissors") {
-            bot.reply(msg, "Please enter either stone, paper or scissors");
-        }
-        else {
-            var response = [];
-            response.push("stone");
-            response.push("paper");
-            response.push("scissors");
+Commands.rps = {
+  name: "rockpaperscissors",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  func: function(bot, msg, args) {
+    args = args.toLowerCase();
+    if (!args || args != "rock" && args != "paper" && args != "scissors") {
+      bot.reply(msg, "Please enter either rock, paper or scissors");
+    } else {
+      var response = [];
+      response.push("rock");
+      response.push("paper");
+      response.push("scissors");
 
-            var responsenum = Math.floor((Math.random())*3)
-            var botJanken = response[responsenum]; //Bot's choice
+      var responsenum = Math.floor((Math.random())*3)
+      var botJanken = response[responsenum]; //Bot's choice
 
-            var msgArray = [];
-            msgArray.push('Player: ' + args +  ' VS DekuBot: ' + botJanken);
+      var msgArray = [];
+      msgArray.push('Player: ' + args +  ' VS DekuBot: ' + botJanken);
 
-            //Check who wins
-            if (botJanken == args) {
-                msgArray.push("\n Draw!");
-            }
-            else if (args == "stone" && botJanken == "scissors" ||
-                             args == "paper" && botJanken == "stone" ||
-                             args == "scissors" && botJanken == "paper") {
-                msgArray.push("\n You Win!");
-            }
-            else if (args == "stone" && botJanken == "paper" ||
-                             args == "paper" && botJanken == "scissors" ||
-                             args == "scissors" && botJanken == "stone") {
-                msgArray.push("\n You Lose!");
-            }
-            else msgArray.push("\n Something went wrong! Try again!");
+      //Check who wins
+      if (botJanken == args) {
+        msgArray.push("\n Draw!");
+      }
+      else if (args == "rock" && botJanken == "scissors" ||
+               args == "paper" && botJanken == "rock" ||
+               args == "scissors" && botJanken == "paper") {
+        msgArray.push("\n You Win!");
+      }
+      else if (args == "rock" && botJanken == "paper" ||
+               args == "paper" && botJanken == "scissors" ||
+               args == "scissors" && botJanken == "rock") {
+        msgArray.push("\n You Lose!");
+      }
+      else msgArray.push("\n Something went wrong! Try again!");
 
-            bot.sendMessage(msg.channel, msgArray); //Send message
-        }
+      bot.sendMessage(msg.channel, msgArray); //Send message
+    }
   }
 };
 
