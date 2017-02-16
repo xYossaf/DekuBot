@@ -38,7 +38,7 @@ exports.getAllHere = function(guild) {
         }
 
         if (res.length === 0) {
-          return reject('No custom commands found');
+           resolve('No custom commands found');
         } else {
              resolve(res);
         }

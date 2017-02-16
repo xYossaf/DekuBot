@@ -9,6 +9,7 @@ var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
 
+var winston = require('winston');
 var jimp = require("jimp");
 var parseString = require('xml2js').parseString;
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
@@ -25,6 +26,7 @@ Commands.help = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg) {
     msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 ");
   }
@@ -35,6 +37,7 @@ Commands.ping = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg) {
     msg.reply(":ping_pong:");
   }
@@ -45,6 +48,7 @@ Commands.pong = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg) {
     msg.reply("Received command in--- wait, hold on, you're supposed to *ping* me! I haven't the slightest clue how to respond to this *pong* nonsense.");
   }
@@ -55,39 +59,48 @@ Commands.rps = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     args = args.toLowerCase();
     if (!args || args != "rock" && args != "paper" && args != "scissors") {
-      bot.reply(msg, "Please enter either rock, paper or scissors");
+      msg.reply("Please enter either rock, paper or scissors");
     } else {
+      if (args == "rock") {
+        args = ":right_facing_fist:"
+      } else if (args == "paper") {
+        args = ":raised_hand:"
+      } else if (args == "scissors") {
+        args = ":v:"
+      }
+
       var response = [];
-      response.push("rock");
-      response.push("paper");
-      response.push("scissors");
+      response.push(":right_facing_fist:");
+      response.push(":raised_hand:");
+      response.push(":v:");
 
       var responsenum = Math.floor((Math.random())*3)
       var botJanken = response[responsenum]; //Bot's choice
 
       var msgArray = [];
-      msgArray.push('Player: ' + args +  ' VS DekuBot: ' + botJanken);
+      msgArray.push('Player: ' + args +  '\n     **VS**\nDekuBot: ' + botJanken);
 
       //Check who wins
       if (botJanken == args) {
-        msgArray.push("\n Draw!");
+        msgArray.push("```fix\nDraw!```");
       }
-      else if (args == "rock" && botJanken == "scissors" ||
-               args == "paper" && botJanken == "rock" ||
-               args == "scissors" && botJanken == "paper") {
-        msgArray.push("\n You Win!");
+      else if (args == ":right_facing_fist:" && botJanken == ":v:" ||
+               args == ":raised_hand:" && botJanken == ":right_facing_fist:" ||
+               args == ":v:" && botJanken == ":raised_hand:") {
+        msgArray.push("```diff\n+ You Win!```");
       }
-      else if (args == "rock" && botJanken == "paper" ||
-               args == "paper" && botJanken == "scissors" ||
-               args == "scissors" && botJanken == "rock") {
-        msgArray.push("\n You Lose!");
+      else if (args == ":right_facing_fist:" && botJanken == ":raised_hand:" ||
+               args == ":raised_hand:" && botJanken == ":v:" ||
+               args == ":v:" && botJanken == ":right_facing_fist:") {
+        msgArray.push("```diff\n- You Lose!```");
       }
-      else msgArray.push("\n Something went wrong! Try again!");
+      else msgArray.push("```fix\nSomething went wrong! Try again!```");
 
-      bot.sendMessage(msg.channel, msgArray); //Send message
+      msg.channel.sendMessage(msgArray); //Send message
     }
   }
 };
@@ -97,6 +110,7 @@ Commands.namechanges = {
   help: "tbt",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg) {
     if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
       msg.channel.sendMessage("```diff\n- Please mention a single user.```");
@@ -121,6 +135,7 @@ Commands.botstatus = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg) {
     var channelcount = 0;
     var usercount = 0;
@@ -158,6 +173,7 @@ Commands.faction = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var msgArray = [];
     var guildFactions = [];
@@ -196,6 +212,7 @@ Commands.customcommands = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     customcommands.getAllHere(msg.guild).then(function(r) {
       var msgarray = [];
@@ -216,6 +233,7 @@ Commands.rip = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 4000,
   func: function(bot, msg, args) {
     var url = ""
     if (msg.mentions.users.array().length > 0) {
@@ -246,6 +264,7 @@ Commands["8ball"] = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var response = [];
     response.push('```diff\n+ It is certain```');
@@ -283,6 +302,7 @@ Commands.dice = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     if (args) {
       dice = args
@@ -309,6 +329,7 @@ Commands.triggered = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 4000,
   func: function(bot, msg, args) {
     var url = ""
     if (msg.mentions.users.array().length > 0) {
@@ -340,19 +361,9 @@ Commands.invite = {
   help: "tbd",
   type: "general",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg) {
     msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146958359\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
-  }
-};
-
-Commands.test = {
-  name: "test",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  func: function(bot, msg) {
-
-    functions.initMangaDB()
   }
 };
 
@@ -364,6 +375,7 @@ Commands.purge = {
   help: "tbd",
   type: "admin",
   lvl: 1,
+  cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.channel.type == 'dm') {
       msg.channel.sendMessage("```diff\n- You can't do that in a DM you silly silly person!```");
@@ -398,6 +410,7 @@ Commands.getpermissionlvl = {
   help: "tbd",
   type: "admin",
   lvl: 1,
+  cooldown: 0,
   func: function(bot, msg, args) {
     if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
       msg.reply("```diff\n- Please mention a user```");
@@ -414,6 +427,7 @@ Commands.setpermissionlvl = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var num = args.substr(args.indexOf(" ") + 1)
     var isnum = /^\d+$/.test(num);
@@ -450,6 +464,7 @@ Commands.createfaction = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var name = args.substr(0, args.indexOf("#") - 1).toLowerCase();
     var hex = args.substr(args.indexOf("#"))
@@ -488,6 +503,7 @@ Commands.deletefaction = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var found = false
     factionDB.getFactionsHere(msg.guild).then(function(r) {
@@ -512,6 +528,7 @@ Commands.ignore = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.ignoreChannel(msg.channel).then(function(r) {
       msg.reply(r);
@@ -526,6 +543,7 @@ Commands.unignore = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.unignoreChannel(msg.channel).then(function(r) {
       msg.reply(r);
@@ -540,6 +558,7 @@ Commands.createcommand = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var comexists = false
     var specific_lvl = 0;
@@ -598,6 +617,7 @@ Commands.deletecommand = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     if (!args) {
       msg.channel.sendMessage("Syntax error. Correct usage: '!delete <command name>. Command name cannot contain spaces.");
@@ -611,30 +631,12 @@ Commands.deletecommand = {
   }
 };
 
-//*TODO* Remove this for master
-Commands.eval = {
-  name: "eval",
-  help: "tbd",
-  type: "admin",
-  lvl: 6,
-  func: function(bot, msg, args) {
-    if (msg.author.id == config.dev_id) {
-      try {
-          msg.channel.sendMessage(eval(args));
-      }
-      catch (err) {
-          msg.channel.sendMessage("Eval failed :(");
-          msg.channel.sendMessage("`" + err + "`");
-      }
-    }
-  }
-};
-
 Commands.nsfw = {
   name: "nsfw",
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.nsfwChannel(msg.channel).then(function(r) {
       msg.reply(r);
@@ -649,6 +651,7 @@ Commands.unnsfw = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.unNSFWChannel(msg.channel).then(function(r) {
       msg.reply(r);
@@ -663,6 +666,7 @@ Commands.reddit = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var found = false;
     if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
@@ -714,6 +718,7 @@ Commands.unreddit = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var found = false;
     if (args.indexOf(" ") > 0 || args.indexOf("\u200B") > 0) {
@@ -761,6 +766,7 @@ Commands.setprefix = {
   help: "tbd",
   type: "admin",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     var eargs = args.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere");
     if (eargs.length > 140) {
@@ -777,6 +783,7 @@ Commands.togglewelcomepm = {
   help: "tbd",
   type: "general",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleWelcomePM(msg.guild.id).then(function(r) {
       msg.channel.sendMessage(r);
@@ -789,6 +796,7 @@ Commands.togglefactionpm = {
   help: "tbd",
   type: "general",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
       msg.channel.sendMessage(r);
@@ -805,6 +813,7 @@ Commands.anime = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
     nani.get('anime/search/' + args).then(function(r) {
@@ -848,6 +857,7 @@ Commands.manga = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
     nani.get('manga/search/' + args).then(function(r) {
@@ -890,6 +900,7 @@ Commands.character = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
     nani.get('character/search/' + args).then(function(r) {
@@ -965,6 +976,7 @@ Commands.animesearch = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
     nani.get('anime/search/' + args).then(function(r) {
@@ -1062,6 +1074,7 @@ Commands.mangasearch = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
     nani.get('manga/search/' + args).then(function(r) {
@@ -1146,6 +1159,7 @@ Commands.animeairdate = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
     nani.get('anime/search/' + args).then(function(r) {
@@ -1188,6 +1202,7 @@ Commands.mangalist= {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     mangaDB.getAll().then(function(r) {
       var msgarray = [];
@@ -1205,6 +1220,7 @@ Commands.mangatrack = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.addToPM(record._id, msg.author);
@@ -1222,6 +1238,7 @@ Commands.unmangatrack = {
   help: "tbd",
   type: "weeb",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.removeFromPM(record._id, msg.author);
@@ -1233,12 +1250,13 @@ Commands.unmangatrack = {
     })
   }
 };
-//*TODO* Make sure that a deleted channel is reflected properly in all db stuff
+
 Commands.servermangatrack = {
   name: "mangatrack",
   help: "tbd",
   type: "weeb",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
@@ -1265,6 +1283,7 @@ Commands.unservermangatrack = {
   help: "tbd",
   type: "weeb",
   lvl: 3,
+  cooldown: 0,
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
@@ -1290,6 +1309,7 @@ Commands.rule34 = {
   help: "tbd",
   type: "nsfw",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
         if (!error && response.statusCode == 200) {
@@ -1317,6 +1337,7 @@ Commands.konachan = {
   help: "tbd",
   type: "nsfw",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     if (args.split(" ").length > 5) {
       msg.channel.sendMessage("Konachan only supports upto 6 tags.");
@@ -1360,6 +1381,7 @@ Commands.danbooru = {
   help: "tbd",
   type: "nsfw",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     if (args.split(" ").length > 2) {
       msg.channel.sendMessage("Danbooru only supports upto 2 tags.");
@@ -1403,6 +1425,7 @@ Commands.yandere = {
   help: "tbd",
   type: "nsfw",
   lvl: 0,
+  cooldown: 0,
   func: function(bot, msg, args) {
     request('https://yande.re/post/index.json?limit=500&tags=' + args, function (error, response, body) {
         if (!error && response.statusCode == 200) {

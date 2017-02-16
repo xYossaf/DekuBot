@@ -30,6 +30,27 @@ exports.newGuild = function(guild) {
   });
 };
 
+exports.get = function(guild_id) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: guild_id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Nothing found');
+        } else {
+          resolve(res[0]);
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 exports.getPrefix = function(guild_id) {
   return new Promise(function(resolve, reject) {
     try {
@@ -193,14 +214,13 @@ exports.getAnnouncementChannel = function(guild_id) {
       reject(e);
     }
   });
-
 };
 
-exports.setAnnouncementChannel = function(channel_id) {
+exports.setAnnouncementChannel = function(channel) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
-        _id: channel_id.guild.id
+        _id: channel.guild.id
       }, function(err, res) {
         if (err) {
           return reject(err);
@@ -209,7 +229,7 @@ exports.setAnnouncementChannel = function(channel_id) {
           return reject('No message');
         } else {
           db.update({
-            _id: guild_id
+            _id: channel.guild.id
           }, {
             $set: {
               announcmentchannel: channel.id

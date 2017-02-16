@@ -8,8 +8,6 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-//*TODO*
-//Change storage system so that it doesn't rely on a server
 exports.trackManga = function(url, chap, name) {
   var mangadoc = {
     url: url,

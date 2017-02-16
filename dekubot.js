@@ -12,7 +12,7 @@ var redditDB = require("./runtime/reddit_rt.js");
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
 var mangaDB = require("./runtime/manga_track_rt.js");
-
+var winston = require('winston');
 var dekubot = new Discord.Client({fetchAllMembers: true});
 var youtubeNode = new youtubeNode();
 var authorpermissionlvl = null;
@@ -32,8 +32,36 @@ if (config.token_mode ===  true) {
   console.log("well even more fuck");
 }
 
+var commandLogger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({
+      name: 'command-file',
+      filename: 'filelog-command.log',
+      level: 'info'
+    })
+  ]
+});
+
+var logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({
+      name: 'info-file',
+      filename: 'filelog-info.log',
+      level: 'info'
+    }),
+    new (winston.transports.File)({
+      name: 'error-file',
+      filename: 'filelog-error.log',
+      level: 'error'
+    })
+  ]
+});
+
+
+
 dekubot.on("guildCreate", (guild) => {
 
+    logger.log('info', `Joined the guild ${guild.name}, ${guild.id}`)
     guildDB.check(guild).catch(function() {
       guildDB.newGuild(guild).catch(function(e) {
           console.log(e);
@@ -60,6 +88,7 @@ dekubot.on("guildCreate", (guild) => {
 });
 
 dekubot.on("guildDelete", (guild) => {
+  logger.log('info', `left the guild ${guild.name}, ${guild.id}`)
   mangaDB.deleteAllHere(guild);
   redditDB.deleteAllHere(guild);
   permissionDB.deleteAllHere(guild);
@@ -68,7 +97,41 @@ dekubot.on("guildDelete", (guild) => {
   guildDB.deleteGuild(guild);
 });
 
+dekubot.on("channelDelete", (channel) => {
+  guildDB.get(channel.guild.id).then(function(r) {
+    if (channel.id == r.announcmentchannel) {
+      guildDB.setAnnouncementChannel(channel.guild.defaultChannel)
+      dekubot.users.get(r.superuser_id).sendMessage(`The bot announcment channel (``${channel.name}``)
+       on ``${channel.guild.name}`` has been deleted. Therefore the announcement channel has been
+        set to ${channel.guild.defaultChannel.name} by default.`)
+    }
+  })
+  mangaDB.getAll().then(function(r) {
+    for (i = 0; i < r.length; i++) {
+      for (j = 0; j < r[i].guild_channel_array.length; j++) {
+        if (r[i].guild_channel_array[j].channel_id == channel.id) {
+          mangaDB.removeGuildChannel(r[i]._id, r[i].guild_channel_array[j])
+          dekubot.users.get(r.superuser_id).sendMessage(`The channel (``${channel.name}``) 
+            on ``${channel.guild.name}`` has been deleted. Therefore the manga ``${r[i].aliases[0]}`` being tracked in this channel is no longer being tracked on the server.`)
+        }
+      }
+    }
+  })
+});
+
+var cooldownArray = []
+
 dekubot.on("ready", () => {
+
+  for (j = 0; j < dekubot.guilds.array().length; j++) {
+    var commandArray = [] 
+    Object.keys(Commands).forEach(function (key) {
+      commandArray.push({name: key, lastTS: 0})
+    });
+    cooldownArray.push({guildID: dekubot.guilds.array()[j].id, tsArray: commandArray})
+  }  
+
+  logger.log('info', "I'm ready!")
   for (i = 0; i < dekubot.guilds.array().length; i++) {
     guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {
       if (e == 'Nothing found!') {
@@ -153,11 +216,15 @@ dekubot.on("message", (message) => {
           authorpermissionlvl = r;
           var command = firstWord.slice(p.length);
           customcommands.getAllHere(message.guild).then(function(r) {
-            for (i = 0; i < r.length; i++) {
-              if (r[i].name == command && message.guild.id == r[i].guild_id && authorpermissionlvl >= r[i].lvl) {
-                message.channel.sendMessage(r[i].text);
+            if (r != 'No custom commands found') {
+              for (i = 0; i < r.length; i++) {
+                if (r[i].name == command && message.guild.id == r[i].guild_id && authorpermissionlvl >= r[i].lvl) {
+                  message.channel.sendMessage(r[i].text);
+                }
               }
             }
+          }).catch(function(e) {
+            console.log(e)
           })
           if (authorpermissionlvl >= Commands[command].lvl) {
             if (Commands[command].type == 'nsfw') {
@@ -171,11 +238,51 @@ dekubot.on("message", (message) => {
                 if (e != 'This channel is nsfw') {
                   console.log(e);
                 } else {
-                  Commands[command].func(dekubot, message, args);
+                  for (x = 0; x < cooldownArray.length; x++) {
+                    (function (i) {
+                      if (cooldownArray[i].guildID == message.guild.id) {
+                        for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                          if (cooldownArray[i].tsArray[j].name == command) {
+                            if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                              Commands[command].func(dekubot, message, args);
+                              commandLogger.log('info', `${command}`, {
+                                guildID: message.guild.id,
+                                guildName: message.guild.name,
+                                channel: message.channel.id, 
+                                authorID: message.author.id, 
+                                authorName: message.author.name
+                              })
+                              cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                            }
+                          }
+                        }
+                      }
+                    })(x)
+                  }
                 }
               })
             } else {
-              Commands[command].func(dekubot, message, args);
+              for (x = 0; x < cooldownArray.length; x++) {
+                (function (i) {
+                  if (cooldownArray[i].guildID == message.guild.id) {
+                    for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                      if (cooldownArray[i].tsArray[j].name == command) {
+                        if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                          Commands[command].func(dekubot, message, args);
+                          commandLogger.log('info', `${command}`, {
+                            guildID: message.guild.id,
+                            guildName: message.guild.name,
+                            channel: message.channel.id, 
+                            authorID: message.author.id, 
+                            authorName: message.author.name
+                          })
+                          cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                        }
+                      }
+                    }
+                  }
+                })(x)
+              }
             }
           } else {
             message.channel.sendMessage("You dont have a high enough permission level to use this command.")
@@ -201,7 +308,27 @@ dekubot.on("message", (message) => {
             authorpermissionlvl = r;
             var command = firstWord.slice(p.length);
             if (authorpermissionlvl >= 3) {
-              Commands[command].func(dekubot, message, args);
+              for (x = 0; x < cooldownArray.length; x++) {
+                (function (i) {
+                  if (cooldownArray[i].guildID == message.guild.id) {
+                    for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                      if (cooldownArray[i].tsArray[j].name == command) {
+                        if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                          Commands[command].func(dekubot, message, args);
+                          commandLogger.log('info', `${command}`, {
+                            guildID: message.guild.id,
+                            guildName: message.guild.name,
+                            channel: message.channel.id, 
+                            authorID: message.author.id, 
+                            authorName: message.author.name
+                          })
+                          cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                        }
+                      }
+                    }
+                  }
+                })(x)
+              }
             }
           });
         }
