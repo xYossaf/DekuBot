@@ -424,6 +424,36 @@ Commands.maths = {
   }
 };
 
+Commands["server-info"] = {
+	name: "server-info",
+	help: "I'll tell you some information about the server you're currently in.",
+	level: 0,
+	fn: function(bot, msg, args) {
+		if (msg.channel.guild) {
+			var data = new Discord.RichEmbed(data);
+			data.setTitle(`${msg.guild.name} (${msg.guild.id})`)
+			data.addField("Members", msg.guild.members.array().length, true)
+			data.addField("Roles", msg.guild.roles.array().length, true)
+			data.addField("Region", msg.guild.region, true)
+			data.addField("Server Created", `${msg.guild.createdAt.getUTCDate()}/${msg.guild.createdAt.getUTCMonth()}/${msg.guild.createdAt.getUTCFullYear()}`, true)
+			data.addField("Server Owner", `${msg.guild.owner.user.username}#${msg.guild.owner.user.discriminator}`, true)
+ 			data.addField("Channels", msg.guild.channels.array().length, true);
+			if (msg.guild.iconURL != null) data.setThumbnail(msg.guild.iconURL);
+			if (msg.guild.emojis.array().lenght === 0) data.addField("Server Emojis", "None", true);
+			else {
+				var emojis = []
+				var emojis2 = []
+				msg.guild.emojis.array().map(function(emoje) {
+					if (emojis.join(" ").length <= 950) emojis.push(`${emoje}`);
+					else (emojis2.push(`${emoje}`))
+				})
+				data.addField("Server Emojis", emojis.join(" "), true);
+				if (emojis2.length > 0) data.addField("​", emojis2.join(" "));
+			}
+			msg.channel.sendEmbed(data)
+		}
+	}
+};
 
 // ADMIN COMMANDS
 Commands.purge = {
