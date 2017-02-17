@@ -97,8 +97,8 @@ dekubot.on("guildCreate", (guild) => {
 dekubot.on("guildDelete", (guild) => {
   logger.log('info', `left the guild ${guild.name}, ${guild.id}`)
   for (j = 0; j < cooldownArray.length; j++) {
-    if (cooldownArray[i].guildID == guild.id) {
-      cooldownArray.splice(i, 1)
+    if (cooldownArray[j].guildID == guild.id) {
+      cooldownArray.splice(j, 1)
     }
   } 
 

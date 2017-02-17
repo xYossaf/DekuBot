@@ -9,6 +9,8 @@ var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
 
+var math = require('mathjs');
+var Discord = require("discord.js");
 var winston = require('winston');
 var jimp = require("jimp");
 var parseString = require('xml2js').parseString;
@@ -155,6 +157,7 @@ Commands.botstatus = {
     finalstring.push("Hi! Im DekuBot :robot:");
     finalstring.push("Im currently used in ``" + bot.guilds.array().length + "`` server(s), in ``" + channelcount + "`` channels used by ``" + usercount + "`` users.");
     finalstring.push("I've been up and ready for ``" + (Math.round(bot.uptime / (1000 * 60 * 60))) + "`` hours, ``" + (Math.round(bot.uptime / (1000 * 60)) % 60) + "`` minutes, and ``" + (Math.round(bot.uptime / 1000) % 60 + ".") + "`` seconds.");
+    finalstring.push("Memory Usage: " + Math.round(process.memoryUsage().rss / 1024 / 1000) + "MB");
     finalstring.push("If you have any questions or need some help, contact **RoddersGH#4702**")
     finalstring.push("```         __    __");
     finalstring.push("        /  |  | |'-.");
@@ -368,6 +371,58 @@ Commands.invite = {
   }
 };
 
+Commands.quote = {
+  name: "quote",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var quote = ""
+    if (msg.mentions.users.array().length <= 0 || msg.mentions.users.array().length > 1) {
+      msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
+    } else {
+      if (args.split(" ")[0] === "<@" + msg.mentions.users.array()[0].id + ">") {
+          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").substring(1);
+      } else {
+          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").trim();
+      }
+    }
+    
+    var randomHex = "#000000".replace(/0/g, function() {
+      return (~~(Math.random() * 16)).toString(16);
+    });
+
+    var data = new Discord.RichEmbed(data);
+    data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
+    data.setColor(randomHex)
+    data.setDescription(quote)
+    
+    msg.channel.sendEmbed(data)
+  }
+};
+
+Commands.math = {
+  name: "math",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+  }
+};
+
+Commands.maths = {
+  name: "maths",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+  }
+};
 
 
 // ADMIN COMMANDS
