@@ -21,6 +21,7 @@ var Commands = [];
 
 
 // GENERAL COMMANDS
+//TODO: Link to the ddd server
 Commands.help = {
   name: "help",
   help: "tbd",
@@ -28,7 +29,7 @@ Commands.help = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg) {
-    msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 ");
+    msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");
   }
 };
 
@@ -105,6 +106,7 @@ Commands.rps = {
   }
 };
 
+//TODO Could look nicer
 Commands.namechanges = {
   name: "namechanges",
   help: "tbt",
@@ -196,7 +198,7 @@ Commands.faction = {
             for (j = 0; j < guildFactions.length; j++) {
               msgArray.push(`${j+1}. ${msg.guild.roles.get(guildFactions[j]).name}` );
             }
-            functions.responseHandling(bot, msgArray, msg.author, msg.guild, guildFactions)
+            functions.responseHandling(msgArray, msg.author, msg.guild, guildFactions)
           }
         }
     }).catch(function(e) {
@@ -405,8 +407,8 @@ Commands.purge = {
   }
 };
 
-Commands.getpermissionlvl = {
-  name: "getpermissionlvl",
+Commands.getpermissionlevel = {
+  name: "getpermissionlevel",
   help: "tbd",
   type: "admin",
   lvl: 1,
@@ -422,8 +424,8 @@ Commands.getpermissionlvl = {
   }
 };
 
-Commands.setpermissionlvl = {
-  name: "setpermissionlvl",
+Commands.setpermissionlevel = {
+  name: "setpermissionlevel",
   help: "tbd",
   type: "admin",
   lvl: 3,
@@ -660,7 +662,7 @@ Commands.unnsfw = {
     })
   }
 };
-
+//TODO: Fix error message so that link isnt broken
 Commands.reddit = {
   name: "reddit",
   help: "tbd",
@@ -895,6 +897,7 @@ Commands.manga = {
   }
 };
 
+//TODO: Should throw err when no result found
 Commands.character = {
   name: "character",
   help: "tbd",
@@ -1258,6 +1261,14 @@ Commands.servermangatrack = {
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
+
+    var mentionVal = ""
+
+    if (args.includes(" | ")) {
+      mentionVal = args.substring(args.indexOf(" | ")+3)
+      args = args.substring(0, args.indexOf(" | "))
+    }
+
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
         msg.channel.sendMessage("You are already tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
@@ -1265,7 +1276,7 @@ Commands.servermangatrack = {
         var obj = {
           guild_id: msg.guild.id,
           channel_id: msg.channel.id,
-          mention: ""
+          mention: mentionVal
         }
         mangaDB.addGuildChannel(record._id, obj);
         msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked in this channel ✔");

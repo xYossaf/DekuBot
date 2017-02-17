@@ -156,7 +156,8 @@ dekubot.on("ready", () => {
       }
     })
   }
-
+  
+  functions.initMangaDB()
   functions.checkManga(dekubot);
   functions.checkReddit(dekubot);
 });

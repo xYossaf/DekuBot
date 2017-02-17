@@ -6,6 +6,7 @@ var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
 var redditDB = require("./reddit_rt.js");
 
+var Discord = require("discord.js");
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
 var nedb = require("nedb")
 var request = require("request");
@@ -91,11 +92,6 @@ exports.initMangaDB = function() {
   })
 };
 
-
-
-
-
-
 //*TODO* Create embeds instead of sending formatted messages.
 exports.checkReddit = function(bot) {
   var rID = null;
@@ -139,21 +135,31 @@ exports.checkReddit = function(bot) {
                 }
 
                 for (j = post_array.length-1; j >= 0; j--) {
-                  var msgArray = [];
 
-                  msgArray.push('\n────────────────────────────────────────────────────────────────────────\n');
-                  msgArray.push('*Posted by /u/' + post_array[j].author.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere")  + ' in /r/' + red.subreddit_name.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '*');
-                  msgArray.push('*https://redd.it/' + post_array[j].id + '*\n');
+                  var data = new Discord.RichEmbed(data);
+
+                  data.setTitle(post_array[j].title)
+                  data.setURL(`https://redd.it/${post_array[j].id}`)
+                  data.setTimestamp()
+                  data.setAuthor(`Posted by /u/${post_array[j].author} in /r/${red.subreddit_name}`, "https://cdn.discordapp.com/attachments/239907411899580417/282016131848339458/fullxfull.png")
+                  data.setColor("#FF4500")
+
                   if (post_array[j].url == 'https://www.reddit.com' + post_array[j].permalink) {
-
-                    msgArray.push('**' + post_array[j].title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**:');
-                    msgArray.push(post_array[j].selftext.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"));
+                    if (post_array[j].selftext.length > 2048) {
+                      data.setDescription(post_array[j].selftext.substring(0, 2040) + '...')
+                    } else {
+                      data.setDescription(post_array[j].selftext)
+                    }  
                   } else {
-                    msgArray.push('**' + post_array[j].title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**');
-                    msgArray.push(post_array[j].url.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '\n');
+                    if (post_array[j].url.includes("imgur")) {
+                      data.setImage("http://i." + post_array[j].url.substring(7).replace(/amp;/g, "") + ".jpg")
+                    } else {
+                      data.setImage(post_array[j].url.replace(/amp;/g, ""))
+                    }
+                      
                   }
 
-                  bot.channels.get(red.channel_id).sendMessage(msgArray, {split: true})
+                  bot.channels.get(red.channel_id).sendEmbed(data)
 
                 }
               })(reddit)
@@ -170,6 +176,7 @@ exports.checkReddit = function(bot) {
         if (error) {
           console.log(error);
         } else {
+          
 
           if (response.children == [] || response.children[0] == undefined) {
 
@@ -177,8 +184,9 @@ exports.checkReddit = function(bot) {
             rID = response.children[0].data.name;
             redditDB.getAll().then(function(redditArray) {
                for (reddit of redditArray) {
+                
                  (function(red) {
-
+                  
                   var post_array = [];
                   for (i = 0; i < response.children.length; i++) {
 
@@ -201,21 +209,30 @@ exports.checkReddit = function(bot) {
                   }
 
                   for (j = post_array.length-1; j >= 0; j--) {
-                    var msgArray = [];
+                      
+                    var data = new Discord.RichEmbed(data);
 
-                    msgArray.push('\n────────────────────────────────────────────────────────────────────────\n');
-                    msgArray.push('*Posted by /u/' + post_array[j].author.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere")  + ' in /r/' + red.subreddit_name.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '*');
-                    msgArray.push('*https://redd.it/' + post_array[j].id + '*\n');
+                    data.setTitle(post_array[j].title)
+                    data.setURL(`https://redd.it/${post_array[j].id}`)
+                    data.setTimestamp()
+                    data.setAuthor(`Posted by /u/${post_array[j].author} in /r/${red.subreddit_name}`, "https://cdn.discordapp.com/attachments/239907411899580417/282016131848339458/fullxfull.png")
+                    data.setColor("#FF4500")
+
                     if (post_array[j].url == 'https://www.reddit.com' + post_array[j].permalink) {
-
-                      msgArray.push('**' + post_array[j].title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**:');
-                      msgArray.push(post_array[j].selftext.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere"));
+                      if (post_array[j].selftext.length > 2048) {
+                        data.setDescription(post_array[j].selftext.substring(0, 2040) + '...')
+                      } else {
+                        data.setDescription(post_array[j].selftext)
+                      }  
                     } else {
-                      msgArray.push('**' + post_array[j].title.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '**');
-                      msgArray.push(post_array[j].url.replace(/&amp;/g, "&").replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere") + '\n');
+                      if (post_array[j].url.includes("imgur")) {
+                        data.setImage("http://i." + post_array[j].url.substring(7).replace(/amp;/g, "") + ".jpg")
+                      } else {
+                        data.setImage(post_array[j].url.replace(/amp;/g, ""))
+                      }
                     }
 
-                    bot.channels.get(red.channel_id).sendMessage(msgArray, {split: true})
+                    bot.channels.get(red.channel_id).sendEmbed(data)
 
                   }
                 })(reddit)

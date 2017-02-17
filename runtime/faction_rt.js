@@ -83,10 +83,10 @@ exports.getFactionsHere = function(guild) {
         if (res.length === 0) {
           return reject('No factions found');
         } else {
-      for(faction of res) {
-        finalarray.push(faction._id);
-      };
-      resolve(finalarray);
+          for(faction of res) {
+            finalarray.push(faction._id);
+          };
+          resolve(finalarray);
         };
       });
     } catch (e) {

@@ -31,7 +31,7 @@ exports.getAllHere = function(guild) {
     [{
         guild_id: guild.id
       }, {
-    _id: /[0-9]/
+    _id: /[0-9]|[^0-9]/
     }] }, function(err, res) {
         if (err) {
           return reject(err);

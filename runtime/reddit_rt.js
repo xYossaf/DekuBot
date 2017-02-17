@@ -28,7 +28,7 @@ exports.getAll = function() {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
-      _id: /[0-9]/
+      _id: /[0-9]|[^0-9]/
       }, function(err, result) {
         if(!err || result.length > 0) {
         returnArray = [];
