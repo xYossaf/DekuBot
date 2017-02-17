@@ -219,7 +219,6 @@ Commands.customcommands = {
     customcommands.getAllHere(msg.guild).then(function(r) {
       var msgarray = [];
       for (i = 0; i < r.length; i++) {
-        console.log(r[i].name);
         msgarray.push(r[i].name);
       }
       msg.author.sendMessage(msgarray, {split: true});
@@ -365,7 +364,7 @@ Commands.invite = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg) {
-    msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146958359\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
+    msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146954327\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
   }
 };
 
@@ -1227,7 +1226,7 @@ Commands.mangatrack = {
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.addToPM(record._id, msg.author);
-      msg.author.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked to you in a Private Message ✔");
+      msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked to you in a Private Message ✔");
     }).catch(function(e) {
       if (e == "Nothing found") {
         msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
@@ -1245,7 +1244,7 @@ Commands.unmangatrack = {
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.removeFromPM(record._id, msg.author);
-      msg.author.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` ✔");
+      msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` ✔");
     }).catch(function(e) {
       if (e == "Nothing found") {
         msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");

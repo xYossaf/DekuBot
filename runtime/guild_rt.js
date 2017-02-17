@@ -479,11 +479,11 @@ exports.checkNSFW = function(channel) {
   });
 };
 
-exports.deleteGuild = function(id) {
+exports.deleteGuild = function(guild) {
   return new Promise(function(resolve, reject) {
     try {
       db.remove({
-        _id: id
+        _id: guild.id
       }, {}, function(err, nr) {
 
         if (err) {
