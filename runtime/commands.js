@@ -23,7 +23,6 @@ var Commands = [];
 
 
 // GENERAL COMMANDS
-//TODO: Link to the ddd server
 Commands.help = {
   name: "help",
   help: "tbd",
@@ -423,6 +422,47 @@ Commands.maths = {
     msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
   }
 };
+
+Commands.server = {
+  name: "server",
+  help: "I'll tell you some information about the server you're currently in.",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.channel.guild) {
+      var data = new Discord.RichEmbed(data);
+
+      var randomHex = "#000000".replace(/0/g, function() {
+        return (~~(Math.random() * 16)).toString(16);
+      });
+      data.setColor(randomHex)
+      data.setTitle(`${msg.guild.name} (${msg.guild.id})`)
+      data.addField("Members", msg.guild.members.array().length, true)
+      data.addField("Roles", msg.guild.roles.array().length, true)
+      data.addField("Region", msg.guild.region, true)
+      data.addField("Server Created", `${msg.guild.createdAt.getUTCDate()}/${msg.guild.createdAt.getUTCMonth()}/${msg.guild.createdAt.getUTCFullYear()}`, true)
+      data.addField("Server Owner", `${msg.guild.owner.user.username}#${msg.guild.owner.user.discriminator}`, true)
+      data.addField("Channels", msg.guild.channels.array().length, true);
+      if (msg.guild.iconURL != null) data.setThumbnail(msg.guild.iconURL);
+      if (msg.guild.emojis.array().length === 0) data.addField("Server Emojis", "None", true);
+      else {
+        var emojis = []
+        var emojis2 = []
+        msg.guild.emojis.array().map(function(emoje) {
+          if (emojis.join(" ").length <= 950) emojis.push(`${emoje}`);
+          else (emojis2.push(`${emoje}`))
+        })
+        data.addField("Server Emojis", emojis.join(" "), true);
+        if (emojis2.length > 0) data.addField("​", emojis2.join(" "));
+      }
+      msg.channel.sendEmbed(data)
+    }
+  }
+};
+
+
+
+
 
 
 // ADMIN COMMANDS
