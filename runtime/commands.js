@@ -436,6 +436,7 @@ Commands.server = {
         return (~~(Math.random() * 16)).toString(16);
       });
       data.setColor(randomHex)
+
       data.setTitle(`${msg.guild.name} (${msg.guild.id})`)
       data.addField("Members", msg.guild.members.array().length, true)
       data.addField("Roles", msg.guild.roles.array().length, true)
@@ -459,7 +460,6 @@ Commands.server = {
     }
   }
 };
-
 
 
 
