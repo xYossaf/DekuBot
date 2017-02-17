@@ -33,7 +33,7 @@ exports.check = function(url) {
       }, function(err, result) {
         if (err) {
           console.log(err)
-        } else if (result = []) {
+        } else if (result.length == 0) {
           resolve("No doc found")
         } else {
           resolve("Doc found")

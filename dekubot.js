@@ -61,6 +61,13 @@ var logger = new (winston.Logger)({
 
 dekubot.on("guildCreate", (guild) => {
 
+    var commandArray = [] 
+    Object.keys(Commands).forEach(function (key) {
+      commandArray.push({name: key, lastTS: 0})
+    });
+    cooldownArray.push({guildID: guild.id, tsArray: commandArray})
+
+
     logger.log('info', `Joined the guild ${guild.name}, ${guild.id}`)
     guildDB.check(guild).catch(function() {
       guildDB.newGuild(guild).catch(function(e) {
@@ -89,6 +96,12 @@ dekubot.on("guildCreate", (guild) => {
 
 dekubot.on("guildDelete", (guild) => {
   logger.log('info', `left the guild ${guild.name}, ${guild.id}`)
+  for (j = 0; j < cooldownArray.length; j++) {
+    if (cooldownArray[i].guildID == guild.id) {
+      cooldownArray.splice(i, 1)
+    }
+  } 
+
   mangaDB.deleteAllHere(guild);
   redditDB.deleteAllHere(guild);
   permissionDB.deleteAllHere(guild);
@@ -342,6 +355,7 @@ dekubot.on("message", (message) => {
 });
 
 dekubot.on("guildMemberAdd", (member) => {
+  
   if (member.id == dekubot.user.id) {
     return;
   } else {
@@ -408,7 +422,7 @@ dekubot.on("guildMemberAdd", (member) => {
   };
 });
 
-//Change so that guild members are removed from everything necessary
+
 dekubot.on("guildMemberRemove", function(member) {
   if (member.id == dekubot.user.id) {
     return;
@@ -420,15 +434,19 @@ dekubot.on("guildMemberRemove", function(member) {
         console.log(e);
       });
   });
-  guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
-    guildDB.getLeavemsg(member.guild.id).then(function(r) {
-      if (r === 'default') {
-        member.guild.channels.get(announce).sendMessage(member.user.username + " has left the server.");
-      } else if (r !== '') {
-        member.guild.channels.get(announce).sendMessage(member.user.username + r);
-      }
-    });
-  });
+  guildDB.checkWelcomePM(member.guild.id).then(function(bool) {
+    if (bool == false) {
+      guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
+        guildDB.getLeavemsg(member.guild.id).then(function(r) {
+          if (r === 'default') {
+            member.guild.channels.get(announce).sendMessage(member.user.username + " has left the server.");
+          } else if (r !== '') {
+            member.guild.channels.get(announce).sendMessage(member.user.username + r);
+          }
+        });
+      });
+    }
+   }) 
   };
 });
 
