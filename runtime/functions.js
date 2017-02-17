@@ -1,183 +1,326 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
-var serverDB = require("./server_rt.js");
+var guildDB = require("./guild_rt.js");
 var permissionDB = require("./permission_rt.js");
 var factionDB = require("./faction_rt.js");
 var mangaDB = require("./manga_track_rt.js");
+var redditDB = require("./reddit_rt.js");
 
-var aniscrape = require("aniscrape");
-var kissanime = require("aniscrape-kissanime")
+var Discord = require("discord.js");
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
 var nedb = require("nedb")
 var request = require("request");
 var youtubeNode = require("youtube-node");
 var ytdl = require("ytdl-core");
 
-var reddit = require('redwrap');
-var lastID = 0
+exports.checkManga = function(bot) {
+  var timercheck = 30000;
+  var check = function() {
+  mangaDB.getAll().then(function(mangaArray) {
+    var request = require("request");
+    request('http://mangastream.com/rss', function(error, response, body) {
+      if (error) {
+        console.log(error)
+      } else {
+        for (manga of mangaArray) {
+          (function(m, b) {
+            var mangatag = m.url.substr(29);
+              if ((parseInt(m.chapter)+1) < 10) {
+                chapnum = '00' + (parseInt(m.chapter)+1).toString()
+              } else if ((parseInt(m.chapter)+1) < 100) {
+                chapnum = '0' + (parseInt(m.chapter)+1).toString()
+              } else {
+                chapnum = (parseInt(m.chapter)+1).toString()
+              }
+              //*TODO*
+              //Change this so that chapnum is any number greater than the current chapter number
+              if (b.search('<link>http://mangastream.com/read/' + mangatag + '/' + chapnum) !== -1) {
 
-exports.checkManga = function(bot, channel) {
-	var timercheck = 20000;
-	var check = function() {
-	mangaDB.getAll().then(function(mangaArray) {
-		for (m of mangaArray) {
-			var mangatag = m.url.substr(29);
-			request(m.url, function(error, response, body) {
-				console.log("checking");
-				if (body.search( '<a href="http://mangastream.com/r/' + mangatag + '/' + (parseInt(m.chapter)+1)) !== -1) {
-					var n = body.search('http://mangastream.com/r/' + mangatag + '/')
-					bot.sendMessage(channel, "@everyone, " + body.substr(n, 45));
-					mangaDB.updateChapter(m._id, body.substr(n+35, 3));
-					//timercheck = 345600000;
-				}
-			})
-		}
-	});
-	}
-	var timer = setInterval(check, timercheck);
+                var temp = ('http://mangastream.com/read/' + mangatag + '/').length
+                var begin = b.search( 'http://mangastream.com/read/' + mangatag + '/') + temp
+                var othertemp = b.substr(begin)
+                var linktemp = othertemp.indexOf('<')
+                var end = othertemp.indexOf("/")
+
+                mangaDB.updateChapter(m._id, b.substr(begin, end));
+                for (j = 0; j < m.guild_channel_array.length; j++) {
+                  (function(x) {
+                    if (m.guild_channel_array[x].mention != "") {
+                      bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage(`@${m.guild_channel_array[x].mention} New chapter of: ` + b.substr(begin-temp, temp+linktemp));
+                    } else {
+                      bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
+                    }
+                  })(j)
+                }
+                for (i = 0; i < m.pm_array.length; i++) {
+                  (function(x) {
+                    bot.users.get(m.pm_array[x]).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
+                  })(i)
+                }
+              }
+          })(manga, body)
+        }
+      }
+    })
+  });
+  }
+  check();
+  var timer = setInterval(check, timercheck);
 };
 
-exports.checkReddit = function(bot, channel) {
-	var checkR = function() {
-		console.log("checking reddit");
-		console.log(lastID);
-		if (lastID == 0) {
-			reddit.r('OnePiece').new().limit(25, function(err, data, res) {
-				if (err) {
-					console.log(err);
-				} else {
-					var msgArray = [];
-					msgArray.push('\n\n\n────────────────────────────────────────────────────────────────────────\n');
-					msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/OnePiece*');
-					if (data.data.children[0].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
-						msgArray.push('*https://redd.it/' + data.data.children[0].data.id + '*\n');
-						msgArray.push('**' + data.data.children[0].data.title + '**:');
-						msgArray.push(data.data.children[0].data.selftext + "\n\n\n\n");
-					} else {
-						msgArray.push('\n**' + data.data.children[0].data.title + '**');
-						msgArray.push(data.data.children[0].data.url + '\n');
-					}
-					bot.sendMessage(channel, msgArray)
-					lastID = data.data.children[0].data.name
-				}
-			});
-		} else {
-			reddit.r('OnePiece').new().before(lastID).limit(25, function(err, data, res) {
-				console.log(lastID);
-				if (err) {
-					console.log(err);
-				} else {
-					for (i = 0; i < data.data.children.length; i++) {
-						if (data.data.children[i].data.name != lastID) {
-							var msgArray = [];
-							msgArray.push('\n\n\n────────────────────────────────────────────────────────────────────────\n');
-							msgArray.push('*Posted by /u/' + data.data.children[0].data.author + ' in /r/OnePiece*');
-							if (data.data.children[i].data.url == 'https://www.reddit.com' + data.data.children[0].data.permalink) {
-								msgArray.push('*https://redd.it/' + data.data.children[i].data.id + '*\n');
-								msgArray.push('**' + data.data.children[i].data.title + '**:');
-								msgArray.push(data.data.children[i].data.selftext + "\n\n\n\n");
-							} else {
-								msgArray.push('\n**' + data.data.children[i].data.title + '**');
-								msgArray.push(data.data.children[i].data.url)+ '\n';
-							}
-							bot.sendMessage(channel, msgArray)
-							lastID = data.data.children[0].data.name
-							console.log(data.data.children[i].data.name);
-						}
-						console.log(data.data.children[i].data.name);
-					}
-				}
-			});
-		}
-	}
-	var timer = setInterval(checkR, 20000);
+exports.initMangaDB = function() {
+  request('http://mangastream.com/manga', function(error, response, body) {
+    var start = body.indexOf('<table class="table table-striped">')
+    var end = body.indexOf('</table>')
+
+    var urlArray = body.substring(start, end).match(/http:[/]{2}mangastream[.]com[/]r[/]\w+[/][^/]+[/]/g);
+    var altUrlArray = body.substring(start, end).match(/http:[/]{2}mangastream[.]com[/]manga[/]\w+/g);
+    
+    for (i=0; i < urlArray.length; i++) {
+      (function(url, altUrl) {
+        var temp = url.substring(25, url.length-1)
+        var chapter = temp.substring(temp.indexOf("/")+1)
+        var name = temp.substring(0, temp.indexOf("/"))
+
+        mangaDB.check(altUrl).then(function(r) {
+          if (r == "No doc found" ) {
+            mangaDB.trackManga(altUrl, chapter, name)
+          }
+        })
+      })(urlArray[i], altUrlArray[i])
+    }
+  })
+};
+
+//*TODO* Create embeds instead of sending formatted messages.
+exports.checkReddit = function(bot) {
+  var rID = null;
+
+  var checkR = function() {
+    var rawjs = require('raw.js');
+    var reddit = new rawjs("DekuBot v1.0.0 by RoddersGH");
+
+    if (rID == null) {
+      reddit.new({
+        "r": "all",
+        "limit": 100,
+        "all": true
+      }, function(error, response) {
+
+
+        rID = response.children[0].data.name;
+        redditDB.getAll().then(function(redditArray) {
+             for (reddit of redditArray) {
+               (function(red) {
+
+                var post_array = [];
+                for (i = 0; i < response.children.length; i++) {
+
+                  if (response.children[i].data.subreddit == red.subreddit_name) {
+
+                    if (red.last_id == 0) {
+                      post_array.push(response.children[i].data)
+                    }
+                    else if (response.children[i].data.name == red.last_id) {
+                        break;
+                    } else {
+
+                        post_array.push(response.children[i].data);
+                    }
+                  }
+                }
+
+                if (post_array.length > 0) {
+                  redditDB.updateLastPost(red._id, post_array[0].name);
+                }
+
+                for (j = post_array.length-1; j >= 0; j--) {
+
+                  var data = new Discord.RichEmbed(data);
+
+                  data.setTitle(post_array[j].title)
+                  data.setURL(`https://redd.it/${post_array[j].id}`)
+                  data.setTimestamp()
+                  data.setAuthor(`Posted by /u/${post_array[j].author} in /r/${red.subreddit_name}`, "https://cdn.discordapp.com/attachments/239907411899580417/282016131848339458/fullxfull.png")
+                  data.setColor("#FF4500")
+
+                  if (post_array[j].url == 'https://www.reddit.com' + post_array[j].permalink) {
+                    if (post_array[j].selftext.length > 2048) {
+                      data.setDescription(post_array[j].selftext.substring(0, 2040) + '...')
+                    } else {
+                      data.setDescription(post_array[j].selftext)
+                    }  
+                  } else {
+                    if (post_array[j].url.includes("imgur")) {
+                      data.setImage("http://i." + post_array[j].url.substring(7).replace(/amp;/g, "") + ".jpg")
+                    } else {
+                      data.setImage(post_array[j].url.replace(/amp;/g, ""))
+                    }
+                      
+                  }
+
+                  bot.channels.get(red.channel_id).sendEmbed(data)
+
+                }
+              })(reddit)
+            }
+        })
+      })
+    } else {
+      reddit.new({
+        "r": "all",
+        "before": rID,
+        "limit": 100,
+        "all": true
+      }, function(error, response) {
+        if (error) {
+          console.log(error);
+        } else {
+          
+
+          if (response.children == [] || response.children[0] == undefined) {
+
+          } else {
+            rID = response.children[0].data.name;
+            redditDB.getAll().then(function(redditArray) {
+               for (reddit of redditArray) {
+                
+                 (function(red) {
+                  
+                  var post_array = [];
+                  for (i = 0; i < response.children.length; i++) {
+
+                    if (response.children[i].data.subreddit == red.subreddit_name) {
+
+                      if (red.last_id == 0) {
+                        post_array.push(response.children[i].data)
+                      }
+                      else if (response.children[i].data.name == red.last_id) {
+                          break;
+                      } else {
+
+                          post_array.push(response.children[i].data);
+                      }
+                    }
+                  }
+
+                  if (post_array.length > 0) {
+                    redditDB.updateLastPost(red._id, post_array[0].name);
+                  }
+
+                  for (j = post_array.length-1; j >= 0; j--) {
+                      
+                    var data = new Discord.RichEmbed(data);
+
+                    data.setTitle(post_array[j].title)
+                    data.setURL(`https://redd.it/${post_array[j].id}`)
+                    data.setTimestamp()
+                    data.setAuthor(`Posted by /u/${post_array[j].author} in /r/${red.subreddit_name}`, "https://cdn.discordapp.com/attachments/239907411899580417/282016131848339458/fullxfull.png")
+                    data.setColor("#FF4500")
+
+                    if (post_array[j].url == 'https://www.reddit.com' + post_array[j].permalink) {
+                      if (post_array[j].selftext.length > 2048) {
+                        data.setDescription(post_array[j].selftext.substring(0, 2040) + '...')
+                      } else {
+                        data.setDescription(post_array[j].selftext)
+                      }  
+                    } else {
+                      if (post_array[j].url.includes("imgur")) {
+                        data.setImage("http://i." + post_array[j].url.substring(7).replace(/amp;/g, "") + ".jpg")
+                      } else {
+                        data.setImage(post_array[j].url.replace(/amp;/g, ""))
+                      }
+                    }
+
+                    bot.channels.get(red.channel_id).sendEmbed(data)
+
+                  }
+                })(reddit)
+              }
+            })
+          }
+        }
+      })
+    }
+
+  }
+  checkR();
+  var timer = setInterval(checkR, 10000);
 };
 
 exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
   return new Promise(function(resolve, reject) {
     try {
-      bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
-				if (error) {
-					bot.sendMessage(msg.channel, error);
-					return;
-				}
-				bot.getChannelLogs(msg.channel, 100, {after: msg}, function(error, messages) {
-					for (var i = 0; i < 100; i++) {
-						if (messages[i].author.id == user.id) {
-							var response = messages[i].content.toLowerCase();
-							resolve(response);
-							break;
-						}
-					}
-				})
-	  	});
+      msg.channel.sendMessage(promptmsg);
+
+      var id = 0;
+      var responseCollector = msg.channel.createCollector(
+        function(message, collector) {
+          if (message.author.id == msg.author.id) {
+            return true;
+          }
+          return false;
+        }, {time: 300000});
+
+      responseCollector.on('message', (message, collector) => {
+        id = message.id
+        collector.stop('recieved');
+      });
+
+      responseCollector.on('end', (collection, reason) => {
+        if (reason == 'recieved') {
+          resolve(collection.get(id).content);
+        }
+        if (reason == 'time') {
+          resolve('A message was not recieved');
+        }
+      });
     } catch (e) {
       reject(e);
     }
   });
 };
 
-exports.responseHandling = function(bot, msg, promptmsg, user, server) {
-	console.log("here");
-	bot.awaitResponse(msg, promptmsg, {}, function(error, message) {
-		if (error) {
-			bot.sendMessage(msg.author, error);
-			return;
-		}
-		bot.getChannelLogs(msg.author, 100, {after: msg}, function(error, messages) {
-			for (var i = 0; i < 100; i++) {
-				if (messages[i].author.id == user.id) {
-					var response = messages[i].content.toLowerCase();
-					var responsechannel = messages[i].channel;
-					exports.choice(bot, user, server, response, responsechannel);
-					break;
-				}
-			}
-		})
-	});
+exports.responseHandling = function(msg, user, guild, guildFactions) {
+  user.sendMessage(msg).then(mesg => {
+    var id = 0;
+    var response = "";
+    var responsechannel = "";
+    var responseCollector = mesg.channel.createCollector(
+      function(message, collector) {
+        if (message.author.id == user.id) {
+          return true;
+        }
+        return false;
+      }, {time: 300000});
+    responseCollector.on('message', (message, collector) => {
+      id = message.id
+      collector.stop('recieved');
+    });
+
+    responseCollector.on('end', (collection, reason) => {
+      if (reason == 'recieved') {
+        response = collection.get(id).content
+        exports.choice(user, guild, response, guildFactions);
+      }
+    });
+  })
 };
 
-exports.choice = function (bot, user, server, response, responsechannel) {
-	if (response === "1" || response === "one" || response === "pirate" || response === "pirates") {
-		factionDB.getFactionID(server.id, "pirate").then(function(r) {
-			userDB.addToFaction(user, r);
-		});
-		var currentrole = server.roles.get("name", "pirate")
-		bot.addUserToRole(user, currentrole, function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		bot.sendMessage(responsechannel, "Thanks for choosing the Pirates!");
-	}
-	else if (response === "2" || response === "two" || response === "marine" || response === "marines") {
-		factionDB.getFactionID(server.id, "marine").then(function(r) {
-			userDB.addToFaction(user, r);
-		});
-		var currentrole = server.roles.get("name", "marine")
-		bot.addUserToRole(user, currentrole, function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		bot.sendMessage(responsechannel, "Thanks for choosing the Marines!");
-	}
-	else if (response === "3" || response === "three" || response === "revolutionary" || response === "army" || response === "revolutionary army") {
-		factionDB.getFactionID(server.id, "revolutionary army").then(function(r) {
-			userDB.addToFaction(user, r);
-		});
-		var currentrole = server.roles.get("name", "revolutionary army")
-		bot.addUserToRole(user, currentrole, function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		bot.sendMessage(responsechannel, "Thanks for choosing the Revolutionary Army!");
-	} else {
-		bot.sendMessage(responsechannel, "Im sorry, but that response doesn't match any of the faction options listed above. \nTo choose a faction, type the number next to the faction name you wish to join <3", function(err, message) {
-			message.author = user;
-			responseHandling(bot, message, " ", user, server.id);
-		});
-
-	}
+exports.choice = function (user, guild, response, guildFactions) {
+  var found = false
+  for (i = 1; i < guildFactions.length+1; i++) {
+    if (response == i.toString()) {
+      var currentrole = guild.roles.get(guildFactions[i-1])
+      guild.members.get(user.id).addRole(currentrole).then(member => {
+        member.sendMessage(`Thanks for choosing the faction **${currentrole.name}**`);
+      })
+      found = true
+    }
+    if (found == false && i == guildFactions.length) {
+      user.sendMessage("Im sorry, but that response doesn't match any of the faction options listed above.").then(message => {
+        exports.responseHandling("**To choose a faction, type the number next to the faction name you wish to join <3 **", user, guild, guildFactions)
+      });
+    }
+  }
 };

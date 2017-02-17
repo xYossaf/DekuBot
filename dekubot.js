@@ -1,17 +1,19 @@
 var config = require("./config.json");
 var userDB = require("./runtime/user_rt.js");
-var serverDB = require("./runtime/server_rt.js");
+var guildDB = require("./runtime/guild_rt.js");
 var permissionDB = require("./runtime/permission_rt.js");
 var factionDB = require("./runtime/faction_rt.js");
 var Commands = require("./runtime/commands.js").Commands;
 var functions = require("./runtime/functions.js");
+var battle = require("./runtime/battle_rt.js");
+var customcommands = require("./runtime/custom_command_rt.js");
+var redditDB = require("./runtime/reddit_rt.js");
 
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
-var reddit = require('redwrap');
 var mangaDB = require("./runtime/manga_track_rt.js");
-
-var dekubot = new Discord.Client({forceFetchUsers: true});
+var winston = require('winston');
+var dekubot = new Discord.Client({fetchAllMembers: true});
 var youtubeNode = new youtubeNode();
 var authorpermissionlvl = null;
 
@@ -23,206 +25,443 @@ var exitloop = null;
 youtubeNode.setKey(config.youtube);
 
 if (config.token_mode ===  true) {
-	dekubot.loginWithToken(config.token);
+  dekubot.login(config.token);
 } else if (config.token_mode ===  false) {
-	console.log("well fuck");
+  console.log("well fuck");
 } else {
-	console.log("well even more fuck");
+  console.log("well even more fuck");
 }
 
-dekubot.on("serverCreated", function(server) {
-	if (server.id == config.server_id) {																								//IDSPECIFIC
-	serverDB.check(server).catch(function() {
-	serverDB.newServer(server).catch(function(e) {
-        console.log(e);
-		});
-	});
-	permissionDB.SuperUserPermission(server);
-	var msgArray = [];
-	msgArray.push("Hey! I'm " + dekubot.user.username);
-	if (config.token_mode === true) {
-		msgArray.push("Someone with `manage server` permissions invited me to this server via OAuth.");
-	} else {
-		msgArray.push('I followed an instant-invite from someone.');
-	}
-	msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
-	msgArray.push("Else, just kick me.");
-	dekubot.sendMessage(server.defaultChannel, msgArray);
-	}
+var commandLogger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({
+      name: 'command-file',
+      filename: 'filelog-command.log',
+      level: 'info'
+    })
+  ]
 });
 
-dekubot.on("ready", function() {
-	var server = dekubot.servers.get("id", config.server_id)                                        //IDSPECIFIC
-	var channel = server.channels.get("name", "general")
-	functions.checkManga(dekubot, channel);
-	functions.checkReddit(dekubot, channel);
+var logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({
+      name: 'info-file',
+      filename: 'filelog-info.log',
+      level: 'info'
+    }),
+    new (winston.transports.File)({
+      name: 'error-file',
+      filename: 'filelog-error.log',
+      level: 'error'
+    })
+  ]
+});
+
+
+
+dekubot.on("guildCreate", (guild) => {
+
+    logger.log('info', `Joined the guild ${guild.name}, ${guild.id}`)
+    guildDB.check(guild).catch(function() {
+      guildDB.newGuild(guild).catch(function(e) {
+          console.log(e);
+      });
+    });
+
+    permissionDB.SuperUserPermission(guild);
+
+    var msgArray = [];
+
+    msgArray.push("Hey! I'm " + dekubot.user.username);
+
+    if (config.token_mode === true) {
+      msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
+    } else {
+      msgArray.push('I followed an instant-invite from someone.');
+    }
+
+    msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
+    msgArray.push("Else, just kick me.");
+
+    guild.defaultChannel.sendMessage(msgArray);
+
+});
+
+dekubot.on("guildDelete", (guild) => {
+  logger.log('info', `left the guild ${guild.name}, ${guild.id}`)
+  mangaDB.deleteAllHere(guild);
+  redditDB.deleteAllHere(guild);
+  permissionDB.deleteAllHere(guild);
+  factionDB.deleteAllHere(guild);
+  customcommands.deleteAllHere(guild);
+  guildDB.deleteGuild(guild);
+});
+
+dekubot.on("channelDelete", (channel) => {
+  guildDB.get(channel.guild.id).then(function(r) {
+    if (channel.id == r.announcmentchannel) {
+      guildDB.setAnnouncementChannel(channel.guild.defaultChannel)
+      dekubot.users.get(r.superuser_id).sendMessage(`The bot announcment channel (``${channel.name}``)
+       on ``${channel.guild.name}`` has been deleted. Therefore the announcement channel has been
+        set to ${channel.guild.defaultChannel.name} by default.`)
+    }
+  })
+  mangaDB.getAll().then(function(r) {
+    for (i = 0; i < r.length; i++) {
+      for (j = 0; j < r[i].guild_channel_array.length; j++) {
+        if (r[i].guild_channel_array[j].channel_id == channel.id) {
+          mangaDB.removeGuildChannel(r[i]._id, r[i].guild_channel_array[j])
+          dekubot.users.get(r.superuser_id).sendMessage(`The channel (``${channel.name}``) 
+            on ``${channel.guild.name}`` has been deleted. Therefore the manga ``${r[i].aliases[0]}`` being tracked in this channel is no longer being tracked on the server.`)
+        }
+      }
+    }
+  })
+});
+
+var cooldownArray = []
+
+dekubot.on("ready", () => {
+
+  for (j = 0; j < dekubot.guilds.array().length; j++) {
+    var commandArray = [] 
+    Object.keys(Commands).forEach(function (key) {
+      commandArray.push({name: key, lastTS: 0})
+    });
+    cooldownArray.push({guildID: dekubot.guilds.array()[j].id, tsArray: commandArray})
+  }  
+
+  logger.log('info', "I'm ready!")
+  for (i = 0; i < dekubot.guilds.array().length; i++) {
+    guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {
+      if (e == 'Nothing found!') {
+        guildDB.newGuild(dekubot.guilds.array()[i]);
+
+        permissionDB.SuperUserPermission(dekubot.guilds.array()[i]);
+
+        var msgArray = [];
+
+        msgArray.push("Hey! I'm " + dekubot.user.username);
+
+        if (config.token_mode === true) {
+          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
+        } else {
+          msgArray.push('I followed an instant-invite from someone.');
+        }
+
+        msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
+        msgArray.push("Else, just kick me.");
+
+        dekubot.guilds.array()[i].defaultChannel.sendMessage(msgArray);
+      }
+    })
+  }
+  
+  functions.initMangaDB()
+  functions.checkManga(dekubot);
+  functions.checkReddit(dekubot);
 });
 
 //Bot start:
-dekubot.on("message", function(message) {
+dekubot.on("message", (message) => {
+  if (message.author.id == dekubot.user.id) {
+    return;
+  } else if (message.channel.type == 'dm' || message.channel.type == 'group') {
+    return;
+  } else {
 
-if (message.author.id == dekubot.user.id) {
-	return;
-} else if (message.channel.isPrivate) {
-	return;
-} else if (message.server.id != config.server_id) {														//IDSPECIFIC
-	return;
-} else {
- serverDB.checkIgnore(message.channel).then(function(r) {
-  userDB.check(message.author).catch(function() {
-    userDB.trackUser(message.author).catch(function(e) {
-        console.log(e);
+    guildDB.check(message.guild).catch(function(e) {
+      if (e == 'Nothing found!') {
+        guildDB.newGuild(message.guild);
+
+        permissionDB.SuperUserPermission(message.guild);
+
+        var msgArray = [];
+
+        msgArray.push("Hey! I'm " + dekubot.user.username);
+
+        if (config.token_mode === true) {
+          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
+        } else {
+          msgArray.push('I followed an instant-invite from someone.');
+        }
+
+        msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
+        msgArray.push("Else, just kick me.");
+
+        message.guild.defaultChannel.sendMessage(msgArray);
+      }
+    })
+
+   guildDB.checkIgnore(message.channel).then(function(r) {
+    userDB.check(message.author).catch(function() {
+      userDB.trackUser(message.author).catch(function(e) {
+          console.log(e);
+      });
     });
-  });
-  permissionDB.check(message.channel.server.id, message.author.id).catch(function() {
-    permissionDB.newPermission(message.channel.server, message.author).catch(function(e) {
-        console.log(e);
+    permissionDB.check(message.channel.guild.id, message.author.id).catch(function() {
+      permissionDB.newPermission(message.channel.guild, message.author).catch(function(e) {
+          console.log(e);
+      });
     });
-  });
-  var temp = message.content.toLowerCase();
-  var words = temp.split(' ');
-  var firstWord = words[0];
-  var args = message.content.substr(message.content.indexOf(" ") + 1);
+    var temp = message.content.toLowerCase();
+    var words = temp.split(' ');
+    var firstWord = words[0];
+    var args = message.content.substr(words[0].length+1);
 
+    //Commands
+    guildDB.getPrefix(message.guild.id).then(function(p) {
 
-  //Commands
-  if (firstWord.charAt(0) == '!') {
-		permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
-			authorpermissionlvl = r;
-			var command = firstWord.slice(1);
-	    if (authorpermissionlvl >= Commands[command].lvl) {
-				Commands[command].func(dekubot, message, args);
-			} else {
-				dekubot.sendMessage(message.channel, "You dont have a high enough permission level to use this command.")
-			}
-		});
-  }
-}).catch(function(e) {
+      if (firstWord.substr(0, p.length) === p) {
+        permissionDB.getPermission(message.channel.guild.id, message.author.id).then(function(r) {
+          authorpermissionlvl = r;
+          var command = firstWord.slice(p.length);
+          customcommands.getAllHere(message.guild).then(function(r) {
+            if (r != 'No custom commands found') {
+              for (i = 0; i < r.length; i++) {
+                if (r[i].name == command && message.guild.id == r[i].guild_id && authorpermissionlvl >= r[i].lvl) {
+                  message.channel.sendMessage(r[i].text);
+                }
+              }
+            }
+          }).catch(function(e) {
+            console.log(e)
+          })
+          if (authorpermissionlvl >= Commands[command].lvl) {
+            if (Commands[command].type == 'nsfw') {
+              guildDB.checkNSFW(message.channel).then(function(r) {
+                if (r != 'Channel is not nsfw') {
+                  console.log(r);
+                } else {
+                  message.channel.sendMessage(r);
+                }
+              }).catch(function(e) {
+                if (e != 'This channel is nsfw') {
+                  console.log(e);
+                } else {
+                  for (x = 0; x < cooldownArray.length; x++) {
+                    (function (i) {
+                      if (cooldownArray[i].guildID == message.guild.id) {
+                        for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                          if (cooldownArray[i].tsArray[j].name == command) {
+                            if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                              Commands[command].func(dekubot, message, args);
+                              commandLogger.log('info', `${command}`, {
+                                guildID: message.guild.id,
+                                guildName: message.guild.name,
+                                channel: message.channel.id, 
+                                authorID: message.author.id, 
+                                authorName: message.author.name
+                              })
+                              cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                            }
+                          }
+                        }
+                      }
+                    })(x)
+                  }
+                }
+              })
+            } else {
+              for (x = 0; x < cooldownArray.length; x++) {
+                (function (i) {
+                  if (cooldownArray[i].guildID == message.guild.id) {
+                    for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                      if (cooldownArray[i].tsArray[j].name == command) {
+                        if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                          Commands[command].func(dekubot, message, args);
+                          commandLogger.log('info', `${command}`, {
+                            guildID: message.guild.id,
+                            guildName: message.guild.name,
+                            channel: message.channel.id, 
+                            authorID: message.author.id, 
+                            authorName: message.author.name
+                          })
+                          cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                        }
+                      }
+                    }
+                  }
+                })(x)
+              }
+            }
+          } else {
+            message.channel.sendMessage("You dont have a high enough permission level to use this command.")
+          }
+        });
+      }
+    });
+  }).catch(function(e) {
     if (e) {
-		if (e != 'This channel is ignored') {
-			console.log(e);
-		}
+      if (e != 'This channel is ignored') {
+        console.log(e);
+      }
 
-		var temp = message.content.toLowerCase();
-		var words = temp.split(' ');
-		var firstWord = words[0];
-		var args = message.content.substr(message.content.indexOf(" ") + 1);
+      var temp = message.content.toLowerCase();
+      var words = temp.split(' ');
+      var firstWord = words[0];
+      var args = message.content.substr(message.content.indexOf(" ") + 1);
 
-		if (firstWord.charAt(0) == '!') {
-			permissionDB.getPermission(message.channel.server.id, message.author.id).then(function(r) {
-				authorpermissionlvl = r;
-				var command = firstWord.slice(1);
-				if (authorpermissionlvl >= 3) {
-					Commands[command].func(dekubot, message, args);
-				}
-			});
-		}
-		return;
-	}
+      guildDB.getPrefix(message.guild.id).then(function(p) {
+
+        if (firstWord.substr(0, p.length) === p) {
+          permissionDB.getPermission(message.channel.guild.id, message.author.id).then(function(r) {
+            authorpermissionlvl = r;
+            var command = firstWord.slice(p.length);
+            if (authorpermissionlvl >= 3) {
+              for (x = 0; x < cooldownArray.length; x++) {
+                (function (i) {
+                  if (cooldownArray[i].guildID == message.guild.id) {
+                    for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                      if (cooldownArray[i].tsArray[j].name == command) {
+                        if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                          Commands[command].func(dekubot, message, args);
+                          commandLogger.log('info', `${command}`, {
+                            guildID: message.guild.id,
+                            guildName: message.guild.name,
+                            channel: message.channel.id, 
+                            authorID: message.author.id, 
+                            authorName: message.author.name
+                          })
+                          cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                        }
+                      }
+                    }
+                  }
+                })(x)
+              }
+            }
+          });
+        }
+      });
+
+      return;
+    }
+  });
+  };
 });
-};
-});
 
+dekubot.on("guildMemberAdd", (member) => {
+  if (member.id == dekubot.user.id) {
+    return;
+  } else {
 
-dekubot.on("serverNewMember", function(server, user) {
-	if (user.id == dekubot.user.id || server.id != config.server_id) {												//IDSPECIFIC
-		return;
-	} else {
-    userDB.check(user).catch(function() {
-    userDB.trackUser(user).catch(function(e) {
+    userDB.check(member.user).catch(function() {
+      userDB.trackUser(member.user).catch(function(e) {
         console.log(e);
       });
-	});
-    permissionDB.check(server.id, user.id).catch(function() {
-    permissionDB.newPermission(server, user).catch(function(e) {
+    });
+
+    permissionDB.check(member.guild.id, member.id).catch(function() {
+      permissionDB.newPermission(member.guild, member.user).catch(function(e) {
         console.log(e);
       });
-	});
-	serverDB.getAnnouncementChannel(server.id).then(function(announce) {
-		serverDB.getJoinmsg(server.id).then(function(r) {
-			if (r === 'default') {
-				dekubot.sendMessage(server.channels.get("name", announce), user.mention() + " Welcome to the server!");
-			} else {
-				dekubot.sendMessage(server.channels.get("name", announce), user.mention() + r);
-			}
-		});
-	});
+    });
 
-			var msgArray = [];
-			msgArray.push("Hi! Welcome to the " + server.name + " server");
-			msgArray.push("Im the servers bot, DekuBot. I help with a bunch of things which you can check out by doing `!help`");
-			msgArray.push("I hope you have lots of fun discussing one piece with us!");
-			msgArray.push(" ");
-			msgArray.push("We have different factions on the server that give you access to exclusive channels and faction leaderboards!");
-			msgArray.push("**If you want to join a faction, type the number next to the faction you wish to join.**" );
-			msgArray.push("The factions are:" );
-			msgArray.push("1. Pirates" );
-			msgArray.push("2. Marines" );
-			msgArray.push("3. Revolutionary Army" );
+    guildDB.checkWelcomePM(member.guild.id).then(function(bool) {
+      guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
+        guildDB.getJoinmsg(member.guild.id).then(function(r) {
+          if (r === 'default') {
+            if (bool == true) {
+              member.user.sendMessage("Welcome to the " + member.guild.name + " server!" );
+            } else if (bool == false) {
+              member.guild.channels.get(announce).sendMessage(member + " Welcome to the server!");
+            }
+          } else if (r !== '') {
+            if (bool == true) {
+              member.user.sendMessage("Welcome to the " + member.guild.name + " server!\n" + r);
+            } else if (bool == false) {
+              member.guild.channels.get(announce).sendMessage(member + r);
+            }
+          }
+        });
+      });
+    })
 
-			dekubot.sendMessage(user, msgArray, {}, function(err, sentmsg) {
-				sentmsg.author = user
-				functions.responseHandling(dekubot, sentmsg, "**Which faction would you like to join?**", user, server);
-			});
-	};
+    guildDB.checkFactionPM(member.guild.id).then(function(bool) {
+
+      if (bool == true) {
+        factionDB.getFactionsHere(member.guild).then(function(guildFactions) {
+          var msgArray = [];
+
+          msgArray.push("We have different factions on the server that give you a role and coloured name.");
+          msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
+          msgArray.push("The factions are:" );
+          for (j = 0; j < guildFactions.length; j++) {
+            msgArray.push(`${j+1}. ${member.guild.roles.get(guildFactions[j]).name}` );
+          }
+          functions.responseHandling(msgArray, member.user, member.guild, guildFactions);
+        }).catch(function(e) {
+          if (e == 'No factions found') {
+
+            var msgArray = []
+
+            msgArray.push("This server has no factions in it at the moment. Message an admin if you would like for them to create factions for the server.");
+
+            member.user.sendMessage(msgArray);
+          }
+        })
+      }
+    })
+
+
+  };
 });
 
-dekubot.on("serverMemberRemoved", function(server, user) {
-	if (user.id == dekubot.user.id || server.id != config.server_id) {												//IDSPECIFIC
-		return;
-	} else {
-	permissionDB.deletePermission(server, user);
-  userDB.check(user).catch(function() {
-    userDB.trackUser(user).catch(function(e) {
+//Change so that guild members are removed from everything necessary
+dekubot.on("guildMemberRemove", function(member) {
+  if (member.id == dekubot.user.id) {
+    return;
+  } else {
+  mangaDB.removeFromAllHere(member.guild, member.user);
+  permissionDB.deletePermission(member.guild, member.user);
+  userDB.check(member.user).catch(function() {
+    userDB.trackUser(member.user).catch(function(e) {
         console.log(e);
       });
-	});
-	serverDB.getAnnouncementChannel(server.id).then(function(announce) {
-		serverDB.getLeavemsg(server.id).then(function(r) {
-			if (r === 'default') {
-				dekubot.sendMessage(server.channels.get("name", announce), user.username + " has left the server.");
-			} else {
-				dekubot.sendMessage(server.channels.get("name", announce), user.username + r);
-			}
-		});
-	});
-	};
+  });
+  guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
+    guildDB.getLeavemsg(member.guild.id).then(function(r) {
+      if (r === 'default') {
+        member.guild.channels.get(announce).sendMessage(member.user.username + " has left the server.");
+      } else if (r !== '') {
+        member.guild.channels.get(announce).sendMessage(member.user.username + r);
+      }
+    });
+  });
+  };
 });
 
-dekubot.on('presence', function(olduser, newuser) {
-	if (newuser.id == dekubot.user.id) {
-		return;
-	} else {
-//	userDB.check(newuser).catch(function() {
-//    userDB.trackUser(newuser).catch(function(e) {
-//        console.log(e);
-//      });
-//	});
+dekubot.on('presenceUpdate', function(olduser, newuser) {
+  if (newuser.id == dekubot.user.id) {
+    return;
+  } else {
+  // userDB.check(newuser).catch(function() {
+  //  userDB.trackUser(newuser).catch(function(e) {
+  //      console.log(e);
+  //    });
+  // });
     if (olduser.username === newuser.username) {
       return;
     } else try {
       userDB.nameChange(newuser);
     } catch(e) {
-		console.log(e);
-	};
-	};
+    console.log(e);
+  };
+  };
 });
 
-dekubot.on("error", function(error) {
+dekubot.on("error", (error) => {
     process.exit(0)
 });
 
-dekubot.on("disconnected", function() {
-  process.exit(0)
-});
-
 process.on('uncaughtException', function(err) {
-	if (err.code == 'ECONNRESET') {
-		console.log('Got an ECONNRESET! This is *probably* not an error. Stacktrace:');
-		console.log(err.stack);
-	} else {
-		console.log(err);
-		console.log(err.stack);
-		process.exit(0);
-	}
+  if (err.code == 'ECONNRESET') {
+    console.log('Got an ECONNRESET! This is *probably* not an error. Stacktrace:');
+    console.log(err.stack);
+  } else {
+    console.log(err);
+    console.log(err.stack);
+    process.exit(0);
+  }
 });

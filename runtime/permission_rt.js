@@ -8,43 +8,43 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.newPermission = function(server, user) {
+exports.newPermission = function(guild, user) {
   var permissiondoc = {
-	_id: (user.id.toString() + "^_^" + server.id.toString()),
+  _id: (user.id.toString() + "^_^" + guild.id.toString()),
     user_id: user.id,
-    server_id: server.id,
+    guild_id: guild.id,
     permission_lvl: 0
   };
-	db.insert(permissiondoc, function (err, result){
+  db.insert(permissiondoc, function (err, result){
     if (err) {
       console.log('Error making permission document! ' + err);
     } else if (result) {
-	  console.log('Sucess making an permissionDB doc');
+    console.log('Sucess making an permissionDB doc');
     }
   });
 };
 
-exports.SuperUserPermission = function(server) {
+exports.SuperUserPermission = function(guild) {
   var permissiondoc = {
-    _id: (server.owner.id.toString() + "^_^" + server.id.toString()),
-	user_id: server.owner.id,
-    server_id: server.id,
+    _id: (guild.owner.id.toString() + "^_^" + guild.id.toString()),
+    user_id: guild.owner.id,
+    guild_id: guild.id,
     permission_lvl: 6
   };
-	db.insert(permissiondoc, function (err, result){
+  db.insert(permissiondoc, function (err, result){
     if (err) {
       console.log('Error making permission document! ' + err);
     } else if (result) {
-	  console.log('Sucess making an permissionDB doc');
+    console.log('Sucess making an permissionDB doc');
     }
   });
 };
 
-exports.getPermission = function(serverid, userid) {
-	return new Promise(function(resolve, reject) {
+exports.getPermission = function(guild_id, userid) {
+  return new Promise(function(resolve, reject) {
     try {
       db.find({
-        _id: (userid.toString() + "^_^" + serverid.toString())
+        _id: (userid.toString() + "^_^" + guild_id.toString())
       }, function(err, res) {
         if (err) {
           return reject(err);
@@ -52,7 +52,7 @@ exports.getPermission = function(serverid, userid) {
         if (res.length === 0) {
           return reject('No user permission');
         } else {
-			resolve(res[0].permission_lvl);
+      resolve(res[0].permission_lvl);
         }
       });
     } catch (e) {
@@ -61,11 +61,11 @@ exports.getPermission = function(serverid, userid) {
   });
 };
 
-exports.setPermission = function(authorlvl, server, user, num) {
-	return new Promise(function(resolve, reject) {
+exports.setPermission = function(authorlvl, guild, user, num) {
+  return new Promise(function(resolve, reject) {
     try {
       db.find({
-        _id: (user.id.toString() + "^_^" + server.id.toString())
+        _id: (user.id.toString() + "^_^" + guild.id.toString())
       }, function(err, res) {
         if (err) {
           return reject(err);
@@ -73,18 +73,18 @@ exports.setPermission = function(authorlvl, server, user, num) {
         if (res.length === 0) {
           return reject('No user permission found');
         } else {
-			if ((res[0].permission_lvl < authorlvl) && (num < authorlvl)) {
-				db.update({
-					_id: (user.id.toString() + "^_^" + server.id.toString())
-				}, {
-					$set: {
-						permission_lvl: Number(num)
-					}
-				}, {});
-				resolve("'s permission level has been changed to " + num)
-			} else {
-				return reject("The permission level you are trying to change/change to is greater than or equal to yours");
-			}
+      if ((res[0].permission_lvl < authorlvl) && (num < authorlvl)) {
+        db.update({
+          _id: (user.id.toString() + "^_^" + guild.id.toString())
+        }, {
+          $set: {
+            permission_lvl: Number(num)
+          }
+        }, {});
+        resolve("'s permission level has been changed to " + num)
+      } else {
+        return reject("The permission level you are trying to change/change to is greater than or equal to yours");
+      }
         }
       });
     } catch (e) {
@@ -93,11 +93,11 @@ exports.setPermission = function(authorlvl, server, user, num) {
   });
 };
 
-exports.check = function(serverid, userid) {
+exports.check = function(guild_id, userid) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
-        _id: (userid.toString() + "^_^" + serverid.toString())
+        _id: (userid.toString() + "^_^" + guild_id.toString())
       }, function(err, res) {
         if (err) {
           return reject(err);
@@ -114,11 +114,36 @@ exports.check = function(serverid, userid) {
   });
 };
 
-exports.deletePermission = function(server, user) {
-	db.remove({
-		_id: (user.id.toString() + "^_^" + server.id.toString())
-	}, {},
-	function(err, numRemoved) {
-		console.log(numRemoved);
-	});
+exports.deletePermission = function(guild, user) {
+  db.remove({
+    _id: (user.id.toString() + "^_^" + guild.id.toString())
+  }, {},
+  function(err, numRemoved) {
+
+  });
+};
+
+exports.deleteAllHere = function(guild) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        guild_id: guild.id
+      }, function(err, result) {
+        if (!err || result.length > 0) {
+          for (i = 0; i < result.length; i++ ) {
+            db.remove({
+              _id: result[i]._id
+            }, {}, function(err, nr) {
+              
+              if (err) {
+                return reject(err);
+              }
+            });
+          }
+        }
+       });
+    } catch (e) {
+      reject(e);
+    }
+  });
 };
