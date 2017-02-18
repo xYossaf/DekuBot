@@ -130,7 +130,7 @@ exports.setJoinmsg = function(guild_id, message) {
           return reject(err);
         }
         if (res.length === 0) {
-          return reject('No message');
+          return reject('No guild');
         } else {
           db.update({
             _id: guild_id
@@ -139,6 +139,7 @@ exports.setJoinmsg = function(guild_id, message) {
               joinmsg: message
             }
           }, {});
+          resolve(message)
         }
       });
     } catch (e) {
@@ -187,6 +188,7 @@ exports.setLeavemsg = function(guild_id, message) {
               leavemsg: message
             }
           }, {});
+          resolve(message)
         }
       });
     } catch (e) {

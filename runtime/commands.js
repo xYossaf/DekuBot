@@ -408,7 +408,12 @@ Commands.math = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+    try {
+      msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+    } catch(e) {
+      msg.channel.sendMessage("```diff\n-" + e + "```")
+    }
+   
   }
 };
 
@@ -419,7 +424,12 @@ Commands.maths = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+    try {
+      msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+    } catch(e) {
+      msg.channel.sendMessage("```diff\n-" + e + "```")
+    }
+   
   }
 };
 
@@ -900,6 +910,57 @@ Commands.togglefactionpm = {
   }
 };
 
+Commands.setjoinmessage = {
+  name: "setjoinmessage",
+  help: "tbd",
+  type: "general",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, " " + args).then(function(r) {
+      msg.channel.sendMessage(`The new join message has been set to "${r}"`);
+    })
+  }
+};
+
+Commands.setleavemessage = {
+  name: "setleavemessage",
+  help: "tbd",
+  type: "general",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, args).then(function(r) {
+      msg.channel.sendMessage(`The new leave message has been set to "${r}"`);
+    })
+  }
+};
+
+Commands.disablejoinmessage = {
+  name: "togglefactionpm",
+  help: "tbd",
+  type: "general",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
+      msg.channel.sendMessage(`The new join message has been set to "${r}"`);
+    })
+  }
+};
+
+Commands.disableleavemessage = {
+  name: "togglefactionpm",
+  help: "tbd",
+  type: "general",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
+      msg.channel.sendMessage(`The new leave message has been set to "${r}"`);
+    })
+  }
+};
 
 
 
