@@ -153,22 +153,21 @@ Commands.botstatus = {
       };
     };
 
-    finalstring.push("Hi! Im DekuBot :robot:");
-    finalstring.push("Im currently used in ``" + bot.guilds.array().length + "`` server(s), in ``" + channelcount + "`` channels used by ``" + usercount + "`` users.");
-    finalstring.push("I've been up and ready for ``" + (Math.round(bot.uptime / (1000 * 60 * 60))) + "`` hours, ``" + (Math.round(bot.uptime / (1000 * 60)) % 60) + "`` minutes, and ``" + (Math.round(bot.uptime / 1000) % 60 + ".") + "`` seconds.");
-    finalstring.push("Memory Usage: " + Math.round(process.memoryUsage().rss / 1024 / 1000) + "MB");
-    finalstring.push("If you have any questions or need some help, contact **RoddersGH#4702**")
-    finalstring.push("```         __    __");
-    finalstring.push("        /  |  | |'-.");
-    finalstring.push("       .|__/  | |   |");
-    finalstring.push("    _ /  `._  |_|_.-'");
-    finalstring.push("   | /  |__.`=._) (_");
-    finalstring.push('   |/ ._/  |"""""""""|');
-    finalstring.push("   |'.  ` )|         |");
-    finalstring.push('   ;"""/ / |         |');
-    finalstring.push("    ) /_/| |.-------.|");
-    finalstring.push("   o  `-`o o         o  ```");
-    msg.channel.sendMessage(finalstring);
+    var data = new Discord.RichEmbed(data)
+    data.setAuthor("Hi! Im DekuBot 🤖")
+
+    data.addField("📗 Servers", bot.guilds.array().length, true)
+    data.addField("📃 Channels", channelcount, true)
+    data.addField("👤 Users", usercount, true)
+    data.addField("🐏 Memory Usage", Math.round(process.memoryUsage().rss / 1024 / 1000) + "MB", true)
+    data.addField("⏲️ Up time", (Math.round(bot.uptime / (1000 * 60 * 60))) + ":" + (Math.round(bot.uptime / (1000 * 60)) % 60) + ":" + (Math.round(bot.uptime / 1000) % 60), true)
+    data.addField("🖥️ Development Server", "https://discord.gg/we8bdxJ", true)
+    data.addField("🔗 Invite Link", "https://discordapp.com/oauth2/authorize?client_id=282126217275244545&scope=bot&permissions=2146954327", true)
+    data.setDescription("If you have any questions or need some help, contact **RoddersGH#4702**")
+    data.setThumbnail("https://cdn.discordapp.com/attachments/239907411899580417/282597112485642241/pretty_much_finished.png")
+    data.setColor("#66D6CC")
+    
+    msg.channel.sendEmbed(data);
   }
 };
 
@@ -468,6 +467,18 @@ Commands.server = {
       }
       msg.channel.sendEmbed(data)
     }
+  }
+};
+
+Commands.setavater = {
+  name: "setavatar",
+  help: "tbd",
+  lvl: 6,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+   if (msg.author.id === config.dev_id) {
+    bot.user.setAvatar(args)
+   }
   }
 };
 
@@ -887,7 +898,7 @@ Commands.setprefix = {
 Commands.togglewelcomepm = {
   name: "togglewelcomepm",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -900,7 +911,7 @@ Commands.togglewelcomepm = {
 Commands.togglefactionpm = {
   name: "togglefactionpm",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -913,7 +924,7 @@ Commands.togglefactionpm = {
 Commands.setjoinmessage = {
   name: "setjoinmessage",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -926,7 +937,7 @@ Commands.setjoinmessage = {
 Commands.setleavemessage = {
   name: "setleavemessage",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -939,7 +950,7 @@ Commands.setleavemessage = {
 Commands.disablejoinmessage = {
   name: "togglefactionpm",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -952,7 +963,7 @@ Commands.disablejoinmessage = {
 Commands.disableleavemessage = {
   name: "togglefactionpm",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
