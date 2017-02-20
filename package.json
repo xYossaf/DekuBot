@@ -16,7 +16,8 @@
     "opusscript": "^0.0.1",
     "uws": "^0.12.0",
     "erlpack": "hammerandchisel/erlpack#master",
-    "ytdl-core": "^0.7.17"
+    "ytdl-core": "^0.7.17",
+    "mathjs": "^3.9.2"
   },
   "name": "dekubot",
   "description": "Dekubot is a discord chat-bot that really has no specific purpose besides making me (RoddersGH) sleep easy at night.\r Check the wiki for basically everything.",
