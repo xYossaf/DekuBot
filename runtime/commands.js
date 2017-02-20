@@ -153,6 +153,12 @@ Commands.botstatus = {
       };
     };
 
+    var seconds = (Math.round(bot.uptime / 1000) % 60)
+    var minutes = (Math.round(bot.uptime / (1000 * 60)) % 60)
+    var hours = (Math.round(bot.uptime / (1000 * 60 * 60)))
+    minutes = (minutes < 10) ? "0" + minutes : minutes;
+    seconds = (seconds < 10) ? "0" + seconds : seconds;
+
     var data = new Discord.RichEmbed(data)
     data.setAuthor("Hi! Im DekuBot 🤖")
 
@@ -160,7 +166,7 @@ Commands.botstatus = {
     data.addField("📃 Channels", channelcount, true)
     data.addField("👤 Users", usercount, true)
     data.addField("🐏 Memory Usage", Math.round(process.memoryUsage().rss / 1024 / 1000) + "MB", true)
-    data.addField("⏲️ Up time", (Math.round(bot.uptime / (1000 * 60 * 60))) + ":" + (Math.round(bot.uptime / (1000 * 60)) % 60) + ":" + (Math.round(bot.uptime / 1000) % 60), true)
+    data.addField("⏲️ Up time", hours + ":" + minutes + ":" + seconds, true)
     data.addField("🖥️ Development Server", "https://discord.gg/we8bdxJ", true)
     data.addField("🔗 Invite Link", "https://discordapp.com/oauth2/authorize?client_id=282126217275244545&scope=bot&permissions=2146954327", true)
     data.setDescription("If you have any questions or need some help, contact **RoddersGH#4702**")
