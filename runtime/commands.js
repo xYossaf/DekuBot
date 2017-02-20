@@ -13,6 +13,8 @@ var math = require('mathjs');
 var Discord = require("discord.js");
 var winston = require('winston');
 var jimp = require("jimp");
+var gm = require("gm");
+var request = require("request");
 var parseString = require('xml2js').parseString;
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
 var nedb = require("nedb")
@@ -252,17 +254,22 @@ Commands.rip = {
     if (url == null) {
       msg.reply("Sorry, you need a profile picture to use this command.")
       return;
-    } else if (url.search("gif") === -1) {
-      jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
-        jimp.read(url, function (err, avatar) {
-          avatar.resize(90, 90).sepia().opacity(0.5);
-          image.composite(avatar, 100, 68);
-          var path = './runtime/jimprepo/gravepic.png'
-          image.write(path, function(err) {
-            msg.channel.sendFile(path)
-          })
+    } else {
+      gm(request(url))
+        .resize(90)
+        .raise(3,3)
+        //.emboss(1)
+        .noise('laplacian')
+        .sepia()
+        .write('./runtime/jimprepo/tempavatar.png',function (err, buffer) {
+          if (err) {console.log(err)}
+          gm('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png')
+            .composite('./runtime/jimprepo/tempavatar.png')
+            .geometry('+102+68')
+            .toBuffer('PNG',function (err, buffer) {
+              msg.channel.sendFile(buffer)
+            })
         })
-      });
     }
   }
 };
@@ -347,20 +354,41 @@ Commands.triggered = {
     }
     if (url == null) {
       msg.reply("Sorry, you need a profile picture to use this command.")
-      return;
-    } else if (url.search("gif") === -1) {
-      jimp.read(url, function (err, avatar) {
-        jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
-          avatar.resize(150, 150);
-          triggered.resize(150, jimp.AUTO);
-          avatar.composite(triggered, 0, 123);
-          var path = './runtime/jimprepo/trigpic.png'
-          avatar.write(path, function(err) {
-            msg.channel.sendFile(path)
-          })
+    } else {
+      gm(request(url))
+        .resize(150)
+        .composite('./runtime/jimprepo/triggered.png')
+        .geometry('+0+123')
+        .toBuffer('PNG',function (err, buffer) {
+          msg.channel.sendFile(buffer)
         })
-      });
     }
+    //Possible alt version for the gifs moving
+      // var gifLength = 0
+      // gm(request(url))
+      //   .identify(function (err, gifVal) {
+      //     gifLength = gifVal.Format.length
+      //     gm(request(url))
+      //       .write('./runtime/jimprepo/temp.gif',function (err) {
+      //         for (i = 0; i < gifLength; i++) {
+      //             gm(`./runtime/jimprepo/temp.gif[${i}]`)
+      //               .resize(150)
+      //               .composite('./runtime/jimprepo/triggered.png')
+      //               .geometry('+0+123')
+      //               .write(`./runtime/jimprepo/temp${i}.jpg`,function (err) {
+      //                 if (err) {console.log(err)}
+      //               })
+      //             if (i == gifLength-1) {
+      //               var evalString = "gm()"
+      //               for (j = 0; j < gifLength; j++) {
+      //                 evalString = evalString + `.in('./runtime/jimprepo/temp${j}.jpg')`
+      //               }
+      //               evalString = evalString + ".delay(8).write('./runtime/jimprepo/trig.gif', function(err){if (err) throw err;msg.channel.sendFile('./runtime/jimprepo/trig.gif')});"
+      //               eval(evalString)
+      //             }
+      //         }
+      //     })
+      //   })
   }
 };
 
@@ -476,7 +504,7 @@ Commands.server = {
   }
 };
 
-Commands.setavater = {
+Commands.setavatar = {
   name: "setavatar",
   help: "tbd",
   lvl: 6,
@@ -487,7 +515,6 @@ Commands.setavater = {
    }
   }
 };
-
 
 
 
