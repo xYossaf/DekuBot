@@ -135,22 +135,24 @@ dekubot.on("ready", () => {
     }  
   }
   logger.log('info', "I'm ready!")
-  for (i = 0; i < dekubot.guilds.array().length; i++) {
-    guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {
-      if (e == 'Nothing found!') {
-        guildDB.newGuild(dekubot.guilds.array()[i]);
+  for (x = 0; x < dekubot.guilds.array().length; x++) {
+    (function(i) {
+      guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {
+        if (e == 'Nothing found!') {
+          guildDB.newGuild(dekubot.guilds.array()[i]);
 
-        permissionDB.SuperUserPermission(dekubot.guilds.array()[i]);
+          permissionDB.SuperUserPermission(dekubot.guilds.array()[i]);
 
-        var msgArray = [];
+          var msgArray = [];
 
-        msgArray.push("Hey! I'm " + dekubot.user.username);
-        msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
-        msgArray.push("Else, just kick me.");
+          msgArray.push("Hey! I'm " + dekubot.user.username);
+          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
+          msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
+          msgArray.push("Else, just kick me.");
 
-        dekubot.guilds.array()[i].defaultChannel.sendMessage(msgArray);
-      }
+          dekubot.guilds.array()[i].defaultChannel.sendMessage(msgArray);
+        }
+      })
     })
   }
   
