@@ -24,12 +24,10 @@ var exitloop = null;
 //config stuff
 youtubeNode.setKey(config.youtube);
 
-if (config.token_mode ===  true) {
+if (config.token_mode) {
   dekubot.login(config.token);
-} else if (config.token_mode ===  false) {
-  console.log("well fuck");
 } else {
-  console.log("well even more fuck");
+  console.log("well fuck");
 }
 
 var commandLogger = new (winston.Logger)({
@@ -81,7 +79,7 @@ dekubot.on("guildCreate", (guild) => {
 
     msgArray.push("Hey! I'm " + dekubot.user.username);
 
-    if (config.token_mode === true) {
+    if (config.token_mode) {
       msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
     } else {
       msgArray.push('I followed an instant-invite from someone.');
@@ -156,7 +154,7 @@ dekubot.on("ready", () => {
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
 
-        if (config.token_mode === true) {
+        if (config.token_mode) {
           msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         } else {
           msgArray.push('I followed an instant-invite from someone.');
@@ -193,7 +191,7 @@ dekubot.on("message", (message) => {
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
 
-        if (config.token_mode === true) {
+        if (config.token_mode) {
           msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         } else {
           msgArray.push('I followed an instant-invite from someone.');
@@ -376,15 +374,15 @@ dekubot.on("guildMemberAdd", (member) => {
       guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
         guildDB.getJoinmsg(member.guild.id).then(function(r) {
           if (r === 'default') {
-            if (bool == true) {
+            if (bool) {
               member.user.sendMessage("Welcome to the " + member.guild.name + " server!" );
-            } else if (bool == false) {
+            } else {
               member.guild.channels.get(announce).sendMessage(member + " Welcome to the server!");
             }
           } else if (r !== '') {
-            if (bool == true) {
+            if (bool) {
               member.user.sendMessage("Welcome to the " + member.guild.name + " server!\n" + r);
-            } else if (bool == false) {
+            } else {
               member.guild.channels.get(announce).sendMessage(member + r);
             }
           }
@@ -394,7 +392,7 @@ dekubot.on("guildMemberAdd", (member) => {
 
     guildDB.checkFactionPM(member.guild.id).then(function(bool) {
 
-      if (bool == true) {
+      if (bool) {
         factionDB.getFactionsHere(member.guild).then(function(guildFactions) {
           var msgArray = [];
 
@@ -435,7 +433,7 @@ dekubot.on("guildMemberRemove", function(member) {
       });
   });
   guildDB.checkWelcomePM(member.guild.id).then(function(bool) {
-    if (bool == false) {
+    if (!bool) {
       guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
         guildDB.getLeavemsg(member.guild.id).then(function(r) {
           if (r === 'default') {

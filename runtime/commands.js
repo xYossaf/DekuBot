@@ -195,7 +195,7 @@ Commands.faction = {
             msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message a member of staff.");
             found = true;
           }
-          if (found == false && i == guildFactions.length-1) {
+          if (!found && i == guildFactions.length-1) {
             msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
             msgArray.push("Im one of the bots on this server made by RoddersGH#4702. I help with a bunch of things which you can check out by going to the following link: https://github.com/RoddersGH/DekuBot/wiki");
             msgArray.push(" ");
@@ -487,7 +487,7 @@ Commands.server = {
       data.addField("Server Created", `${msg.guild.createdAt.getUTCDate()}/${msg.guild.createdAt.getUTCMonth()}/${msg.guild.createdAt.getUTCFullYear()}`, true)
       data.addField("Server Owner", `${msg.guild.owner.user.username}#${msg.guild.owner.user.discriminator}`, true)
       data.addField("Channels", msg.guild.channels.array().length, true);
-      if (msg.guild.iconURL != null) data.setThumbnail(msg.guild.iconURL);
+      if (msg.guild.iconURL) data.setThumbnail(msg.guild.iconURL);
       if (msg.guild.emojis.array().length === 0) data.addField("Server Emojis", "None", true);
       else {
         var emojis = []
@@ -585,7 +585,7 @@ Commands.setpermissionlevel = {
       msg.reply("```diff\n- Please mention a user```");
       return;
     } else {
-      if (!num || isnum == false || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
+      if (!num || !isnum || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
         msg.channel.sendMessage("```diff\n- Please define the permission level you wish to set for the user.```");
         return;
       } else {
@@ -620,7 +620,7 @@ Commands.createfaction = {
     var hex = args.substr(args.indexOf("#"))
     var isHex = /^#[0-9A-F]{6}$/i.test(hex);
 
-    if (isHex == false) {
+    if (!isHex) {
       msg.channel.sendMessage("```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
       return;
     };
@@ -665,7 +665,7 @@ Commands.deletefaction = {
           })
           found = true
         }
-        if (found == false && i == r.length-1) {
+        if (!found && i == r.length-1) {
           msg.channel.sendMessage("```diff\nA faction with this name does not exist\n```")
         }
       }
@@ -849,7 +849,7 @@ Commands.reddit = {
                   msg.channel.sendMessage("You are already tracking /r/" + name + ` in <#${msg.channel.id}>. All new posts are sent as messages here.`);
                   found = true
               }
-              if (found == false && i == r.length-1) {
+              if (!found && i == r.length-1) {
                 redditDB.trackSubreddit(name, msg);
                 msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
               }
@@ -898,7 +898,7 @@ Commands.unreddit = {
                   msg.channel.sendMessage(`/r/` + name + ` Is now not being tracked in <#${msg.channel.id}>`);
                   found = true
               }
-              if (found == false && i == r.length-1) {
+              if (!found && i == r.length-1) {
                 msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
               }
             }

@@ -116,14 +116,14 @@ exports.getBattleRecord = function(user, guild) {
 //           return false;
 //         }
 //       }
-//       while (val == false) {
-//         if (check(record.level) == false) {
+//       while (!val) {
+//         if (!check(record.level)) {
 //           return;
 //         } else {
 //           val == num
 //         }
 //       }
-//       if (escape != false) {
+//       if (escape) {
 //         resolve(enemy_list[val])
 //       }
 //     } catch (e) {
