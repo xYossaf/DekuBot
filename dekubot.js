@@ -153,7 +153,7 @@ dekubot.on("ready", () => {
           dekubot.guilds.array()[i].defaultChannel.sendMessage(msgArray);
         }
       })
-    })
+    })(x)
   }
   
   functions.initMangaDB()
