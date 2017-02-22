@@ -97,39 +97,43 @@ dekubot.on("guildDelete", (guild) => {
 });
 
 dekubot.on("channelDelete", (channel) => {
-  guildDB.get(channel.guild.id).then(function(r) {
-    if (channel.id == r.announcmentchannel) {
-      guildDB.setAnnouncementChannel(channel.guild.defaultChannel)
-      dekubot.users.get(r.superuser_id).sendMessage(`The bot announcment channel (``${channel.name}``)
-       on ``${channel.guild.name}`` has been deleted. Therefore the announcement channel has been
-        set to ${channel.guild.defaultChannel.name} by default.`)
-    }
-  })
-  mangaDB.getAll().then(function(r) {
-    for (i = 0; i < r.length; i++) {
-      for (j = 0; j < r[i].guild_channel_array.length; j++) {
-        if (r[i].guild_channel_array[j].channel_id == channel.id) {
-          mangaDB.removeGuildChannel(r[i]._id, r[i].guild_channel_array[j])
-          dekubot.users.get(r.superuser_id).sendMessage(`The channel (``${channel.name}``) 
-            on ``${channel.guild.name}`` has been deleted. Therefore the manga ``${r[i].aliases[0]}`` being tracked in this channel is no longer being tracked on the server.`)
+  //TODO fix this as channel.guild here is pointless and a search through the bots channels is needed to get the guild id
+  if (channel.type == 'text') {
+    guildDB.get(channel.guild.id).then(function(r) {
+      if (channel.id == r.announcmentchannel) {
+        guildDB.setAnnouncementChannel(channel.guild.defaultChannel)
+        dekubot.users.get(r.superuser_id).sendMessage(`The bot announcment channel (``${channel.name}``)
+         on ``${channel.guild.name}`` has been deleted. Therefore the announcement channel has been
+          set to ${channel.guild.defaultChannel.name} by default.`)
+      }
+    })
+  
+    mangaDB.getAll().then(function(r) {
+      for (i = 0; i < r.length; i++) {
+        for (j = 0; j < r[i].guild_channel_array.length; j++) {
+          if (r[i].guild_channel_array[j].channel_id == channel.id) {
+            mangaDB.removeGuildChannel(r[i]._id, r[i].guild_channel_array[j])
+            dekubot.users.get(r.superuser_id).sendMessage(`The channel (``${channel.name}``) 
+              on ``${channel.guild.name}`` has been deleted. Therefore the manga ``${r[i].aliases[0]}`` being tracked in this channel is no longer being tracked on the server.`)
+          }
         }
       }
-    }
-  })
+    })
+  }
 });
 
 var cooldownArray = []
 
 dekubot.on("ready", () => {
-
-  for (j = 0; j < dekubot.guilds.array().length; j++) {
-    var commandArray = [] 
-    Object.keys(Commands).forEach(function (key) {
-      commandArray.push({name: key, lastTS: 0})
-    });
-    cooldownArray.push({guildID: dekubot.guilds.array()[j].id, tsArray: commandArray})
-  }  
-
+  if (cooldownArray.length == 0) {
+    for (j = 0; j < dekubot.guilds.array().length; j++) {
+      var commandArray = [] 
+      Object.keys(Commands).forEach(function (key) {
+        commandArray.push({name: key, lastTS: 0})
+      });
+      cooldownArray.push({guildID: dekubot.guilds.array()[j].id, tsArray: commandArray})
+    }  
+  }
   logger.log('info', "I'm ready!")
   for (i = 0; i < dekubot.guilds.array().length; i++) {
     guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {

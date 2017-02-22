@@ -339,6 +339,7 @@ Commands.dice = {
   }
 };
 
+//TODO Don't forget to figure out install for gm so that it works on linux
 Commands.triggered = {
   name: "triggered",
   help: "tbd",
