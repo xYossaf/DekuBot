@@ -1,7 +1,6 @@
 {
   "bot_client_id":"",
   "youtube": "",
-  "token_mode": true,
   "token": "",
   "anilistID": "",
   "anilist_Secret": "",

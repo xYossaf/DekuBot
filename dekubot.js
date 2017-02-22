@@ -21,14 +21,8 @@ var responseID = null;
 var AwaitingResponse = null;
 var exitloop = null;
 
-//config stuff
 youtubeNode.setKey(config.youtube);
-
-if (config.token_mode) {
-  dekubot.login(config.token);
-} else {
-  console.log("well fuck");
-}
+dekubot.login(config.token);
 
 var commandLogger = new (winston.Logger)({
   transports: [
@@ -78,13 +72,7 @@ dekubot.on("guildCreate", (guild) => {
     var msgArray = [];
 
     msgArray.push("Hey! I'm " + dekubot.user.username);
-
-    if (config.token_mode) {
-      msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-    } else {
-      msgArray.push('I followed an instant-invite from someone.');
-    }
-
+    msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
     msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
     msgArray.push("Else, just kick me.");
 
@@ -153,13 +141,7 @@ dekubot.on("ready", () => {
         var msgArray = [];
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
-
-        if (config.token_mode) {
-          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        } else {
-          msgArray.push('I followed an instant-invite from someone.');
-        }
-
+        msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
         msgArray.push("Else, just kick me.");
 
@@ -190,13 +172,7 @@ dekubot.on("message", (message) => {
         var msgArray = [];
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
-
-        if (config.token_mode) {
-          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        } else {
-          msgArray.push('I followed an instant-invite from someone.');
-        }
-
+        msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
         msgArray.push("Else, just kick me.");
 
