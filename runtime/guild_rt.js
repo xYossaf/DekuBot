@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/guild_store',
+  filename: './databases/guild_store',
   autoload: true
 });
 

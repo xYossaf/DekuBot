@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/permission_store',
+  filename: './databases/permission_store',
   autoload: true
 });
 

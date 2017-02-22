@@ -261,10 +261,10 @@ Commands.rip = {
         //.emboss(1)
         .noise('laplacian')
         .sepia()
-        .write('./runtime/jimprepo/tempavatar.png',function (err, buffer) {
+        .write('./images/tempavatar.png',function (err, buffer) {
           if (err) {console.log(err)}
-          gm('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png')
-            .composite('./runtime/jimprepo/tempavatar.png')
+          gm('./images/grave' + Math.floor(Math.random()*4) + '.png')
+            .composite('./images/tempavatar.png')
             .geometry('+102+68')
             .toBuffer('PNG',function (err, buffer) {
               msg.channel.sendFile(buffer)
@@ -357,7 +357,7 @@ Commands.triggered = {
     } else {
       gm(request(url))
         .resize(150)
-        .composite('./runtime/jimprepo/triggered.png')
+        .composite('./images/triggered.png')
         .geometry('+0+123')
         .toBuffer('PNG',function (err, buffer) {
           msg.channel.sendFile(buffer)
@@ -369,21 +369,21 @@ Commands.triggered = {
       //   .identify(function (err, gifVal) {
       //     gifLength = gifVal.Format.length
       //     gm(request(url))
-      //       .write('./runtime/jimprepo/temp.gif',function (err) {
+      //       .write('./images/temp.gif',function (err) {
       //         for (i = 0; i < gifLength; i++) {
-      //             gm(`./runtime/jimprepo/temp.gif[${i}]`)
+      //             gm(`./images/temp.gif[${i}]`)
       //               .resize(150)
-      //               .composite('./runtime/jimprepo/triggered.png')
+      //               .composite('./images/triggered.png')
       //               .geometry('+0+123')
-      //               .write(`./runtime/jimprepo/temp${i}.jpg`,function (err) {
+      //               .write(`./images/temp${i}.jpg`,function (err) {
       //                 if (err) {console.log(err)}
       //               })
       //             if (i == gifLength-1) {
       //               var evalString = "gm()"
       //               for (j = 0; j < gifLength; j++) {
-      //                 evalString = evalString + `.in('./runtime/jimprepo/temp${j}.jpg')`
+      //                 evalString = evalString + `.in('./images/temp${j}.jpg')`
       //               }
-      //               evalString = evalString + ".delay(8).write('./runtime/jimprepo/trig.gif', function(err){if (err) throw err;msg.channel.sendFile('./runtime/jimprepo/trig.gif')});"
+      //               evalString = evalString + ".delay(8).write('./images/trig.gif', function(err){if (err) throw err;msg.channel.sendFile('./images/trig.gif')});"
       //               eval(evalString)
       //             }
       //         }
