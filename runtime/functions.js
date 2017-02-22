@@ -323,4 +323,6 @@ exports.choice = function (user, guild, response, guildFactions) {
   }
 };
 
-
+exports.checkBlacklist = string => {
+  return config.blacklisted_tags.some(tag => string.toLowerCase().includes(tag));
+};

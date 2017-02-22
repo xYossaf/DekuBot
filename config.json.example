@@ -4,5 +4,6 @@
   "token": "",
   "anilistID": "",
   "anilist_Secret": "",
-  "dev_id": ""
+  "dev_id": "",
+  "blacklisted_tags": []
 }
