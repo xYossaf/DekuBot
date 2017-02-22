@@ -96,6 +96,13 @@ dekubot.on("guildDelete", (guild) => {
   guildDB.deleteGuild(guild);
 });
 
+dekubot.on("roleDelete", (role) => {
+  factionDB.deleteFaction(role.id).catch(function(e) {
+    logger.log('error', e)
+  })
+  console.log('lol')
+});
+
 dekubot.on("channelDelete", (channel) => {
   //TODO fix this as channel.guild here is pointless and a search through the bots channels is needed to get the guild id
   if (channel.type == 'text') {

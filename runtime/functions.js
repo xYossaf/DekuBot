@@ -96,7 +96,6 @@ exports.initMangaDB = function() {
   })
 };
 
-//*TODO* Create embeds instead of sending formatted messages.
 exports.checkReddit = function(bot) {
   var rID = null;
 
@@ -310,6 +309,9 @@ exports.choice = function (user, guild, response, guildFactions) {
   for (i = 1; i < guildFactions.length+1; i++) {
     if (response == i.toString()) {
       var currentrole = guild.roles.get(guildFactions[i-1])
+      if (currentrole == undefined) {
+        return
+      }
       guild.members.get(user.id).addRole(currentrole).then(member => {
         member.sendMessage(`Thanks for choosing the faction **${currentrole.name}**`);
       })
