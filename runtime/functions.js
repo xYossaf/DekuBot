@@ -260,10 +260,7 @@ exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
       var id = 0;
       var responseCollector = msg.channel.createCollector(
         function(message, collector) {
-          if (message.author.id == msg.author.id) {
-            return true;
-          }
-          return false;
+          return message.author.id == msg.author.id;
         }, {time: 300000});
 
       responseCollector.on('message', (message, collector) => {
@@ -292,10 +289,7 @@ exports.responseHandling = function(msg, user, guild, guildFactions) {
     var responsechannel = "";
     var responseCollector = mesg.channel.createCollector(
       function(message, collector) {
-        if (message.author.id == user.id) {
-          return true;
-        }
-        return false;
+        return message.author.id == user.id;
       }, {time: 300000});
     responseCollector.on('message', (message, collector) => {
       id = message.id
@@ -321,7 +315,7 @@ exports.choice = function (user, guild, response, guildFactions) {
       })
       found = true
     }
-    if (found == false && i == guildFactions.length) {
+    if (!found && i == guildFactions.length) {
       user.sendMessage("Im sorry, but that response doesn't match any of the faction options listed above.").then(message => {
         exports.responseHandling("**To choose a faction, type the number next to the faction name you wish to join <3 **", user, guild, guildFactions)
       });
@@ -329,4 +323,6 @@ exports.choice = function (user, guild, response, guildFactions) {
   }
 };
 
-
+exports.checkBlacklist = string => {
+  return config.blacklisted_tags.some(tag => string.toLowerCase().includes(tag));
+};

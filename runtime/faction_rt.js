@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/faction_store',
+  filename: './databases/faction_store',
   autoload: true
 });
 

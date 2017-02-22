@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/guild_store',
+  filename: './databases/guild_store',
   autoload: true
 });
 
@@ -552,7 +552,7 @@ exports.toggleWelcomePM = function(guild_id) {
         if (res.length === 0) {
           return reject('Nothing found!');
         } else {
-          if (res[0].welcomePM == true) {
+          if (res[0].welcomePM) {
             db.update({
               _id: guild_id
             }, {
@@ -561,7 +561,7 @@ exports.toggleWelcomePM = function(guild_id) {
               }
             }, {});
             resolve('The welcome message will now not be sent in a private message.')
-          } else if (res[0].welcomePM == false) {
+          } else {
             db.update({
               _id: guild_id
             }, {
@@ -591,7 +591,7 @@ exports.toggleFactionPM = function(guild_id) {
         if (res.length === 0) {
           return reject('Nothing found!');
         } else {
-          if (res[0].factionPM == true) {
+          if (res[0].factionPM) {
             db.update({
               _id: guild_id
             }, {
@@ -600,7 +600,7 @@ exports.toggleFactionPM = function(guild_id) {
               }
             }, {});
             resolve('The faction join prompt message will now not be sent in a private message.')
-          } else if (res[0].factionPM == false) {
+          } else {
             db.update({
               _id: guild_id
             }, {

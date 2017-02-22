@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/battle_store',
+  filename: './databases/battle_store',
   autoload: true
 });
 
@@ -116,14 +116,14 @@ exports.getBattleRecord = function(user, guild) {
 //           return false;
 //         }
 //       }
-//       while (val == false) {
-//         if (check(record.level) == false) {
+//       while (!val) {
+//         if (!check(record.level)) {
 //           return;
 //         } else {
 //           val == num
 //         }
 //       }
-//       if (escape != false) {
+//       if (escape) {
 //         resolve(enemy_list[val])
 //       }
 //     } catch (e) {

@@ -21,16 +21,8 @@ var responseID = null;
 var AwaitingResponse = null;
 var exitloop = null;
 
-//config stuff
 youtubeNode.setKey(config.youtube);
-
-if (config.token_mode ===  true) {
-  dekubot.login(config.token);
-} else if (config.token_mode ===  false) {
-  console.log("well fuck");
-} else {
-  console.log("well even more fuck");
-}
+dekubot.login(config.token);
 
 var commandLogger = new (winston.Logger)({
   transports: [
@@ -80,13 +72,7 @@ dekubot.on("guildCreate", (guild) => {
     var msgArray = [];
 
     msgArray.push("Hey! I'm " + dekubot.user.username);
-
-    if (config.token_mode === true) {
-      msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-    } else {
-      msgArray.push('I followed an instant-invite from someone.');
-    }
-
+    msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
     msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
     msgArray.push("Else, just kick me.");
 
@@ -159,13 +145,7 @@ dekubot.on("ready", () => {
         var msgArray = [];
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
-
-        if (config.token_mode === true) {
-          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        } else {
-          msgArray.push('I followed an instant-invite from someone.');
-        }
-
+        msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
         msgArray.push("Else, just kick me.");
 
@@ -196,13 +176,7 @@ dekubot.on("message", (message) => {
         var msgArray = [];
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
-
-        if (config.token_mode === true) {
-          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        } else {
-          msgArray.push('I followed an instant-invite from someone.');
-        }
-
+        msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
         msgArray.push("Else, just kick me.");
 
@@ -380,15 +354,15 @@ dekubot.on("guildMemberAdd", (member) => {
       guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
         guildDB.getJoinmsg(member.guild.id).then(function(r) {
           if (r === 'default') {
-            if (bool == true) {
+            if (bool) {
               member.user.sendMessage("Welcome to the " + member.guild.name + " server!" );
-            } else if (bool == false) {
+            } else {
               member.guild.channels.get(announce).sendMessage(member + " Welcome to the server!");
             }
           } else if (r !== '') {
-            if (bool == true) {
+            if (bool) {
               member.user.sendMessage("Welcome to the " + member.guild.name + " server!\n" + r);
-            } else if (bool == false) {
+            } else {
               member.guild.channels.get(announce).sendMessage(member + r);
             }
           }
@@ -398,7 +372,7 @@ dekubot.on("guildMemberAdd", (member) => {
 
     guildDB.checkFactionPM(member.guild.id).then(function(bool) {
 
-      if (bool == true) {
+      if (bool) {
         factionDB.getFactionsHere(member.guild).then(function(guildFactions) {
           var msgArray = [];
 
@@ -439,7 +413,7 @@ dekubot.on("guildMemberRemove", function(member) {
       });
   });
   guildDB.checkWelcomePM(member.guild.id).then(function(bool) {
-    if (bool == false) {
+    if (!bool) {
       guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
         guildDB.getLeavemsg(member.guild.id).then(function(r) {
           if (r === 'default') {
