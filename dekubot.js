@@ -21,16 +21,8 @@ var responseID = null;
 var AwaitingResponse = null;
 var exitloop = null;
 
-//config stuff
 youtubeNode.setKey(config.youtube);
-
-if (config.token_mode ===  true) {
-  dekubot.login(config.token);
-} else if (config.token_mode ===  false) {
-  console.log("well fuck");
-} else {
-  console.log("well even more fuck");
-}
+dekubot.login(config.token);
 
 var commandLogger = new (winston.Logger)({
   transports: [
@@ -80,13 +72,7 @@ dekubot.on("guildCreate", (guild) => {
     var msgArray = [];
 
     msgArray.push("Hey! I'm " + dekubot.user.username);
-
-    if (config.token_mode === true) {
-      msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-    } else {
-      msgArray.push('I followed an instant-invite from someone.');
-    }
-
+    msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
     msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
     msgArray.push("Else, just kick me.");
 
@@ -97,8 +83,8 @@ dekubot.on("guildCreate", (guild) => {
 dekubot.on("guildDelete", (guild) => {
   logger.log('info', `left the guild ${guild.name}, ${guild.id}`)
   for (j = 0; j < cooldownArray.length; j++) {
-    if (cooldownArray[i].guildID == guild.id) {
-      cooldownArray.splice(i, 1)
+    if (cooldownArray[j].guildID == guild.id) {
+      cooldownArray.splice(j, 1)
     }
   } 
 
@@ -110,64 +96,71 @@ dekubot.on("guildDelete", (guild) => {
   guildDB.deleteGuild(guild);
 });
 
-dekubot.on("channelDelete", (channel) => {
-  guildDB.get(channel.guild.id).then(function(r) {
-    if (channel.id == r.announcmentchannel) {
-      guildDB.setAnnouncementChannel(channel.guild.defaultChannel)
-      dekubot.users.get(r.superuser_id).sendMessage(`The bot announcment channel (``${channel.name}``)
-       on ``${channel.guild.name}`` has been deleted. Therefore the announcement channel has been
-        set to ${channel.guild.defaultChannel.name} by default.`)
-    }
+dekubot.on("roleDelete", (role) => {
+  factionDB.deleteFaction(role.id).catch(function(e) {
+    logger.log('error', e)
   })
-  mangaDB.getAll().then(function(r) {
-    for (i = 0; i < r.length; i++) {
-      for (j = 0; j < r[i].guild_channel_array.length; j++) {
-        if (r[i].guild_channel_array[j].channel_id == channel.id) {
-          mangaDB.removeGuildChannel(r[i]._id, r[i].guild_channel_array[j])
-          dekubot.users.get(r.superuser_id).sendMessage(`The channel (``${channel.name}``) 
-            on ``${channel.guild.name}`` has been deleted. Therefore the manga ``${r[i].aliases[0]}`` being tracked in this channel is no longer being tracked on the server.`)
+  console.log('lol')
+});
+
+dekubot.on("channelDelete", (channel) => {
+  //TODO fix this as channel.guild here is pointless and a search through the bots channels is needed to get the guild id
+  if (channel.type == 'text') {
+    guildDB.get(channel.guild.id).then(function(r) {
+      if (channel.id == r.announcmentchannel) {
+        guildDB.setAnnouncementChannel(channel.guild.defaultChannel)
+        dekubot.users.get(r.superuser_id).sendMessage(`The bot announcment channel (``${channel.name}``)
+         on ``${channel.guild.name}`` has been deleted. Therefore the announcement channel has been
+          set to ${channel.guild.defaultChannel.name} by default.`)
+      }
+    })
+  
+    mangaDB.getAll().then(function(r) {
+      for (i = 0; i < r.length; i++) {
+        for (j = 0; j < r[i].guild_channel_array.length; j++) {
+          if (r[i].guild_channel_array[j].channel_id == channel.id) {
+            mangaDB.removeGuildChannel(r[i]._id, r[i].guild_channel_array[j])
+            dekubot.users.get(r.superuser_id).sendMessage(`The channel (``${channel.name}``) 
+              on ``${channel.guild.name}`` has been deleted. Therefore the manga ``${r[i].aliases[0]}`` being tracked in this channel is no longer being tracked on the server.`)
+          }
         }
       }
-    }
-  })
+    })
+  }
 });
 
 var cooldownArray = []
 
 dekubot.on("ready", () => {
-
-  for (j = 0; j < dekubot.guilds.array().length; j++) {
-    var commandArray = [] 
-    Object.keys(Commands).forEach(function (key) {
-      commandArray.push({name: key, lastTS: 0})
-    });
-    cooldownArray.push({guildID: dekubot.guilds.array()[j].id, tsArray: commandArray})
-  }  
-
+  if (cooldownArray.length == 0) {
+    for (j = 0; j < dekubot.guilds.array().length; j++) {
+      var commandArray = [] 
+      Object.keys(Commands).forEach(function (key) {
+        commandArray.push({name: key, lastTS: 0})
+      });
+      cooldownArray.push({guildID: dekubot.guilds.array()[j].id, tsArray: commandArray})
+    }  
+  }
   logger.log('info', "I'm ready!")
-  for (i = 0; i < dekubot.guilds.array().length; i++) {
-    guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {
-      if (e == 'Nothing found!') {
-        guildDB.newGuild(dekubot.guilds.array()[i]);
+  for (x = 0; x < dekubot.guilds.array().length; x++) {
+    (function(i) {
+      guildDB.check(dekubot.guilds.array()[i]).catch(function(e) {
+        if (e == 'Nothing found!') {
+          guildDB.newGuild(dekubot.guilds.array()[i]);
 
-        permissionDB.SuperUserPermission(dekubot.guilds.array()[i]);
+          permissionDB.SuperUserPermission(dekubot.guilds.array()[i]);
 
-        var msgArray = [];
+          var msgArray = [];
 
-        msgArray.push("Hey! I'm " + dekubot.user.username);
-
-        if (config.token_mode === true) {
+          msgArray.push("Hey! I'm " + dekubot.user.username);
           msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        } else {
-          msgArray.push('I followed an instant-invite from someone.');
+          msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
+          msgArray.push("Else, just kick me.");
+
+          dekubot.guilds.array()[i].defaultChannel.sendMessage(msgArray);
         }
-
-        msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
-        msgArray.push("Else, just kick me.");
-
-        dekubot.guilds.array()[i].defaultChannel.sendMessage(msgArray);
-      }
-    })
+      })
+    })(x)
   }
   
   functions.initMangaDB()
@@ -192,13 +185,7 @@ dekubot.on("message", (message) => {
         var msgArray = [];
 
         msgArray.push("Hey! I'm " + dekubot.user.username);
-
-        if (config.token_mode === true) {
-          msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
-        } else {
-          msgArray.push('I followed an instant-invite from someone.');
-        }
-
+        msgArray.push("Someone with `manage server` permissions invited me to this guild via OAuth.");
         msgArray.push("If I'm intended to be here, use `!help` to see what I can do.");
         msgArray.push("Else, just kick me.");
 
@@ -376,15 +363,15 @@ dekubot.on("guildMemberAdd", (member) => {
       guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
         guildDB.getJoinmsg(member.guild.id).then(function(r) {
           if (r === 'default') {
-            if (bool == true) {
+            if (bool) {
               member.user.sendMessage("Welcome to the " + member.guild.name + " server!" );
-            } else if (bool == false) {
+            } else {
               member.guild.channels.get(announce).sendMessage(member + " Welcome to the server!");
             }
           } else if (r !== '') {
-            if (bool == true) {
+            if (bool) {
               member.user.sendMessage("Welcome to the " + member.guild.name + " server!\n" + r);
-            } else if (bool == false) {
+            } else {
               member.guild.channels.get(announce).sendMessage(member + r);
             }
           }
@@ -394,7 +381,7 @@ dekubot.on("guildMemberAdd", (member) => {
 
     guildDB.checkFactionPM(member.guild.id).then(function(bool) {
 
-      if (bool == true) {
+      if (bool) {
         factionDB.getFactionsHere(member.guild).then(function(guildFactions) {
           var msgArray = [];
 
@@ -435,7 +422,7 @@ dekubot.on("guildMemberRemove", function(member) {
       });
   });
   guildDB.checkWelcomePM(member.guild.id).then(function(bool) {
-    if (bool == false) {
+    if (!bool) {
       guildDB.getAnnouncementChannel(member.guild.id).then(function(announce) {
         guildDB.getLeavemsg(member.guild.id).then(function(r) {
           if (r === 'default') {

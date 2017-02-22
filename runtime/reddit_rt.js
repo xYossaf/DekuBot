@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/reddit_track_store',
+  filename: './databases/reddit_track_store',
   autoload: true
 });
 

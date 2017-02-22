@@ -25,39 +25,43 @@ exports.checkManga = function(bot) {
         for (manga of mangaArray) {
           (function(m, b) {
             var mangatag = m.url.substr(29);
-              if ((parseInt(m.chapter)+1) < 10) {
-                chapnum = '00' + (parseInt(m.chapter)+1).toString()
-              } else if ((parseInt(m.chapter)+1) < 100) {
-                chapnum = '0' + (parseInt(m.chapter)+1).toString()
-              } else {
-                chapnum = (parseInt(m.chapter)+1).toString()
-              }
-              //*TODO*
-              //Change this so that chapnum is any number greater than the current chapter number
-              if (b.search('<link>http://mangastream.com/read/' + mangatag + '/' + chapnum) !== -1) {
-
-                var temp = ('http://mangastream.com/read/' + mangatag + '/').length
-                var begin = b.search( 'http://mangastream.com/read/' + mangatag + '/') + temp
-                var othertemp = b.substr(begin)
-                var linktemp = othertemp.indexOf('<')
-                var end = othertemp.indexOf("/")
-
-                mangaDB.updateChapter(m._id, b.substr(begin, end));
-                for (j = 0; j < m.guild_channel_array.length; j++) {
-                  (function(x) {
-                    if (m.guild_channel_array[x].mention != "") {
-                      bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage(`@${m.guild_channel_array[x].mention} New chapter of: ` + b.substr(begin-temp, temp+linktemp));
-                    } else {
-                      bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
-                    }
-                  })(j)
+            var regex = new RegExp("[<]link[>]http[:][/][/]mangastream[.]com[/]read[/]" + mangatag + "[/]((.|\n){30})", 'gi')
+            var chapterTest = b.match(regex)
+            if (chapterTest !== null) {
+              for (k = 0; k < chapterTest.length; k++) {
+                
+                var temporary = chapterTest[k].substr(chapterTest[k].indexOf(mangatag) + mangatag.length + 1)
+                var chapVal = temporary.substring(0, temporary.indexOf("/"))
+                if (chapVal > unescape(m.chapter).match(/[0-9\.]+/ig)[0]){
+                  var temp = ('http://mangastream.com/read/' + mangatag + '/').length
+                  var begin = b.search( 'http://mangastream.com/read/' + mangatag + '/') + temp
+                  var othertemp = b.substr(begin)
+                  var linktemp = othertemp.indexOf('<')
+                  var end = othertemp.indexOf("/")
+                  
+                  mangaDB.updateChapter(m._id, b.substr(begin, end));
+                  for (j = 0; j < m.guild_channel_array.length; j++) {
+                    (function(x) {
+                      
+                      if (m.guild_channel_array[x].mention != "") {
+                        bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage(`@${m.guild_channel_array[x].mention} New chapter of: ` + b.substr(begin-temp, temp+linktemp));
+                      } else {
+                        
+                        bot.channels.get(m.guild_channel_array[x].channel_id).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
+                      }
+                    })(j)
+                  }
+                  for (i = 0; i < m.pm_array.length; i++) {
+                    (function(x) {
+                      
+                      bot.users.get(m.pm_array[x]).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
+                    })(i)
+                  }
                 }
-                for (i = 0; i < m.pm_array.length; i++) {
-                  (function(x) {
-                    bot.users.get(m.pm_array[x]).sendMessage("New chapter of: " + b.substr(begin-temp, temp+linktemp));
-                  })(i)
-                }
+                break;
               }
+              
+            }
           })(manga, body)
         }
       }
@@ -92,7 +96,6 @@ exports.initMangaDB = function() {
   })
 };
 
-//*TODO* Create embeds instead of sending formatted messages.
 exports.checkReddit = function(bot) {
   var rID = null;
 
@@ -256,10 +259,7 @@ exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
       var id = 0;
       var responseCollector = msg.channel.createCollector(
         function(message, collector) {
-          if (message.author.id == msg.author.id) {
-            return true;
-          }
-          return false;
+          return message.author.id == msg.author.id;
         }, {time: 300000});
 
       responseCollector.on('message', (message, collector) => {
@@ -288,10 +288,7 @@ exports.responseHandling = function(msg, user, guild, guildFactions) {
     var responsechannel = "";
     var responseCollector = mesg.channel.createCollector(
       function(message, collector) {
-        if (message.author.id == user.id) {
-          return true;
-        }
-        return false;
+        return message.author.id == user.id;
       }, {time: 300000});
     responseCollector.on('message', (message, collector) => {
       id = message.id
@@ -312,15 +309,22 @@ exports.choice = function (user, guild, response, guildFactions) {
   for (i = 1; i < guildFactions.length+1; i++) {
     if (response == i.toString()) {
       var currentrole = guild.roles.get(guildFactions[i-1])
+      if (currentrole == undefined) {
+        return
+      }
       guild.members.get(user.id).addRole(currentrole).then(member => {
         member.sendMessage(`Thanks for choosing the faction **${currentrole.name}**`);
       })
       found = true
     }
-    if (found == false && i == guildFactions.length) {
+    if (!found && i == guildFactions.length) {
       user.sendMessage("Im sorry, but that response doesn't match any of the faction options listed above.").then(message => {
         exports.responseHandling("**To choose a faction, type the number next to the faction name you wish to join <3 **", user, guild, guildFactions)
       });
     }
   }
+};
+
+exports.checkBlacklist = string => {
+  return config.blacklisted_tags.some(tag => string.toLowerCase().includes(tag));
 };

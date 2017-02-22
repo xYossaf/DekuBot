@@ -9,8 +9,12 @@ var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
 
+var math = require('mathjs');
+var Discord = require("discord.js");
 var winston = require('winston');
 var jimp = require("jimp");
+var gm = require("gm");
+var request = require("request");
 var parseString = require('xml2js').parseString;
 var nani = require("nani").init(config.anilistID, config.anilist_Secret);
 var nedb = require("nedb")
@@ -21,7 +25,6 @@ var Commands = [];
 
 
 // GENERAL COMMANDS
-//TODO: Link to the ddd server
 Commands.help = {
   name: "help",
   help: "tbd",
@@ -152,21 +155,27 @@ Commands.botstatus = {
       };
     };
 
-    finalstring.push("Hi! Im DekuBot :robot:");
-    finalstring.push("Im currently used in ``" + bot.guilds.array().length + "`` server(s), in ``" + channelcount + "`` channels used by ``" + usercount + "`` users.");
-    finalstring.push("I've been up and ready for ``" + (Math.round(bot.uptime / (1000 * 60 * 60))) + "`` hours, ``" + (Math.round(bot.uptime / (1000 * 60)) % 60) + "`` minutes, and ``" + (Math.round(bot.uptime / 1000) % 60 + ".") + "`` seconds.");
-    finalstring.push("If you have any questions or need some help, contact **RoddersGH#4702**")
-    finalstring.push("```         __    __");
-    finalstring.push("        /  |  | |'-.");
-    finalstring.push("       .|__/  | |   |");
-    finalstring.push("    _ /  `._  |_|_.-'");
-    finalstring.push("   | /  |__.`=._) (_");
-    finalstring.push('   |/ ._/  |"""""""""|');
-    finalstring.push("   |'.  ` )|         |");
-    finalstring.push('   ;"""/ / |         |');
-    finalstring.push("    ) /_/| |.-------.|");
-    finalstring.push("   o  `-`o o         o  ```");
-    msg.channel.sendMessage(finalstring);
+    var seconds = (Math.round(bot.uptime / 1000) % 60)
+    var minutes = (Math.round(bot.uptime / (1000 * 60)) % 60)
+    var hours = (Math.round(bot.uptime / (1000 * 60 * 60)))
+    minutes = (minutes < 10) ? "0" + minutes : minutes;
+    seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+    var data = new Discord.RichEmbed(data)
+    data.setAuthor("Hi! Im DekuBot 🤖")
+
+    data.addField("📗 Servers", bot.guilds.array().length, true)
+    data.addField("📃 Channels", channelcount, true)
+    data.addField("👤 Users", usercount, true)
+    data.addField("🐏 Memory Usage", Math.round(process.memoryUsage().rss / 1024 / 1000) + "MB", true)
+    data.addField("⏲️ Up time", hours + ":" + minutes + ":" + seconds, true)
+    data.addField("🖥️ Development Server", "https://discord.gg/we8bdxJ", true)
+    data.addField("🔗 Invite Link", "https://discordapp.com/oauth2/authorize?client_id=282126217275244545&scope=bot&permissions=2146954327", true)
+    data.setDescription("If you have any questions or need some help, contact **RoddersGH#4702**")
+    data.setThumbnail("https://cdn.discordapp.com/attachments/239907411899580417/282597112485642241/pretty_much_finished.png")
+    data.setColor("#66D6CC")
+    
+    msg.channel.sendEmbed(data);
   }
 };
 
@@ -186,7 +195,7 @@ Commands.faction = {
             msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message a member of staff.");
             found = true;
           }
-          if (found == false && i == guildFactions.length-1) {
+          if (!found && i == guildFactions.length-1) {
             msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
             msgArray.push("Im one of the bots on this server made by RoddersGH#4702. I help with a bunch of things which you can check out by going to the following link: https://github.com/RoddersGH/DekuBot/wiki");
             msgArray.push(" ");
@@ -245,17 +254,22 @@ Commands.rip = {
     if (url == null) {
       msg.reply("Sorry, you need a profile picture to use this command.")
       return;
-    } else if (url.search("gif") === -1) {
-      jimp.read('./runtime/jimprepo/grave' + Math.floor(Math.random()*4) + '.png', function (err, image) {
-        jimp.read(url, function (err, avatar) {
-          avatar.resize(90, 90).sepia().opacity(0.5);
-          image.composite(avatar, 100, 68);
-          var path = './runtime/jimprepo/gravepic.png'
-          image.write(path, function(err) {
-            msg.channel.sendFile(path)
-          })
+    } else {
+      gm(request(url))
+        .resize(90)
+        .raise(3,3)
+        //.emboss(1)
+        .noise('laplacian')
+        .sepia()
+        .write('./images/tempavatar.png',function (err, buffer) {
+          if (err) {console.log(err)}
+          gm('./images/grave' + Math.floor(Math.random()*4) + '.png')
+            .composite('./images/tempavatar.png')
+            .geometry('+102+68')
+            .toBuffer('PNG',function (err, buffer) {
+              msg.channel.sendFile(buffer)
+            })
         })
-      });
     }
   }
 };
@@ -325,6 +339,7 @@ Commands.dice = {
   }
 };
 
+//TODO Don't forget to figure out install for gm so that it works on linux
 Commands.triggered = {
   name: "triggered",
   help: "tbd",
@@ -340,20 +355,41 @@ Commands.triggered = {
     }
     if (url == null) {
       msg.reply("Sorry, you need a profile picture to use this command.")
-      return;
-    } else if (url.search("gif") === -1) {
-      jimp.read(url, function (err, avatar) {
-        jimp.read('./runtime/jimprepo/triggered.png', function (err, triggered) {
-          avatar.resize(150, 150);
-          triggered.resize(150, jimp.AUTO);
-          avatar.composite(triggered, 0, 123);
-          var path = './runtime/jimprepo/trigpic.png'
-          avatar.write(path, function(err) {
-            msg.channel.sendFile(path)
-          })
+    } else {
+      gm(request(url))
+        .resize(150)
+        .composite('./images/triggered.png')
+        .geometry('+0+123')
+        .toBuffer('PNG',function (err, buffer) {
+          msg.channel.sendFile(buffer)
         })
-      });
     }
+    //Possible alt version for the gifs moving
+      // var gifLength = 0
+      // gm(request(url))
+      //   .identify(function (err, gifVal) {
+      //     gifLength = gifVal.Format.length
+      //     gm(request(url))
+      //       .write('./images/temp.gif',function (err) {
+      //         for (i = 0; i < gifLength; i++) {
+      //             gm(`./images/temp.gif[${i}]`)
+      //               .resize(150)
+      //               .composite('./images/triggered.png')
+      //               .geometry('+0+123')
+      //               .write(`./images/temp${i}.jpg`,function (err) {
+      //                 if (err) {console.log(err)}
+      //               })
+      //             if (i == gifLength-1) {
+      //               var evalString = "gm()"
+      //               for (j = 0; j < gifLength; j++) {
+      //                 evalString = evalString + `.in('./images/temp${j}.jpg')`
+      //               }
+      //               evalString = evalString + ".delay(8).write('./images/trig.gif', function(err){if (err) throw err;msg.channel.sendFile('./images/trig.gif')});"
+      //               eval(evalString)
+      //             }
+      //         }
+      //     })
+      //   })
   }
 };
 
@@ -367,6 +403,120 @@ Commands.invite = {
     msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146954327\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
   }
 };
+
+Commands.quote = {
+  name: "quote",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var quote = ""
+    if (msg.mentions.users.array().length <= 0 || msg.mentions.users.array().length > 1) {
+      msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
+    } else {
+      if (args.split(" ")[0] === "<@" + msg.mentions.users.array()[0].id + ">") {
+          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").substring(1);
+      } else {
+          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").trim();
+      }
+    }
+    
+    var randomHex = "#000000".replace(/0/g, function() {
+      return (~~(Math.random() * 16)).toString(16);
+    });
+
+    var data = new Discord.RichEmbed(data);
+    data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
+    data.setColor(randomHex)
+    data.setDescription(quote)
+    
+    msg.channel.sendEmbed(data)
+  }
+};
+
+Commands.math = {
+  name: "math",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    try {
+      msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+    } catch(e) {
+      msg.channel.sendMessage("```diff\n-" + e + "```")
+    }
+   
+  }
+};
+
+Commands.maths = {
+  name: "maths",
+  help: "tbd",
+  type: "general",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    try {
+      msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
+    } catch(e) {
+      msg.channel.sendMessage("```diff\n-" + e + "```")
+    }
+   
+  }
+};
+
+Commands.server = {
+  name: "server",
+  help: "I'll tell you some information about the server you're currently in.",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.channel.guild) {
+      var data = new Discord.RichEmbed(data);
+
+      var randomHex = "#000000".replace(/0/g, function() {
+        return (~~(Math.random() * 16)).toString(16);
+      });
+      data.setColor(randomHex)
+
+      data.setTitle(`${msg.guild.name} (${msg.guild.id})`)
+      data.addField("Members", msg.guild.members.array().length, true)
+      data.addField("Roles", msg.guild.roles.array().length, true)
+      data.addField("Region", msg.guild.region, true)
+      data.addField("Server Created", `${msg.guild.createdAt.getUTCDate()}/${msg.guild.createdAt.getUTCMonth()}/${msg.guild.createdAt.getUTCFullYear()}`, true)
+      data.addField("Server Owner", `${msg.guild.owner.user.username}#${msg.guild.owner.user.discriminator}`, true)
+      data.addField("Channels", msg.guild.channels.array().length, true);
+      if (msg.guild.iconURL) data.setThumbnail(msg.guild.iconURL);
+      if (msg.guild.emojis.array().length === 0) data.addField("Server Emojis", "None", true);
+      else {
+        var emojis = []
+        var emojis2 = []
+        msg.guild.emojis.array().map(function(emoje) {
+          if (emojis.join(" ").length <= 950) emojis.push(`${emoje}`);
+          else (emojis2.push(`${emoje}`))
+        })
+        data.addField("Server Emojis", emojis.join(" "), true);
+        if (emojis2.length > 0) data.addField("​", emojis2.join(" "));
+      }
+      msg.channel.sendEmbed(data)
+    }
+  }
+};
+
+Commands.setavatar = {
+  name: "setavatar",
+  help: "tbd",
+  lvl: 6,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+   if (msg.author.id === config.dev_id) {
+    bot.user.setAvatar(args)
+   }
+  }
+};
+
 
 
 
@@ -436,7 +586,7 @@ Commands.setpermissionlevel = {
       msg.reply("```diff\n- Please mention a user```");
       return;
     } else {
-      if (!num || isnum == false || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
+      if (!num || !isnum || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
         msg.channel.sendMessage("```diff\n- Please define the permission level you wish to set for the user.```");
         return;
       } else {
@@ -471,7 +621,7 @@ Commands.createfaction = {
     var hex = args.substr(args.indexOf("#"))
     var isHex = /^#[0-9A-F]{6}$/i.test(hex);
 
-    if (isHex == false) {
+    if (!isHex) {
       msg.channel.sendMessage("```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
       return;
     };
@@ -516,7 +666,7 @@ Commands.deletefaction = {
           })
           found = true
         }
-        if (found == false && i == r.length-1) {
+        if (!found && i == r.length-1) {
           msg.channel.sendMessage("```diff\nA faction with this name does not exist\n```")
         }
       }
@@ -700,7 +850,7 @@ Commands.reddit = {
                   msg.channel.sendMessage("You are already tracking /r/" + name + ` in <#${msg.channel.id}>. All new posts are sent as messages here.`);
                   found = true
               }
-              if (found == false && i == r.length-1) {
+              if (!found && i == r.length-1) {
                 redditDB.trackSubreddit(name, msg);
                 msg.channel.sendMessage("/r/" + name + ` Is now being tracked in <#${msg.channel.id}>. All new posts will be sent as messages here.`);
               }
@@ -749,7 +899,7 @@ Commands.unreddit = {
                   msg.channel.sendMessage(`/r/` + name + ` Is now not being tracked in <#${msg.channel.id}>`);
                   found = true
               }
-              if (found == false && i == r.length-1) {
+              if (!found && i == r.length-1) {
                 msg.channel.sendMessage(`/r/` + name + ` was not being tracked in <#${msg.channel.id}> to begin with.`);
               }
             }
@@ -782,7 +932,7 @@ Commands.setprefix = {
 Commands.togglewelcomepm = {
   name: "togglewelcomepm",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -795,7 +945,7 @@ Commands.togglewelcomepm = {
 Commands.togglefactionpm = {
   name: "togglefactionpm",
   help: "tbd",
-  type: "general",
+  type: "admin",
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
@@ -805,6 +955,57 @@ Commands.togglefactionpm = {
   }
 };
 
+Commands.setjoinmessage = {
+  name: "setjoinmessage",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, " " + args).then(function(r) {
+      msg.channel.sendMessage(`The new join message has been set to "${r}"`);
+    })
+  }
+};
+
+Commands.setleavemessage = {
+  name: "setleavemessage",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, args).then(function(r) {
+      msg.channel.sendMessage(`The new leave message has been set to "${r}"`);
+    })
+  }
+};
+
+Commands.disablejoinmessage = {
+  name: "togglefactionpm",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
+      msg.channel.sendMessage(`The new join message has been set to "${r}"`);
+    })
+  }
+};
+
+Commands.disableleavemessage = {
+  name: "togglefactionpm",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
+      msg.channel.sendMessage(`The new leave message has been set to "${r}"`);
+    })
+  }
+};
 
 
 
@@ -1322,14 +1523,23 @@ Commands.rule34 = {
   cooldown: 0,
   func: function(bot, msg, args) {
     request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-          if (body.length < 1) {
-            msg.channel.sendMessage("Sorry, nothing found.");
-            return;
-          }
-          if (args.length < 1) {
-            args = "<no tags specified>";
-          }
+      if (!error && response.statusCode == 200) {
+        if (body.length < 1) {
+          msg.channel.sendMessage("Sorry, nothing found.");
+          return;
+        }
+        if (args.length < 1) {
+          args = "<no tags specified>";
+        }
+        if (functions.checkBlacklist(args)) {
+          parseString(body, function (err, result) {
+            msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+              msg.author.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+              msg.author.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+              msg.author.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
+            });
+          });
+        } else {
           parseString(body, function (err, result) {
             msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
               msg.channel.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
@@ -1338,7 +1548,8 @@ Commands.rule34 = {
             });
           });
         }
-    })
+      }
+    });
   }
 };
 
@@ -1354,35 +1565,30 @@ Commands.konachan = {
       return;
     }
     request('https://konachan.net/post/index.json?limit=300&tags=' + args, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-          var result = JSON.parse(body);
-          if (result.length < 1) {
-            msg.channel.sendMessage("Sorry, nothing found.");
-            return;
-          }
-          if (args.length < 1) {
-            args = "<no tags specified>";
-          }
-          if ((args.toString().toLowerCase().indexOf("gaping") > -1
-            || args.toString().toLowerCase().indexOf("gape") > -1)
-            || args.toString().toLowerCase().indexOf("prolapse") > -1
-            || args.toString().toLowerCase().indexOf("toddlercon") > -1
-            || args.toString().toLowerCase().indexOf("scat") > -1
-            || args.toString().toLowerCase().indexOf("gore") > -1) {
-              msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
-                msg.author.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.author.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.author.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
-              });
-          } else {
-              msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
-                msg.channel.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.channel.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.channel.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
-              });
-          }
+      if (!error && response.statusCode == 200) {
+        var result = JSON.parse(body);
+        if (result.length < 1) {
+          msg.channel.sendMessage("Sorry, nothing found.");
+          return;
         }
-      })
+        if (args.length < 1) {
+          args = "<no tags specified>";
+        }
+        if (functions.checkBlacklist(args)) {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+            msg.author.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.author.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.author.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
+          });
+        } else {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
+            msg.channel.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.channel.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.channel.sendMessage('http:' + result[Math.floor((Math.random() * result.length))].file_url);
+          });
+        }
+      }
+    });
   }
 };
 
@@ -1398,35 +1604,30 @@ Commands.danbooru = {
       return;
     }
     request('https://danbooru.donmai.us/posts.json?limit=300&tags=' + args, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-          var result = JSON.parse(body);
-          if (result.length < 1) {
-            msg.channel.sendMessage("Sorry, nothing found.");
-            return;
-          }
-          if (args.length < 1) {
-            args = "<no tags specified>";
-          }
-          if ((args.toString().toLowerCase().indexOf("gaping") > -1
-            || args.toString().toLowerCase().indexOf("gape") > -1)
-            || args.toString().toLowerCase().indexOf("prolapse") > -1
-            || args.toString().toLowerCase().indexOf("toddlercon") > -1
-            || args.toString().toLowerCase().indexOf("scat") > -1
-            || args.toString().toLowerCase().indexOf("gore") > -1) {
-              msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
-                msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-              });
-          } else {
-              msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg =>  {
-                msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-                msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
-              });
-          }
+      if (!error && response.statusCode == 200) {
+        var result = JSON.parse(body);
+        if (result.length < 1) {
+          msg.channel.sendMessage("Sorry, nothing found.");
+          return;
         }
-      })
+        if (args.length < 1) {
+          args = "<no tags specified>";
+        }
+        if (functions.checkBlacklist(args)) {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+            msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.author.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+          });
+        } else {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg =>  {
+            msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+            msg.channel.sendMessage('https://danbooru.donmai.us' + result[Math.floor((Math.random() * result.length))].file_url);
+          });
+        }
+      }
+    });
   }
 };
 
@@ -1438,35 +1639,30 @@ Commands.yandere = {
   cooldown: 0,
   func: function(bot, msg, args) {
     request('https://yande.re/post/index.json?limit=500&tags=' + args, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-          var result = JSON.parse(body);
-          if (result.length < 1) {
-            msg.channel.sendMessage("Sorry, nothing found.");
-            return;
-          }
-          if (args.length < 1) {
-            args = "<no tags specified>";
-          }
-          if ((args.toString().toLowerCase().indexOf("gaping") > -1
-            || args.toString().toLowerCase().indexOf("gape") > -1)
-            || args.toString().toLowerCase().indexOf("prolapse") > -1
-            || args.toString().toLowerCase().indexOf("toddlercon") > -1
-            || args.toString().toLowerCase().indexOf("scat") > -1
-            || args.toString().toLowerCase().indexOf("gore") > -1) {
-              msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
-                msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
-                msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
-                msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
-              });
-          } else {
-              msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
-                msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
-                msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
-                msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
-              });
-          }
+      if (!error && response.statusCode == 200) {
+        var result = JSON.parse(body);
+        if (result.length < 1) {
+          msg.channel.sendMessage("Sorry, nothing found.");
+          return;
         }
-      })
+        if (args.length < 1) {
+          args = "<no tags specified>";
+        }
+        if (functions.checkBlacklist(args)) {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
+            msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+            msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+            msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+          });
+        } else {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+            msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+            msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+            msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
+          });
+        }
+      }
+    });
   }
 };
 

@@ -2,7 +2,7 @@ var config = require("../config.json"),
   Datastore = require('nedb');
 
 var db = new Datastore({
-  filename: './runtime/databases/manga_track_store',
+  filename: './databases/manga_track_store',
   autoload: true
 });
 
