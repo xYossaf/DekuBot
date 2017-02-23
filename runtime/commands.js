@@ -523,7 +523,9 @@ Commands.setgame = {
   lvl: 6,
   cooldown: 0,
   func: function(bot, msg, args){
-    bot.user.setGame(args);
+    if (msg.author.id === config.dev_id) {
+      bot.user.setGame(args);
+    }
   }
 };
 
