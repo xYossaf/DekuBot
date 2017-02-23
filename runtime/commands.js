@@ -174,7 +174,7 @@ Commands.botstatus = {
     data.setDescription("If you have any questions or need some help, contact **RoddersGH#4702**")
     data.setThumbnail("https://cdn.discordapp.com/attachments/239907411899580417/282597112485642241/pretty_much_finished.png")
     data.setColor("#66D6CC")
-    
+
     msg.channel.sendEmbed(data);
   }
 };
@@ -421,7 +421,7 @@ Commands.quote = {
           quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").trim();
       }
     }
-    
+
     var randomHex = "#000000".replace(/0/g, function() {
       return (~~(Math.random() * 16)).toString(16);
     });
@@ -430,7 +430,7 @@ Commands.quote = {
     data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
     data.setColor(randomHex)
     data.setDescription(quote)
-    
+
     msg.channel.sendEmbed(data)
   }
 };
@@ -447,7 +447,7 @@ Commands.math = {
     } catch(e) {
       msg.channel.sendMessage("```diff\n-" + e + "```")
     }
-   
+
   }
 };
 
@@ -463,7 +463,7 @@ Commands.maths = {
     } catch(e) {
       msg.channel.sendMessage("```diff\n-" + e + "```")
     }
-   
+
   }
 };
 
@@ -517,6 +517,15 @@ Commands.setavatar = {
   }
 };
 
+Commands.setgame = {
+  name: "setgame",
+  help: "tbd",
+  lvl: 6,
+  cooldown: 0,
+  func: function(bot, msg, args){
+    bot.user.setGame(args);
+  }
+};
 
 
 
