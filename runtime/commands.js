@@ -415,10 +415,10 @@ Commands.quote = {
     if (msg.mentions.users.array().length <= 0 || msg.mentions.users.array().length > 1) {
       msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
     } else {
-      if (args.split(" ")[0] === "<@" + msg.mentions.users.array()[0].id + ">") {
-          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").substring(1);
+      if (args.split(" ")[0] === msg.guild.members.get(msg.mentions.users.array()[0].id)) {
+          quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").substring(1);
       } else {
-          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").trim();
+          quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").trim();
       }
     }
     
@@ -485,7 +485,7 @@ Commands.server = {
       data.addField("Members", msg.guild.members.array().length, true)
       data.addField("Roles", msg.guild.roles.array().length, true)
       data.addField("Region", msg.guild.region, true)
-      data.addField("Server Created", `${msg.guild.createdAt.getUTCDate()}/${msg.guild.createdAt.getUTCMonth()}/${msg.guild.createdAt.getUTCFullYear()}`, true)
+      data.addField("Server Created", `${msg.guild.createdAt.toDateString()}`, true)
       data.addField("Server Owner", `${msg.guild.owner.user.username}#${msg.guild.owner.user.discriminator}`, true)
       data.addField("Channels", msg.guild.channels.array().length, true);
       if (msg.guild.iconURL) data.setThumbnail(msg.guild.iconURL);
