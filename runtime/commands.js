@@ -412,22 +412,22 @@ Commands.quote = {
   cooldown: 0,
   func: function(bot, msg, args) {
     var quote = ""
-    if (msg.mentions.users.array().length <= 0 || msg.mentions.users.array().length > 1) {
-      msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
+    var data = new Discord.RichEmbed(data)
+    
+    if (msg.mentions.users.array().length <= 0) {
+      quote = args
+      data.setAuthor(` ${msg.author.username}`, msg.author.avatarURL)
+    } else if (args.split(" ")[0] === "<@" + msg.mentions.users.array()[0].id + ">" || args.split(" ")[0] === "<@!" + msg.mentions.users.array()[0].id + ">") {
+      data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
+      quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").substring(1);
     } else {
-      if (args.split(" ")[0] === msg.guild.members.get(msg.mentions.users.array()[0].id)) {
-          quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").substring(1);
-      } else {
-          quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").trim();
-      }
+      msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
     }
 
     var randomHex = "#000000".replace(/0/g, function() {
       return (~~(Math.random() * 16)).toString(16);
     });
-
-    var data = new Discord.RichEmbed(data);
-    data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
+    
     data.setColor(randomHex)
     data.setDescription(quote)
 
