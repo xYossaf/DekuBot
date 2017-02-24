@@ -237,7 +237,6 @@ Commands.customcommands = {
   }
 };
 
-//*TODO* Use new library http://www.graphicsmagick.org/GraphicsMagick.html#details-compose so we can handle gifs
 Commands.rip = {
   name: "rip",
   help: "tbd",
@@ -339,7 +338,6 @@ Commands.dice = {
   }
 };
 
-//TODO Don't forget to figure out install for gm so that it works on linux
 Commands.triggered = {
   name: "triggered",
   help: "tbd",
@@ -1519,6 +1517,33 @@ Commands.unservermangatrack = {
         msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
+  }
+};
+
+//MUSIC COMMANDS
+Commands.joinvoice = {
+  name: "joinvoice",
+  help: "tbd",
+  lvl: 1,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.member.voiceChannel) {
+      msg.member.voiceChannel.join().then(connection => { 
+        msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
+      })
+    } else {
+      msg.channel.sendMessage('```diff\n- Error: You need to join a voice channel first```');
+    }
+  }
+};
+
+Commands.leavevoice = {
+  name: "leavevoice",
+  help: "tbd",
+  lvl: 1,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    msg.guild.voiceConnection.channel.leave()
   }
 };
 
