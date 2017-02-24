@@ -4,7 +4,6 @@
 
 <p align="center">
 <a href="http://nodejs.org"><img src="https://img.shields.io/badge/Node.js-6.9.1-brightgreen.svg" alt="Node JS"></a>
-<a href="https://discord.gg/we8bdxJ"><img src="https://discordapp.com/api/guilds/110462143152803840/widget.png?style=banner2" alt="Discord server"></a>
 </p>
 
 ---
@@ -24,7 +23,7 @@ Dekubot is a general purpose discord chat-bot. It performs various different tas
 
 * For a list of commands I recommend reading the [Wiki](https://github.com/RoddersGH/DekuBot/wiki/General-Commands) we have here on this repository as it has a comprehensive list of every command and how they can be used
 
-* If you have any further questions or you want to help in the development of DekuBot then please join our [Discord server](https://discord.gg/we8bdxJ) 
+* If you have any further questions or you want to help in the development of DekuBot then please join our [discord server](https://discord.gg/we8bdxJ) 
 
 ## Installation
 
