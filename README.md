@@ -3,7 +3,7 @@
 
 
 <p align="center">
-<a href="http://nodejs.org"><img src="https://img.shields.io/badge/Node.js-6.9.1-brightgreen.svg" alt="Node JS"></a>
+<a href="http://nodejs.org"><img src="https://img.shields.io/badge/Node.js-7.5.0-brightgreen.svg" alt="Node JS"></a>
 <a href="https://discord.gg/we8bdxJ"><img src="https://discordapp.com/api/guilds/239907411899580417/widget.png" alt="Discord server"></a>
 </p>
 
