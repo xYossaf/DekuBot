@@ -1635,7 +1635,6 @@ Commands.request = {
                 console.log(error);
               }
               else {
-                console.log(result.items[0])
                 var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
 
                 var data = new Discord.RichEmbed(data);
