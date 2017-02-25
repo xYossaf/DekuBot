@@ -24,6 +24,10 @@ var youtubeNode = require("youtube-node");
 var ytdl = require("ytdl-core");
 var Commands = [];
 
+var youtube = new youtubeNode();
+
+youtube.setKey(config.youtube);
+
 
 // GENERAL COMMANDS
 Commands.help = {
@@ -1607,10 +1611,47 @@ Commands.request = {
         var regex = new RegExp("https:[/][/]www[.]youtube[.]com[/]watch[?]v[=][a-zA-Z0-9\-_]{11}", "ig")
         var str = regex.exec(args)
         if (str) {
-          music.addToSongs(bot, msg.guild, str[0], msg.member)
-          msg.channel.sendMessage('```md\nAdded the following to the queue:\n# '+ str[0] + '```');
+          youtube.getById(str[0].substr(32), function(error, result) {
+            if (error) {
+              console.log(error);
+            }
+            else {
+              console.log(result)
+              var data = new Discord.RichEmbed(data);
+              data.setAuthor(msg.member.displayName + ' added the following to the queue:')
+              data.setTitle('▶️️ Title:   ' + result.items[0].snippet.title)
+              data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
+              data.setColor("#FF4500")
+              data.setDescription("🔗 **URL:** " + str[0])
+             
+              msg.channel.sendEmbed(data);
+              music.addToSongs(bot, msg.guild, str[0], msg.member, result.items[0])
+            }
+          })
         } else {
-          msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA```');
+          if (args) {
+            youtube.search(args, 2, function(error, result) {
+              if (error) {
+                console.log(error);
+              }
+              else {
+                //console.log(result)
+                var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
+
+                var data = new Discord.RichEmbed(data);
+                data.setAuthor(msg.member.displayName + ' added the following to the queue:')
+                data.setTitle('▶️️ Title:   ' + result.items[0].snippet.title)
+                data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
+                data.setColor("#FF4500")
+                data.setDescription("🔗 **URL:** " + link)
+                
+                msg.channel.sendEmbed(data)
+                music.addToSongs(bot, msg.guild, link, msg.member, result.items[0])
+              }
+            })
+          } else {
+            msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA or give a search term```');
+          }
         }
       } else {
         msg.channel.sendMessage('```diff\n- Error: You need to join the voice channel the bot is in first```');
@@ -1621,8 +1662,8 @@ Commands.request = {
   }
 };
 
-Commands.voteskip = {
-  name: "voteskip",
+Commands.skipsong = {
+  name: "skipsong",
   help: "tbd",
   lvl: 0,
   cooldown: 0,
@@ -1764,8 +1805,9 @@ Commands.volume = {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
             var vol = parseFloat(args)
-            if (vol) {
+            if (vol && vol > 0 && vol < 350) {
               music.setVolume(bot, msg.guild, vol)
+              msg.channel.sendMessage('```fix\n- The volume has been set to ' + vol + '%```');
             } else {
               msg.channel.sendMessage("```diff\n- Error: a number between 1 and 100 was not given; where 40 is average volume```");
             }

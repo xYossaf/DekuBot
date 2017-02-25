@@ -22,7 +22,7 @@ exports.removeFromGuildArray = function(bot, guild) {
   } 
 };
 
-exports.addToSongs = function(bot, guild, url, user) {
+exports.addToSongs = function(bot, guild, url, user, info) {
 	for (x = 0; x < guildArray.length; x++) {
 		(function(i) {
 
@@ -31,8 +31,11 @@ exports.addToSongs = function(bot, guild, url, user) {
 	    	if (guildArray[i].songs.length === 0) {
 	    		guildArray[i].songs.push({
 	    			url: url,
-	    			addedBy: user.displayName
+	    			addedBy: user.displayName,
+	    			title: info.snippet.title,
+	    			thumbnail: info.snippet.thumbnails.default.url
 	    		})
+	    	
 					const streamOptions = { seek: 0, volume: 0.3 };
 				  const stream = ytdl(guildArray[i].songs[0].url, {filter : 'audioonly'});
 				  const dispatcher = guild.voiceConnection.playStream(stream, streamOptions)
@@ -43,7 +46,9 @@ exports.addToSongs = function(bot, guild, url, user) {
 	    	} else {
 	    		guildArray[i].songs.push({
 	    			url: url,
-	    			addedBy: user.displayName
+	    			addedBy: user.displayName,
+	    			title: info.snippet.title,
+	    			thumbnail: info.snippet.thumbnails.default.url
 	    		})
 	    	}
 	    }
@@ -63,7 +68,7 @@ var addListener = function(currentGuild, guild) {
 	    const dispatcher = guild.voiceConnection.playStream(stream, streamOptions)
 			currentGuild.stream = dispatcher
 			addListener(currentGuild, guild);
-
+			currentGuild.skipArray = []
 			currentGuild.songs.splice(0, 1)
 		} else if (currentGuild.songs.length === 1) {
 			currentGuild.songs.splice(0, 1)	
@@ -127,14 +132,20 @@ exports.getQueue = function(bot, guild, channel) {
 					channel.sendMessage('```fix\nThere are currently no songs in the queue```')
 				} else {
 					var msgArray = []
-					msgArray.push("```diff\nThe current song queue is:\n---------------------------------------------------------------------------------")
-					for (k = 0; k < guildArray[i].songs.length; k++) {
-						msgArray.push("+ URL: " + guildArray[i].songs[k].url + "       Added By: " + guildArray[i].songs[k].addedBy + "\n")
-					}
-					msgArray.push('```')
-					channel.sendMessage(msgArray)
+					channel.sendMessage("```fix\nThe current song queue is:\n---------------------------------------------------------------------------------```").then(() => {
+						for (k = 0; k < guildArray[i].songs.length; k++) {
+
+							var data = new Discord.RichEmbed(data);
+							data.setAuthor('Added by ' + guildArray[i].songs[k].addedBy)
+	            data.setTitle('▶️️ Title:   ' + guildArray[i].songs[k].title)
+	            data.setThumbnail(guildArray[i].songs[k].thumbnail)
+	            data.setColor("#FF4500")
+	            data.setDescription("🔗 **URL:** " + guildArray[i].songs[k].url)
+
+							channel.sendEmbed(data)
+						}
+					})
 				}
-				
 			}
 		})(x)
 	}
