@@ -8,6 +8,7 @@ var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
+var music = require("./music.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -23,6 +24,10 @@ var youtubeNode = require("youtube-node");
 var ytdl = require("ytdl-core");
 var Commands = [];
 
+var youtube = new youtubeNode();
+
+youtube.setKey(config.youtube);
+youtube.addParam('type', 'video');
 
 // GENERAL COMMANDS
 Commands.help = {
@@ -237,7 +242,6 @@ Commands.customcommands = {
   }
 };
 
-//*TODO* Use new library http://www.graphicsmagick.org/GraphicsMagick.html#details-compose so we can handle gifs
 Commands.rip = {
   name: "rip",
   help: "tbd",
@@ -339,7 +343,6 @@ Commands.dice = {
   }
 };
 
-//TODO Don't forget to figure out install for gm so that it works on linux
 Commands.triggered = {
   name: "triggered",
   help: "tbd",
@@ -1034,7 +1037,6 @@ Commands.anime = {
         bot.reply(msg, "❌ Nothing found ");
         return
       } else {
-        console.log(r[0]);
         nani.get('anime/' + r[0].id).then(function(data) {
           msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
             var msgArray = [];
@@ -1522,6 +1524,306 @@ Commands.unservermangatrack = {
   }
 };
 
+
+
+//MUSIC COMMANDS
+//TODO Make it auto leave when trying to join the servers afk channel
+Commands.dj = {
+  name: "dj",
+  help: "tbd",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        msg.channel.sendMessage('```fix\nA DJ role already exists, it is the role:```' + msg.guild.roles.get(r.DJRole))
+      } else {
+        msg.guild.createRole({name: 'DJ'}).then(role => {
+          msg.channel.sendMessage('```fix\nA DJ role has been created. People with this role can use all of the music commands.```')
+          guildDB.setDJRole(msg.guild.id, role.id)
+          msg.member.addRole(role)
+        })
+      }
+    })
+  }
+};
+
+Commands.joinvoice = {
+  name: "joinvoice",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    //have the d role to use this command
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.member.voiceChannel) {
+            msg.member.voiceChannel.join().then(connection => {
+              music.addToGuildArray(bot, msg.guild) 
+              msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
+            })
+          } else {
+            msg.channel.sendMessage('```diff\n- Error: You need to join a voice channel first```');
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+  
+Commands.leavevoice = {
+  name: "leavevoice",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.removeFromGuildArray(bot, msg.guild) 
+            msg.guild.voiceConnection.channel.leave()
+            msg.channel.sendMessage('Disconnected from the ``' + msg.guild.voiceConnection.channel.name + '`` voice channel.');
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.request = {
+  name: "request",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      if (msg.member.voiceChannel && msg.member.voiceChannel.id == msg.guild.voiceConnection.channel.id) {
+        var regex = new RegExp("https:[/][/]www[.]youtube[.]com[/]watch[?]v[=][a-zA-Z0-9\-_]{11}", "ig")
+        var str = regex.exec(args)
+        if (str) {
+          youtube.getById(str[0].substr(32), function(error, result) {
+            if (error) {
+              console.log(error);
+            }
+            else {
+              console.log(result)
+              var data = new Discord.RichEmbed(data);
+              data.setAuthor(msg.member.displayName + ' added the following to the queue:')
+              data.setTitle('▶️️ Title:   ' + result.items[0].snippet.title)
+              data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
+              data.setColor("#FF4500")
+              data.setDescription("🔗 **URL:** " + str[0])
+             
+              msg.channel.sendEmbed(data);
+              music.addToSongs(bot, msg.guild, str[0], msg.member, result.items[0])
+            }
+          })
+        } else {
+          if (args) {
+            youtube.search(args, 2, function(error, result) {
+              if (error) {
+                console.log(error);
+              }
+              else {
+                var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
+
+                var data = new Discord.RichEmbed(data);
+                data.setAuthor(msg.member.displayName + ' added the following to the queue:')
+                data.setTitle('▶️️ Title:   ' + result.items[0].snippet.title)
+                data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
+                data.setColor("#FF4500")
+                data.setDescription("🔗 **URL:** " + link)
+                
+                msg.channel.sendEmbed(data)
+                music.addToSongs(bot, msg.guild, link, msg.member, result.items[0])
+              }
+            })
+          } else {
+            msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA or give a search term```');
+          }
+        }
+      } else {
+        msg.channel.sendMessage('```diff\n- Error: You need to join the voice channel the bot is in first```');
+      }
+    } else {
+      msg.channel.sendMessage('```diff\n- Error: I need to be added to a voice channel before I can play music```');
+    }
+  }
+};
+
+Commands.skipsong = {
+  name: "skipsong",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      if (msg.member.voiceChannel && msg.member.voiceChannel.id == msg.guild.voiceConnection.channel.id) {
+        music.skipSong(bot, msg.guild.voiceConnection.channel, msg.member.id, msg.channel)
+      } else {
+        msg.channel.sendMessage("```diff\n- Error:You aren't listening to the music```");
+      }
+    } else {
+      msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+    }
+  }
+};
+
+Commands.clearqueue = {
+  name: "clearsongs",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.clearSongs(bot, msg.guild) 
+            msg.channel.sendMessage('```fix\nAll songs cleared from the queue```');
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.endsong = {
+  name: "endsong",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.endSong(bot, msg.guild) 
+            msg.channel.sendMessage('```fix\nSong ended...```');
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.queue = {
+  name: "queue",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      music.getQueue(bot, msg.guild, msg.channel)
+    } else {
+      msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+    }
+  }
+};
+
+Commands.pause = {
+  name: "pause",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.pause(bot, msg.guild)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.resume = {
+  name: "resume",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.resume(bot, msg.guild)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+    
+  }
+};
+
+Commands.volume = {
+  name: "resume",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            var vol = parseFloat(args)
+            if (vol && vol > 0 && vol < 350) {
+              music.setVolume(bot, msg.guild, vol)
+              msg.channel.sendMessage('```fix\n- The volume has been set to ' + vol + '%```');
+            } else {
+              msg.channel.sendMessage("```diff\n- Error: a number between 1 and 100 was not given; where 40 is average volume```");
+            }
+
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+    
+  }
+};
 
 
 
