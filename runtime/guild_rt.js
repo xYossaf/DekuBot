@@ -5,7 +5,7 @@ var db = new Datastore({
   filename: './databases/guild_store',
   autoload: true
 });
-
+//TODO UPDATE DB SO THAT IT HOLDS DJROLE
 db.persistence.setAutocompactionInterval(30000);
 //*TODO* Add blacklist field
 exports.newGuild = function(guild) {
@@ -18,6 +18,7 @@ exports.newGuild = function(guild) {
   nsfwchannels: [],
   ignoredchannels: [],
   prefix: '!',
+  DJRole: "",
   welcomePM: false,
   factionPM: false
   };
@@ -610,6 +611,34 @@ exports.toggleFactionPM = function(guild_id) {
             }, {});
             resolve('The faction join prompt message will now be sent in a private message to each new member.')
           }
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.setDJRole = function(guild_id, id) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+        _id: guild_id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('No guild');
+        } else {
+          db.update({
+            _id: guild_id
+          }, {
+            $set: {
+              DJRole: id
+            }
+          }, {});
+          resolve(id)
         }
       });
     } catch (e) {

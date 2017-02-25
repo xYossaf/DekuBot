@@ -101,7 +101,6 @@ dekubot.on("roleDelete", (role) => {
   factionDB.deleteFaction(role.id).catch(function(e) {
     logger.log('error', e)
   })
-  console.log('lol')
 });
 
 dekubot.on("channelDelete", (channel) => {

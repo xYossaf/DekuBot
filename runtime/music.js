@@ -9,9 +9,9 @@ exports.initGuildArray = function(bot) {
 		if (bot.guilds.array()[i].voiceConnection) {
 			var obj = {
 				guildID: bot.guilds.array[i].id,
-				skipCount: 0,
+				skipArray: [],
 				stream: '',
-				tracks: []
+				songs: []
 			}
 			guildArray.push(obj)
 		}
@@ -21,9 +21,9 @@ exports.initGuildArray = function(bot) {
 exports.addToGuildArray = function(bot, guild) {
 	var obj = {
 		guildID: guild.id,
-		skipCount: 0,
+		skipArray: [],
 		stream: '',
-		tracks: []
+		songs: []
 	}
 	guildArray.push(obj)
 };
@@ -36,23 +36,27 @@ exports.removeFromGuildArray = function(bot, guild) {
   } 
 };
 
-exports.addToTracks = function(bot, guild, url) {
+exports.addToSongs = function(bot, guild, url) {
 	for (x = 0; x < guildArray.length; x++) {
 		(function(i) {
 
 	    if (guildArray[i].guildID == guild.id) {
-
-	    	if (guildArray[i].tracks.length === 0) {
-	    		guildArray[i].tracks.push(url)
-					const streamOptions = { seek: 0, volume: 0.4 };
-				  const stream = ytdl(guildArray[i].tracks[0], {filter : 'audioonly'});
+	    	//info
+	    	if (guildArray[i].songs.length === 0) {
+	    		guildArray[i].songs.push(url)
+					const streamOptions = { seek: 0, volume: 0.3 };
+				  const stream = ytdl(guildArray[i].songs[0], {filter : 'audioonly'});
+				  stream.on('info', (info, format) => {
+				  	//console.log(info)
+				  	//console.log(format)
+				  })
 				  const dispatcher = guild.voiceConnection.playStream(stream, streamOptions)
 				  guildArray[i].stream = dispatcher
 				  
 				  addListener(guildArray[i], guild)
 					
 	    	} else {
-	    		guildArray[i].tracks.push(url)
+	    		guildArray[i].songs.push(url)
 	    	}
 	    }
 
@@ -64,43 +68,49 @@ exports.addToTracks = function(bot, guild, url) {
 var addListener = function(currentGuild, guild) {
 	
 	currentGuild.stream.on('end', () => {
-		if (currentGuild.tracks.length > 1) {
+		if (currentGuild.songs.length > 1) {
 
-			const streamOptions = { seek: 0, volume: 0.4 };
-	    const stream = ytdl(currentGuild.tracks[1], {filter : 'audioonly'});
+			const streamOptions = { seek: 0, volume: 0.3 };
+	    const stream = ytdl(currentGuild.songs[1], {filter : 'audioonly'});
 	    const dispatcher = guild.voiceConnection.playStream(stream, streamOptions)
 			currentGuild.stream = dispatcher
 			addListener(currentGuild, guild);
 
-			currentGuild.tracks.splice(0, 1)
-		} else if (currentGuild.tracks.length === 1) {
-			currentGuild.tracks.splice(0, 1)	
+			currentGuild.songs.splice(0, 1)
+		} else if (currentGuild.songs.length === 1) {
+			currentGuild.songs.splice(0, 1)	
 		}
 	});
 };
 
-exports.clearTracks = function(bot, guild) {
+exports.clearSongs = function(bot, guild) {
 	for (i = 0; i < guildArray.length; i++) {
     if (guildArray[i].guildID == guild.id) {
-      guildArray[i].tracks = []
-      exports.endTrack(bot, guild)
+      guildArray[i].songs = []
+      exports.endSong(bot, guild)
     }
   } 
 };
 
-exports.skipTrack = function(bot, voiceChannel) {
-	for (i = 0; i < guildArray.length; i++) {
-    if (guildArray[i].guildID == voiceChannel.guild.id) {
-      guildArray[i].skipCount++
-      if (guildArray[i].skipCount / voiceChannel.members.array().length-1 > 0.5) {
-      	exports.endTrack(bot, voiceChannel.guild)
-      	guildArray[i].skipCount = 0
-      }
-    }
+exports.skipSong = function(bot, voiceChannel, id, channel) {
+	for (x = 0; x < guildArray.length; x++) {
+		(function(i) {		
+	    if (guildArray[i].guildID == voiceChannel.guild.id) {
+	   		if (skipCheck(id, guildArray[i])) {
+	   			guildArray[i].skipArray.push(id)
+	   			channel.sendMessage("```Votes to skip current song: " + guildArray[i].skipArray.length + " / " + Math.ceil((voiceChannel.members.array().length-1)/2) + "```")
+		      if ((guildArray[i].skipArray.length) / (voiceChannel.members.array().length-1) >= 0.5) {
+		      	exports.endSong(bot, voiceChannel.guild)
+		      	guildArray[i].skipArray = []
+		      	channel.sendMessage("```Skipping song...```")
+		      }
+	   		}
+	    }
+    })(x)
   }
 };
 
-exports.endTrack = function(bot, guild) {
+exports.endSong = function(bot, guild) {
 	for (x = 0; x < guildArray.length; x++) {
 		(function(i) {
 			if (guildArray[i].guildID == guild.id) {
@@ -111,3 +121,12 @@ exports.endTrack = function(bot, guild) {
 		})(x)
   } 
 };
+
+var skipCheck = function(id, guild) {
+	for (i = 0; i < guild.skipArray.length; i++) {
+		if (guild.skipArray[i] == id) {
+			return false
+		}
+	}
+	return true
+}

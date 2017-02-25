@@ -1521,22 +1521,55 @@ Commands.unservermangatrack = {
   }
 };
 
+
+
 //MUSIC COMMANDS
 //TODO Make it auto leave when trying to join the servers afk channel
+Commands.dj = {
+  name: "dj",
+  help: "tbd",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        msg.channel.sendMessage('```fix\nA DJ role already exists, it is the role:```' + msg.guild.roles.get(r.DJRole))
+      } else {
+        msg.guild.createRole({name: 'DJ'}).then(role => {
+          msg.channel.sendMessage('```fix\nA DJ role has been created. People with this role can use all of the music commands.```')
+          guildDB.setDJRole(msg.guild.id, role.id)
+          msg.member.addRole(role)
+        })
+      }
+    })
+  }
+};
+
 Commands.joinvoice = {
   name: "joinvoice",
   help: "tbd",
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    if (msg.member.voiceChannel) {
-      msg.member.voiceChannel.join().then(connection => {
-        music.addToGuildArray(bot, msg.guild) 
-        msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
-      })
-    } else {
-      msg.channel.sendMessage('```diff\n- Error: You need to join a voice channel first```');
-    }
+    //have the d role to use this command
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.member.voiceChannel) {
+            msg.member.voiceChannel.join().then(connection => {
+              music.addToGuildArray(bot, msg.guild) 
+              msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
+            })
+          } else {
+            msg.channel.sendMessage('```diff\n- Error: You need to join a voice channel first```');
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
   }
 };
   
@@ -1546,10 +1579,21 @@ Commands.leavevoice = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    if (msg.guild.voiceConnection) {
-      music.removeFromGuildArray(bot, msg.guild) 
-      msg.guild.voiceConnection.channel.leave()
-    }
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.removeFromGuildArray(bot, msg.guild) 
+            msg.guild.voiceConnection.channel.leave()
+            msg.channel.sendMessage('Disconnected from the ``' + msg.guild.voiceConnection.channel.name + '`` voice channel.');
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
   }
 };
 
@@ -1559,8 +1603,21 @@ Commands.request = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    
-    music.addToTracks(bot, msg.guild, args)
+    if (msg.guild.voiceConnection) {
+      if (msg.member.voiceChannel) {
+        var regex = new RegExp("https:[/][/]www[.]youtube[.]com[/]watch[?]v[=][a-zA-Z0-9\-_]{11}", "ig")
+        var str = regex.exec(args)
+        if (str) {
+          music.addToSongs(bot, msg.guild, str[0])
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA```');
+        }
+      } else {
+        msg.channel.sendMessage('```diff\n- Error: You need to join the voice channel the bot is in first```');
+      }
+    } else {
+      msg.channel.sendMessage('```diff\n- Error: I need to be added to a voice channel before I can play music```');
+    }
   }
 };
 
@@ -1570,9 +1627,73 @@ Commands.voteskip = {
   lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    music.skipTrack(bot, msg.guild.voiceConnection.channel)
+    if (msg.guild.voiceConnection) {
+      if (msg.member.voiceChannel) {
+        music.skipSong(bot, msg.guild.voiceConnection.channel, msg.member.id, msg.channel)
+      } else {
+        msg.channel.sendMessage("```diff\n- Error:You aren't listening to the music```");
+      }
+    } else {
+      msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+    }
   }
 };
+
+Commands.clearqueue = {
+  name: "clearsongs",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.clearSongs(bot, msg.guild) 
+            msg.channel.sendMessage('```fix\nAll songs cleared from the queue```');
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.endsong = {
+  name: "endsong",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.endSong(bot, msg.guild) 
+            msg.channel.sendMessage('```fix\nSong ended...```');
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+
+
+
+
+
 
 // NSFW COMMANDS
 Commands.rule34 = {
