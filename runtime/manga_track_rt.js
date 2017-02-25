@@ -279,14 +279,12 @@ exports.removeFromPM = function(id, user) {
 exports.removeFromAllHere = function(guild, user) {
   return new Promise(function(resolve, reject) {
     try {
-      console.log(guild.id);
       db.find({
         guild_id: guild.id
       }, function(err, res) {
         if (err) {
           return reject(err);
         }
-        console.log(res);
         if (res.length === 0) {
           return reject('Nothing found!');
         } else {

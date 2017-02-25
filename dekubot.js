@@ -230,7 +230,7 @@ dekubot.on("message", (message) => {
             if (Commands[command].type == 'nsfw') {
               guildDB.checkNSFW(message.channel).then(function(r) {
                 if (r != 'Channel is not nsfw') {
-                  console.log(r);
+                  // console.log(r);
                 } else {
                   message.channel.sendMessage(r);
                 }

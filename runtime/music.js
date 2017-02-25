@@ -163,3 +163,15 @@ exports.resume = function(bot, guild) {
 		})(x)
   } 
 };
+
+exports.setVolume = function(bot, guild, volume) {
+	for (x = 0; x < guildArray.length; x++) {
+		(function(i) {
+			if (guildArray[i].guildID == guild.id) {
+
+	    	guildArray[i].stream.setVolume(volume/100)
+
+	    }
+		})(x)
+  } 
+};

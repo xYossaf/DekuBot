@@ -1033,7 +1033,6 @@ Commands.anime = {
         bot.reply(msg, "❌ Nothing found ");
         return
       } else {
-        console.log(r[0]);
         nani.get('anime/' + r[0].id).then(function(data) {
           msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
             var msgArray = [];
@@ -1604,11 +1603,12 @@ Commands.request = {
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
-      if (msg.member.voiceChannel) {
+      if (msg.member.voiceChannel && msg.member.voiceChannel.id == msg.guild.voiceConnection.channel.id) {
         var regex = new RegExp("https:[/][/]www[.]youtube[.]com[/]watch[?]v[=][a-zA-Z0-9\-_]{11}", "ig")
         var str = regex.exec(args)
         if (str) {
           music.addToSongs(bot, msg.guild, str[0], msg.member)
+          msg.channel.sendMessage('```md\nAdded the following to the queue:\n# '+ str[0] + '```');
         } else {
           msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA```');
         }
@@ -1628,7 +1628,7 @@ Commands.voteskip = {
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
-      if (msg.member.voiceChannel) {
+      if (msg.member.voiceChannel && msg.member.voiceChannel.id == msg.guild.voiceConnection.channel.id) {
         music.skipSong(bot, msg.guild.voiceConnection.channel, msg.member.id, msg.channel)
       } else {
         msg.channel.sendMessage("```diff\n- Error:You aren't listening to the music```");
@@ -1744,6 +1744,33 @@ Commands.resume = {
   }
 };
 
+Commands.volume = {
+  name: "resume",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+
+      if (r.DJRole) {
+        if (msg.guild.voiceConnection) {
+          var vol = parseFloat(args)
+          if (vol) {
+            music.setVolume(bot, msg.guild, vol)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: a number between 1 and 100 was not given; where 40 is average volume```");
+          }
+
+        } else {
+          msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+    
+  }
+};
 
 
 
