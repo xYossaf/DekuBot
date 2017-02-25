@@ -1711,10 +1711,14 @@ Commands.pause = {
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
       if (r.DJRole) {
-        if (msg.guild.voiceConnection) {
-          music.pause(bot, msg.guild)
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.pause(bot, msg.guild)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
         } else {
-          msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
         }
       } else {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
@@ -1731,10 +1735,14 @@ Commands.resume = {
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
       if (r.DJRole) {
-        if (msg.guild.voiceConnection) {
-          music.resume(bot, msg.guild)
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.resume(bot, msg.guild)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
         } else {
-          msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
         }
       } else {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
@@ -1753,16 +1761,20 @@ Commands.volume = {
     guildDB.get(msg.guild.id).then(r => {
 
       if (r.DJRole) {
-        if (msg.guild.voiceConnection) {
-          var vol = parseFloat(args)
-          if (vol) {
-            music.setVolume(bot, msg.guild, vol)
-          } else {
-            msg.channel.sendMessage("```diff\n- Error: a number between 1 and 100 was not given; where 40 is average volume```");
-          }
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            var vol = parseFloat(args)
+            if (vol) {
+              music.setVolume(bot, msg.guild, vol)
+            } else {
+              msg.channel.sendMessage("```diff\n- Error: a number between 1 and 100 was not given; where 40 is average volume```");
+            }
 
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
         } else {
-          msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
         }
       } else {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
