@@ -8,6 +8,7 @@ var functions = require("./runtime/functions.js");
 var battle = require("./runtime/battle_rt.js");
 var customcommands = require("./runtime/custom_command_rt.js");
 var redditDB = require("./runtime/reddit_rt.js");
+var music = require("./runtime/music.js");
 
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
@@ -162,7 +163,7 @@ dekubot.on("ready", () => {
       })
     })(x)
   }
-  
+  music.initGuildArray(dekubot)
   functions.initMangaDB()
   functions.checkManga(dekubot);
   functions.checkReddit(dekubot);

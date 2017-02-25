@@ -8,6 +8,7 @@ var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
+var music = require("./music.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -1521,14 +1522,16 @@ Commands.unservermangatrack = {
 };
 
 //MUSIC COMMANDS
+//TODO Make it auto leave when trying to join the servers afk channel
 Commands.joinvoice = {
   name: "joinvoice",
   help: "tbd",
-  lvl: 1,
+  lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.member.voiceChannel) {
-      msg.member.voiceChannel.join().then(connection => { 
+      msg.member.voiceChannel.join().then(connection => {
+        music.addToGuildArray(bot, msg.guild) 
         msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
       })
     } else {
@@ -1536,19 +1539,40 @@ Commands.joinvoice = {
     }
   }
 };
-
+  
 Commands.leavevoice = {
   name: "leavevoice",
   help: "tbd",
-  lvl: 1,
+  lvl: 0,
   cooldown: 0,
   func: function(bot, msg, args) {
-    msg.guild.voiceConnection.channel.leave()
+    if (msg.guild.voiceConnection) {
+      music.removeFromGuildArray(bot, msg.guild) 
+      msg.guild.voiceConnection.channel.leave()
+    }
   }
 };
 
+Commands.request = {
+  name: "request",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    
+    music.addToTracks(bot, msg.guild, args)
+  }
+};
 
-
+Commands.voteskip = {
+  name: "voteskip",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    music.skipTrack(bot, msg.guild.voiceConnection.channel)
+  }
+};
 
 // NSFW COMMANDS
 Commands.rule34 = {
