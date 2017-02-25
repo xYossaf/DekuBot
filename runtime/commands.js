@@ -27,7 +27,7 @@ var Commands = [];
 var youtube = new youtubeNode();
 
 youtube.setKey(config.youtube);
-
+youtube.addParam('type', 'video');
 
 // GENERAL COMMANDS
 Commands.help = {
@@ -1635,7 +1635,7 @@ Commands.request = {
                 console.log(error);
               }
               else {
-                //console.log(result)
+                console.log(result.items[0])
                 var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
 
                 var data = new Discord.RichEmbed(data);

@@ -23,6 +23,7 @@ exports.removeFromGuildArray = function(bot, guild) {
 };
 
 exports.addToSongs = function(bot, guild, url, user, info) {
+	console.log(guildArray)
 	for (x = 0; x < guildArray.length; x++) {
 		(function(i) {
 
