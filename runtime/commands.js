@@ -1608,7 +1608,7 @@ Commands.request = {
         var regex = new RegExp("https:[/][/]www[.]youtube[.]com[/]watch[?]v[=][a-zA-Z0-9\-_]{11}", "ig")
         var str = regex.exec(args)
         if (str) {
-          music.addToSongs(bot, msg.guild, str[0])
+          music.addToSongs(bot, msg.guild, str[0], msg.member)
         } else {
           msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA```');
         }
@@ -1689,8 +1689,60 @@ Commands.endsong = {
   }
 };
 
+Commands.queue = {
+  name: "queue",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      music.getQueue(bot, msg.guild, msg.channel)
+    } else {
+      msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+    }
+  }
+};
 
+Commands.pause = {
+  name: "pause",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.guild.voiceConnection) {
+          music.pause(bot, msg.guild)
+        } else {
+          msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
 
+Commands.resume = {
+  name: "resume",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.guild.voiceConnection) {
+          music.resume(bot, msg.guild)
+        } else {
+          msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+    
+  }
+};
 
 
 

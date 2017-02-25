@@ -4,20 +4,6 @@ var ytdl = require("ytdl-core");
 
 var guildArray = []
 
-exports.initGuildArray = function(bot) {
-	for (i = 0; i < bot.guilds.array().length; i++) {
-		if (bot.guilds.array()[i].voiceConnection) {
-			var obj = {
-				guildID: bot.guilds.array[i].id,
-				skipArray: [],
-				stream: '',
-				songs: []
-			}
-			guildArray.push(obj)
-		}
-	}
-}
-
 exports.addToGuildArray = function(bot, guild) {
 	var obj = {
 		guildID: guild.id,
@@ -36,27 +22,29 @@ exports.removeFromGuildArray = function(bot, guild) {
   } 
 };
 
-exports.addToSongs = function(bot, guild, url) {
+exports.addToSongs = function(bot, guild, url, user) {
 	for (x = 0; x < guildArray.length; x++) {
 		(function(i) {
 
 	    if (guildArray[i].guildID == guild.id) {
-	    	//info
+
 	    	if (guildArray[i].songs.length === 0) {
-	    		guildArray[i].songs.push(url)
+	    		guildArray[i].songs.push({
+	    			url: url,
+	    			addedBy: user.displayName
+	    		})
 					const streamOptions = { seek: 0, volume: 0.3 };
-				  const stream = ytdl(guildArray[i].songs[0], {filter : 'audioonly'});
-				  stream.on('info', (info, format) => {
-				  	//console.log(info)
-				  	//console.log(format)
-				  })
+				  const stream = ytdl(guildArray[i].songs[0].url, {filter : 'audioonly'});
 				  const dispatcher = guild.voiceConnection.playStream(stream, streamOptions)
 				  guildArray[i].stream = dispatcher
 				  
 				  addListener(guildArray[i], guild)
 					
 	    	} else {
-	    		guildArray[i].songs.push(url)
+	    		guildArray[i].songs.push({
+	    			url: url,
+	    			addedBy: user.displayName
+	    		})
 	    	}
 	    }
 
@@ -71,7 +59,7 @@ var addListener = function(currentGuild, guild) {
 		if (currentGuild.songs.length > 1) {
 
 			const streamOptions = { seek: 0, volume: 0.3 };
-	    const stream = ytdl(currentGuild.songs[1], {filter : 'audioonly'});
+	    const stream = ytdl(currentGuild.songs[1].url, {filter : 'audioonly'});
 	    const dispatcher = guild.voiceConnection.playStream(stream, streamOptions)
 			currentGuild.stream = dispatcher
 			addListener(currentGuild, guild);
@@ -102,7 +90,7 @@ exports.skipSong = function(bot, voiceChannel, id, channel) {
 		      if ((guildArray[i].skipArray.length) / (voiceChannel.members.array().length-1) >= 0.5) {
 		      	exports.endSong(bot, voiceChannel.guild)
 		      	guildArray[i].skipArray = []
-		      	channel.sendMessage("```Skipping song...```")
+		      	channel.sendMessage("```fix\nSkipping song...```")
 		      }
 	   		}
 	    }
@@ -130,3 +118,48 @@ var skipCheck = function(id, guild) {
 	}
 	return true
 }
+
+exports.getQueue = function(bot, guild, channel) {
+	for (x = 0; x < guildArray.length; x++) {
+		(function(i) {
+			if (guildArray[i].guildID == guild.id) {
+				if (guildArray[i].songs.length === 0) {
+					channel.sendMessage('```fix\nThere are currently no songs in the queue```')
+				} else {
+					var msgArray = []
+					msgArray.push("```diff\nThe current song queue is:\n---------------------------------------------------------------------------------")
+					for (k = 0; k < guildArray[i].songs.length; k++) {
+						msgArray.push("+ URL: " + guildArray[i].songs[k].url + "       Added By: " + guildArray[i].songs[k].addedBy + "\n")
+					}
+					msgArray.push('```')
+					channel.sendMessage(msgArray)
+				}
+				
+			}
+		})(x)
+	}
+}
+
+exports.pause = function(bot, guild) {
+	for (x = 0; x < guildArray.length; x++) {
+		(function(i) {
+			if (guildArray[i].guildID == guild.id) {
+
+	    	guildArray[i].stream.pause()
+
+	    }
+		})(x)
+  } 
+};
+
+exports.resume = function(bot, guild) {
+	for (x = 0; x < guildArray.length; x++) {
+		(function(i) {
+			if (guildArray[i].guildID == guild.id) {
+
+	    	guildArray[i].stream.resume()
+
+	    }
+		})(x)
+  } 
+};

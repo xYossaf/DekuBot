@@ -162,7 +162,6 @@ dekubot.on("ready", () => {
       })
     })(x)
   }
-  music.initGuildArray(dekubot)
   functions.initMangaDB()
   functions.checkManga(dekubot);
   functions.checkReddit(dekubot);
