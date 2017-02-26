@@ -14,7 +14,7 @@ Dekubot is a general purpose discord chat-bot. It performs various different tas
 
 * General server utils such as having a welcome message
 * Creating feeds for the new posts on a subreddit
-* Works as a music bot by playing yotube links
+* Works as a music bot by playing youtube links
 * Tracking new releases of manga as they are released on [Mangastream](http://mangastream.com/)
 * Creating custom commands
 * A whole bunch of other stuff yo
