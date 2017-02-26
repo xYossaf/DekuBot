@@ -21,7 +21,7 @@ Dekubot is a general purpose discord chat-bot. It performs various different tas
 
 ## Adding the bot to your server
 
-* The way to add Dekubot to your server is to simply use the [Invite link](http://mangastream.com/). From that page you can add the bot to any server where you have manage_server permissions 
+* The way to add Dekubot to your server is to simply use the [Invite link](https://discordapp.com/oauth2/authorize?client_id=282126217275244545&scope=bot&permissions=2146954327). From that page you can add the bot to any server where you have manage_server permissions 
 
 * For a list of commands I recommend reading the [Wiki](https://github.com/RoddersGH/DekuBot/wiki/General-Commands) we have here on this repository as it has a comprehensive list of every command and how they can be used
 
