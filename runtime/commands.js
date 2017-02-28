@@ -1015,12 +1015,115 @@ Commands.disableleavemessage = {
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
-    guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
+    guildDB.setLeavemsg(msg.guild.id, "").then(function(r) {
       msg.channel.sendMessage(`The new leave message has been set to "${r}"`);
     })
   }
 };
 
+Commands.setup = {
+  name: "setup",
+  help: "tbd",
+  type: "admin",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      var data = new Discord.RichEmbed(data);
+      data.setAuthor(`The ${msg.guild.name} server`)
+      data.setTitle(`The following are the current settings for the server:`)
+      data.addField("ID", r._id, true)
+      data.addField("Superuser", `${bot.users.get(r.superuser_id).username} (${r.superuser_id})`, true)
+      data.addField("Announcment Channel", "``" + bot.channels.get(r.announcmentchannel).name + "``", true)
+      //console.log(r.nsfwchannels)
+      data.addField("NSFW Channel(s)", r.nsfwchannels, true)
+      //data.addField("Ignored Channel(s)", r.ignoredchannels, true)
+      data.addField("Bot Prefix", r.prefix, true)
+      data.addField("Welcome Message", r.welcomePM, true)
+      data.addField("Faction Join Message", r.factionPM, true)
+      
+      msg.author.sendEmbed(data)
+      
+      
+    })
+    
+  }
+};
+
+Commands.spoiler = {
+  name: "spoiler",
+  help: "tbd",
+  type: "admin",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    //console.log(msg.member.displayName)
+    args = args.replace(/\n/ig, " ").replace(/\u200B/ig, "")
+    if (args.indexOf(':') <= 0) {
+      msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
+    } else {
+      var height = Math.ceil(args.length / 60)
+      //max height should be 15
+      //console.log(height)
+      gm(385, height*20, "#36393E")
+        .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
+        .fontSize(15)  
+        .fill("#B9BABC")
+        .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " !\n- Hover over this to reveal")
+        .write('./images/tempspoil.png',function (err) {
+          if (err) {console.log(err)}
+          gm(385, height*20, "#36393E")
+            .toBuffer('PNG',function (err, buffer) {
+              functions.handleText(buffer, height, args.substr(args.indexOf(':') + 1), msg.channel, 0, msg.member.displayName)
+              //msg.delete()`
+            })
+        })
+    }
+    
+  }
+};
+
+Commands.spoils = {
+  name: "spoils",
+  help: "tbd",
+  type: "admin",
+  lvl: 1,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    //console.log(msg.member.displayName)
+    args = args.replace(/\n/ig, " ").replace(/\u200B/ig, "")
+    var id = args.substr(args.indexOf(':') + 1).trim()
+    //console.log(msg.channel.messages.array().length)
+    
+    msg.channel.fetchMessage(id).then(mesg => {
+      if (args.indexOf(':') <= 0) {
+        msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
+      } else {
+        var height = Math.ceil(args.length / 60)
+        //max height should be 15
+        //console.log(height)
+        gm(385, height*20, "#36393E")
+          .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
+          .fontSize(15)  
+          .fill("#B9BABC")
+          .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal")
+          .write('./images/tempspoil.png',function (err) {
+            if (err) {console.log(err)}
+            gm(385, height*20, "#36393E")
+              .toBuffer('PNG',function (err, buffer) {
+                functions.handleText(buffer, height, mesg.content, msg.channel, 0, mesg.member.displayName)
+                msg.delete()
+                mesg.delete()
+              })
+          })
+      }
+    })
+    //onsole.log(mesg)
+    
+    
+  }
+};
+//36393E|\u200B
 
 
 // WEEB COMMANDS
@@ -1619,7 +1722,7 @@ Commands.request = {
               console.log(result)
               var data = new Discord.RichEmbed(data);
               data.setAuthor(msg.member.displayName + ' added the following to the queue:')
-              data.setTitle('▶️️ Title:   ' + result.items[0].snippet.title)
+              data.setTitle('▶️️ Title:     ' + result.items[0].snippet.title)
               data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
               data.setColor("#FF4500")
               data.setDescription("🔗 **URL:** " + str[0])
@@ -1639,7 +1742,7 @@ Commands.request = {
 
                 var data = new Discord.RichEmbed(data);
                 data.setAuthor(msg.member.displayName + ' added the following to the queue:')
-                data.setTitle('▶️️ Title:   ' + result.items[0].snippet.title)
+                data.setTitle('▶️️ Title:     ' + result.items[0].snippet.title)
                 data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
                 data.setColor("#FF4500")
                 data.setDescription("🔗 **URL:** " + link)

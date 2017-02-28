@@ -12,6 +12,7 @@ var nedb = require("nedb")
 var request = require("request");
 var youtubeNode = require("youtube-node");
 var ytdl = require("ytdl-core");
+var gm = require("gm");
 
 exports.checkManga = function(bot) {
   var timercheck = 30000;
@@ -327,4 +328,51 @@ exports.choice = function (user, guild, response, guildFactions) {
 
 exports.checkBlacklist = string => {
   return config.blacklisted_tags.some(tag => string.toLowerCase().includes(tag));
+};
+
+exports.spoiler = function(bot) {
+  
+};
+
+exports.handleText = function(buf, height, text, channel, count, name) {
+  // console.log("here1")
+  // console.log((height*20)+1)
+  // console.log(text)
+  //console.log(name)
+  var end = text.substring(0, 60).lastIndexOf(" ")
+  if (text.length < 60) {
+    end = text.length
+  }
+  if (end === -1) {
+    end = 60
+  }
+  gm(buf, 'temp.png')
+    .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
+    .fontSize(15)  
+    .fill("#B9BABC")
+    .drawText(5, (count*20)+15, text.substring(0, end))
+    .toBuffer('PNG',function (err, buffer) {
+      // console.log("here2")
+      // console.log(height)
+      if (count === height) {
+        gm(buf, 'temp2.png')
+          .write('./images/tempspoil2.png',function (err) {
+            if (err) {console.log(err)}
+            gm()
+              .in('-delay', 60)
+              .in('./images/tempspoil.png')
+              .in('-delay', 65535)
+              .in('./images/tempspoil2.png')
+              .write('./images/spoil.gif',function(err) {
+                channel.sendFile('./images/spoil.gif', "spoilergif.gif", '**Sent By ' + name + ': **')
+                // gm('./images/spoil.gif')
+                //   .identify(function (err, data) {
+                //     if (!err) console.log(data.Delay[1])
+                //   })
+              })
+          })
+      } else {
+        exports.handleText(buffer, height, text.substr(end+1), channel, count+1, name)
+      }
+    })
 };
