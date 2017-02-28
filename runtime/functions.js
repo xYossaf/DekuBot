@@ -330,10 +330,6 @@ exports.checkBlacklist = string => {
   return config.blacklisted_tags.some(tag => string.toLowerCase().includes(tag));
 };
 
-exports.spoiler = function(bot) {
-  
-};
-
 exports.handleText = function(buf, height, text, channel, count, name) {
   // console.log("here1")
   // console.log((height*20)+1)

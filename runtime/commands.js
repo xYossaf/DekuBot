@@ -1021,34 +1021,34 @@ Commands.disableleavemessage = {
   }
 };
 
-Commands.setup = {
-  name: "setup",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    guildDB.get(msg.guild.id).then(r => {
-      var data = new Discord.RichEmbed(data);
-      data.setAuthor(`The ${msg.guild.name} server`)
-      data.setTitle(`The following are the current settings for the server:`)
-      data.addField("ID", r._id, true)
-      data.addField("Superuser", `${bot.users.get(r.superuser_id).username} (${r.superuser_id})`, true)
-      data.addField("Announcment Channel", "``" + bot.channels.get(r.announcmentchannel).name + "``", true)
-      //console.log(r.nsfwchannels)
-      data.addField("NSFW Channel(s)", r.nsfwchannels, true)
-      //data.addField("Ignored Channel(s)", r.ignoredchannels, true)
-      data.addField("Bot Prefix", r.prefix, true)
-      data.addField("Welcome Message", r.welcomePM, true)
-      data.addField("Faction Join Message", r.factionPM, true)
+// Commands.setup = {
+//   name: "setup",
+//   help: "tbd",
+//   type: "admin",
+//   lvl: 3,
+//   cooldown: 0,
+//   func: function(bot, msg, args) {
+//     guildDB.get(msg.guild.id).then(r => {
+//       var data = new Discord.RichEmbed(data);
+//       data.setAuthor(`The ${msg.guild.name} server`)
+//       data.setTitle(`The following are the current settings for the server:`)
+//       data.addField("ID", r._id, true)
+//       data.addField("Superuser", `${bot.users.get(r.superuser_id).username} (${r.superuser_id})`, true)
+//       data.addField("Announcment Channel", "``" + bot.channels.get(r.announcmentchannel).name + "``", true)
+//       //console.log(r.nsfwchannels)
+//       data.addField("NSFW Channel(s)", r.nsfwchannels, true)
+//       //data.addField("Ignored Channel(s)", r.ignoredchannels, true)
+//       data.addField("Bot Prefix", r.prefix, true)
+//       data.addField("Welcome Message", r.welcomePM, true)
+//       data.addField("Faction Join Message", r.factionPM, true)
       
-      msg.author.sendEmbed(data)
+//       msg.author.sendEmbed(data)
       
       
-    })
+//     })
     
-  }
-};
+//   }
+// };
 
 Commands.spoiler = {
   name: "spoiler",
