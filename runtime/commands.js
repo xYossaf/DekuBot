@@ -435,6 +435,7 @@ Commands.quote = {
     data.setDescription(quote)
 
     msg.channel.sendEmbed(data)
+    msg.delete()
   }
 };
 
@@ -1062,20 +1063,27 @@ Commands.spoiler = {
     if (args.indexOf(':') <= 0) {
       msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
     } else {
+      var text = ""
       var height = Math.ceil(args.length / 60)
+      if (("! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal").length > 60) {
+        text = "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " !\n - Hover over to reveal"
+        height++
+      } else {
+        text = "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal"
+      }
       //max height should be 15
       //console.log(height)
       gm(385, height*20, "#36393E")
         .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-        .fontSize(15)  
+        .fontSize(14)  
         .fill("#B9BABC")
-        .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " !\n- Hover over this to reveal")
+        .drawText(5, 15, text)
         .write('./images/tempspoil.png',function (err) {
           if (err) {console.log(err)}
           gm(385, height*20, "#36393E")
             .toBuffer('PNG',function (err, buffer) {
               functions.handleText(buffer, height, args.substr(args.indexOf(':') + 1), msg.channel, 0, msg.member.displayName)
-              //msg.delete()`
+              msg.delete()
             })
         })
     }
@@ -1123,7 +1131,8 @@ Commands.spoils = {
     
   }
 };
-//36393E|\u200B
+
+
 
 
 // WEEB COMMANDS

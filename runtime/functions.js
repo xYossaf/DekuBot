@@ -344,7 +344,7 @@ exports.handleText = function(buf, height, text, channel, count, name) {
   }
   gm(buf, 'temp.png')
     .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-    .fontSize(15)  
+    .fontSize(14)  
     .fill("#B9BABC")
     .drawText(5, (count*20)+15, text.substring(0, end))
     .toBuffer('PNG',function (err, buffer) {
