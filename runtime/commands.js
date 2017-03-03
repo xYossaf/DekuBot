@@ -433,6 +433,7 @@ Commands.quote = {
     
     data.setColor(randomHex)
     data.setDescription(quote)
+    data.setFooter('Quoted by ' + msg.member.displayName)
 
     msg.channel.sendEmbed(data)
     msg.delete()

@@ -261,7 +261,7 @@ exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
       var responseCollector = msg.channel.createCollector(
         function(message, collector) {
           return message.author.id == msg.author.id;
-        }, {time: 300000});
+        }, {time: 2400000});
 
       responseCollector.on('message', (message, collector) => {
         id = message.id
@@ -290,7 +290,7 @@ exports.responseHandling = function(msg, user, guild, guildFactions) {
     var responseCollector = mesg.channel.createCollector(
       function(message, collector) {
         return message.author.id == user.id;
-      }, {time: 300000});
+      }, {time: 2400000});
     responseCollector.on('message', (message, collector) => {
       id = message.id
       collector.stop('recieved');
