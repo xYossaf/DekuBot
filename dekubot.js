@@ -8,6 +8,7 @@ var functions = require("./runtime/functions.js");
 var battle = require("./runtime/battle_rt.js");
 var customcommands = require("./runtime/custom_command_rt.js");
 var redditDB = require("./runtime/reddit_rt.js");
+var music = require("./runtime/music.js");
 
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
@@ -100,7 +101,6 @@ dekubot.on("roleDelete", (role) => {
   factionDB.deleteFaction(role.id).catch(function(e) {
     logger.log('error', e)
   })
-  console.log('lol')
 });
 
 dekubot.on("channelDelete", (channel) => {
@@ -162,7 +162,6 @@ dekubot.on("ready", () => {
       })
     })(x)
   }
-  
   functions.initMangaDB()
   functions.checkManga(dekubot);
   functions.checkReddit(dekubot);
@@ -231,7 +230,7 @@ dekubot.on("message", (message) => {
             if (Commands[command].type == 'nsfw') {
               guildDB.checkNSFW(message.channel).then(function(r) {
                 if (r != 'Channel is not nsfw') {
-                  console.log(r);
+                  // console.log(r);
                 } else {
                   message.channel.sendMessage(r);
                 }

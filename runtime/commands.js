@@ -8,6 +8,7 @@ var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var customcommands = require("./custom_command_rt.js");
+var music = require("./music.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -23,6 +24,10 @@ var youtubeNode = require("youtube-node");
 var ytdl = require("ytdl-core");
 var Commands = [];
 
+var youtube = new youtubeNode();
+
+youtube.setKey(config.youtube);
+youtube.addParam('type', 'video');
 
 // GENERAL COMMANDS
 Commands.help = {
@@ -174,7 +179,7 @@ Commands.botstatus = {
     data.setDescription("If you have any questions or need some help, contact **RoddersGH#4702**")
     data.setThumbnail("https://cdn.discordapp.com/attachments/239907411899580417/282597112485642241/pretty_much_finished.png")
     data.setColor("#66D6CC")
-    
+
     msg.channel.sendEmbed(data);
   }
 };
@@ -237,7 +242,6 @@ Commands.customcommands = {
   }
 };
 
-//*TODO* Use new library http://www.graphicsmagick.org/GraphicsMagick.html#details-compose so we can handle gifs
 Commands.rip = {
   name: "rip",
   help: "tbd",
@@ -339,7 +343,6 @@ Commands.dice = {
   }
 };
 
-//TODO Don't forget to figure out install for gm so that it works on linux
 Commands.triggered = {
   name: "triggered",
   help: "tbd",
@@ -412,26 +415,28 @@ Commands.quote = {
   cooldown: 0,
   func: function(bot, msg, args) {
     var quote = ""
-    if (msg.mentions.users.array().length <= 0 || msg.mentions.users.array().length > 1) {
-      msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
-    } else {
-      if (args.split(" ")[0] === "<@" + msg.mentions.users.array()[0].id + ">") {
-          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").substring(1);
-      } else {
-          quote = args.replace("<@" + msg.mentions.users.array()[0].id + ">", "").trim();
-      }
-    }
+    var data = new Discord.RichEmbed(data)
     
+    if (msg.mentions.users.array().length <= 0) {
+      quote = args
+      data.setAuthor(` ${msg.author.username}`, msg.author.avatarURL)
+    } else if (args.split(" ")[0] === "<@" + msg.mentions.users.array()[0].id + ">" || args.split(" ")[0] === "<@!" + msg.mentions.users.array()[0].id + ">") {
+      data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
+      quote = args.replace(msg.guild.members.get(msg.mentions.users.array()[0].id), "").substring(1);
+    } else {
+      msg.reply("Sorry, you need to mention a user you want to quote, followed by the quote.")
+    }
+
     var randomHex = "#000000".replace(/0/g, function() {
       return (~~(Math.random() * 16)).toString(16);
     });
-
-    var data = new Discord.RichEmbed(data);
-    data.setAuthor(` ${msg.mentions.users.array()[0].username}`, msg.mentions.users.array()[0].avatarURL)
+    
     data.setColor(randomHex)
     data.setDescription(quote)
-    
+    data.setFooter('Quoted by ' + msg.member.displayName)
+
     msg.channel.sendEmbed(data)
+    msg.delete()
   }
 };
 
@@ -447,7 +452,7 @@ Commands.math = {
     } catch(e) {
       msg.channel.sendMessage("```diff\n-" + e + "```")
     }
-   
+
   }
 };
 
@@ -463,7 +468,7 @@ Commands.maths = {
     } catch(e) {
       msg.channel.sendMessage("```diff\n-" + e + "```")
     }
-   
+
   }
 };
 
@@ -485,7 +490,7 @@ Commands.server = {
       data.addField("Members", msg.guild.members.array().length, true)
       data.addField("Roles", msg.guild.roles.array().length, true)
       data.addField("Region", msg.guild.region, true)
-      data.addField("Server Created", `${msg.guild.createdAt.getUTCDate()}/${msg.guild.createdAt.getUTCMonth()}/${msg.guild.createdAt.getUTCFullYear()}`, true)
+      data.addField("Server Created", `${msg.guild.createdAt.toDateString()}`, true)
       data.addField("Server Owner", `${msg.guild.owner.user.username}#${msg.guild.owner.user.discriminator}`, true)
       data.addField("Channels", msg.guild.channels.array().length, true);
       if (msg.guild.iconURL) data.setThumbnail(msg.guild.iconURL);
@@ -517,6 +522,17 @@ Commands.setavatar = {
   }
 };
 
+Commands.setgame = {
+  name: "setgame",
+  help: "tbd",
+  lvl: 6,
+  cooldown: 0,
+  func: function(bot, msg, args){
+    if (msg.author.id === config.dev_id) {
+      bot.user.setGame(args);
+    }
+  }
+};
 
 
 
@@ -1001,11 +1017,122 @@ Commands.disableleavemessage = {
   lvl: 3,
   cooldown: 0,
   func: function(bot, msg, args) {
-    guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
+    guildDB.setLeavemsg(msg.guild.id, "").then(function(r) {
       msg.channel.sendMessage(`The new leave message has been set to "${r}"`);
     })
   }
 };
+
+// Commands.setup = {
+//   name: "setup",
+//   help: "tbd",
+//   type: "admin",
+//   lvl: 3,
+//   cooldown: 0,
+//   func: function(bot, msg, args) {
+//     guildDB.get(msg.guild.id).then(r => {
+//       var data = new Discord.RichEmbed(data);
+//       data.setAuthor(`The ${msg.guild.name} server`)
+//       data.setTitle(`The following are the current settings for the server:`)
+//       data.addField("ID", r._id, true)
+//       data.addField("Superuser", `${bot.users.get(r.superuser_id).username} (${r.superuser_id})`, true)
+//       data.addField("Announcment Channel", "``" + bot.channels.get(r.announcmentchannel).name + "``", true)
+//       //console.log(r.nsfwchannels)
+//       data.addField("NSFW Channel(s)", r.nsfwchannels, true)
+//       //data.addField("Ignored Channel(s)", r.ignoredchannels, true)
+//       data.addField("Bot Prefix", r.prefix, true)
+//       data.addField("Welcome Message", r.welcomePM, true)
+//       data.addField("Faction Join Message", r.factionPM, true)
+      
+//       msg.author.sendEmbed(data)
+      
+      
+//     })
+    
+//   }
+// };
+
+Commands.spoiler = {
+  name: "spoiler",
+  help: "tbd",
+  type: "admin",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    //console.log(msg.member.displayName)
+    args = args.replace(/\n/ig, " ").replace(/\u200B/ig, "")
+    if (args.indexOf(':') <= 0) {
+      msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
+    } else {
+      var text = ""
+      var height = Math.ceil(args.length / 60)
+      if (("! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal").length > 60) {
+        text = "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " !\n - Hover over to reveal"
+        height++
+      } else {
+        text = "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal"
+      }
+      //max height should be 15
+      //console.log(height)
+      gm(385, height*20, "#36393E")
+        .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
+        .fontSize(14)  
+        .fill("#B9BABC")
+        .drawText(5, 15, text)
+        .write('./images/tempspoil.png',function (err) {
+          if (err) {console.log(err)}
+          gm(385, height*20, "#36393E")
+            .toBuffer('PNG',function (err, buffer) {
+              functions.handleText(buffer, height, args.substr(args.indexOf(':') + 1), msg.channel, 0, msg.member.displayName)
+              msg.delete()
+            })
+        })
+    }
+    
+  }
+};
+
+Commands.spoils = {
+  name: "spoils",
+  help: "tbd",
+  type: "admin",
+  lvl: 1,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    //console.log(msg.member.displayName)
+    args = args.replace(/\n/ig, " ").replace(/\u200B/ig, "")
+    var id = args.substr(args.indexOf(':') + 1).trim()
+    //console.log(msg.channel.messages.array().length)
+    
+    msg.channel.fetchMessage(id).then(mesg => {
+      if (args.indexOf(':') <= 0) {
+        msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
+      } else {
+        var height = Math.ceil(args.length / 60)
+        //max height should be 15
+        //console.log(height)
+        gm(385, height*20, "#36393E")
+          .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
+          .fontSize(15)  
+          .fill("#B9BABC")
+          .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal")
+          .write('./images/tempspoil.png',function (err) {
+            if (err) {console.log(err)}
+            gm(385, height*20, "#36393E")
+              .toBuffer('PNG',function (err, buffer) {
+                functions.handleText(buffer, height, mesg.content, msg.channel, 0, mesg.member.displayName)
+                msg.delete()
+                mesg.delete()
+              })
+          })
+      }
+    })
+    //onsole.log(mesg)
+    
+    
+  }
+};
+
 
 
 
@@ -1023,7 +1150,6 @@ Commands.anime = {
         bot.reply(msg, "❌ Nothing found ");
         return
       } else {
-        console.log(r[0]);
         nani.get('anime/' + r[0].id).then(function(data) {
           msg.channel.sendMessage('http://anilist.co/anime/' + data.id + "   " + data.image_url_lge).then(message => {
             var msgArray = [];
@@ -1511,6 +1637,306 @@ Commands.unservermangatrack = {
   }
 };
 
+
+
+//MUSIC COMMANDS
+//TODO Make it auto leave when trying to join the servers afk channel
+Commands.dj = {
+  name: "dj",
+  help: "tbd",
+  lvl: 3,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        msg.channel.sendMessage('```fix\nA DJ role already exists, it is the role:```' + msg.guild.roles.get(r.DJRole))
+      } else {
+        msg.guild.createRole({name: 'DJ'}).then(role => {
+          msg.channel.sendMessage('```fix\nA DJ role has been created. People with this role can use all of the music commands.```')
+          guildDB.setDJRole(msg.guild.id, role.id)
+          msg.member.addRole(role)
+        })
+      }
+    })
+  }
+};
+
+Commands.joinvoice = {
+  name: "joinvoice",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    //have the d role to use this command
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.member.voiceChannel) {
+            msg.member.voiceChannel.join().then(connection => {
+              music.addToGuildArray(bot, msg.guild) 
+              msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
+            })
+          } else {
+            msg.channel.sendMessage('```diff\n- Error: You need to join a voice channel first```');
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+  
+Commands.leavevoice = {
+  name: "leavevoice",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.removeFromGuildArray(bot, msg.guild) 
+            msg.guild.voiceConnection.channel.leave()
+            msg.channel.sendMessage('Disconnected from the ``' + msg.guild.voiceConnection.channel.name + '`` voice channel.');
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.request = {
+  name: "request",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      if (msg.member.voiceChannel && msg.member.voiceChannel.id == msg.guild.voiceConnection.channel.id) {
+        var regex = new RegExp("https:[/][/]www[.]youtube[.]com[/]watch[?]v[=][a-zA-Z0-9\-_]{11}", "ig")
+        var str = regex.exec(args)
+        if (str) {
+          youtube.getById(str[0].substr(32), function(error, result) {
+            if (error) {
+              console.log(error);
+            }
+            else {
+              console.log(result)
+              var data = new Discord.RichEmbed(data);
+              data.setAuthor(msg.member.displayName + ' added the following to the queue:')
+              data.setTitle('▶️️ Title:     ' + result.items[0].snippet.title)
+              data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
+              data.setColor("#FF4500")
+              data.setDescription("🔗 **URL:** " + str[0])
+             
+              msg.channel.sendEmbed(data);
+              music.addToSongs(bot, msg.guild, str[0], msg.member, result.items[0])
+            }
+          })
+        } else {
+          if (args) {
+            youtube.search(args, 2, function(error, result) {
+              if (error) {
+                console.log(error);
+              }
+              else {
+                var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
+
+                var data = new Discord.RichEmbed(data);
+                data.setAuthor(msg.member.displayName + ' added the following to the queue:')
+                data.setTitle('▶️️ Title:     ' + result.items[0].snippet.title)
+                data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
+                data.setColor("#FF4500")
+                data.setDescription("🔗 **URL:** " + link)
+                
+                msg.channel.sendEmbed(data)
+                music.addToSongs(bot, msg.guild, link, msg.member, result.items[0])
+              }
+            })
+          } else {
+            msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA or give a search term```');
+          }
+        }
+      } else {
+        msg.channel.sendMessage('```diff\n- Error: You need to join the voice channel the bot is in first```');
+      }
+    } else {
+      msg.channel.sendMessage('```diff\n- Error: I need to be added to a voice channel before I can play music```');
+    }
+  }
+};
+
+Commands.skipsong = {
+  name: "skipsong",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      if (msg.member.voiceChannel && msg.member.voiceChannel.id == msg.guild.voiceConnection.channel.id) {
+        music.skipSong(bot, msg.guild.voiceConnection.channel, msg.member.id, msg.channel)
+      } else {
+        msg.channel.sendMessage("```diff\n- Error:You aren't listening to the music```");
+      }
+    } else {
+      msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+    }
+  }
+};
+
+Commands.clearqueue = {
+  name: "clearsongs",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.clearSongs(bot, msg.guild) 
+            msg.channel.sendMessage('```fix\nAll songs cleared from the queue```');
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.endsong = {
+  name: "endsong",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.endSong(bot, msg.guild) 
+            msg.channel.sendMessage('```fix\nSong ended...```');
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+          msg.channel.sendMessage('```diff\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+        msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.queue = {
+  name: "queue",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (msg.guild.voiceConnection) {
+      music.getQueue(bot, msg.guild, msg.channel)
+    } else {
+      msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+    }
+  }
+};
+
+Commands.pause = {
+  name: "pause",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.pause(bot, msg.guild)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+  }
+};
+
+Commands.resume = {
+  name: "resume",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            music.resume(bot, msg.guild)
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+    
+  }
+};
+
+Commands.volume = {
+  name: "resume",
+  help: "tbd",
+  lvl: 0,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    guildDB.get(msg.guild.id).then(r => {
+
+      if (r.DJRole) {
+        if (msg.member.roles.has(r.DJRole)) {
+          if (msg.guild.voiceConnection) {
+            var vol = parseFloat(args)
+            if (vol && vol > 0 && vol < 350) {
+              music.setVolume(bot, msg.guild, vol)
+              msg.channel.sendMessage('```fix\n- The volume has been set to ' + vol + '%```');
+            } else {
+              msg.channel.sendMessage("```diff\n- Error: a number between 1 and 100 was not given; where 40 is average volume```");
+            }
+
+          } else {
+            msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
+          }
+        } else {
+           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command```');
+        }
+      } else {
+          msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
+      }
+    })
+    
+  }
+};
 
 
 
