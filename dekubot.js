@@ -203,7 +203,7 @@ dekubot.on("message", (message) => {
         customcommands.getAllHere(message.guild).then(function(r) {
           if (r != 'No custom commands found') {
             for (i = 0; i < r.length; i++) {
-              if (r[i].name == command && message.guild.id == r[i].guild_id && authorpermissionlvl >= r[i].lvl) {
+              if (r[i].name == command && message.guild.id == r[i].guild_id/* && authorpermissionlvl  >= r[i].lvl*/) {
                 message.channel.sendMessage(r[i].text);
               }
             }
@@ -211,7 +211,7 @@ dekubot.on("message", (message) => {
         }).catch(function(e) {
           console.log(e)
         })
-        if (message.member.hasPermissions(Commands[command].lvl)) {
+        if (message.member.hasPermissions(Commands[command].perms)) {
           if (Commands[command].type == 'nsfw') {
             guildDB.checkNSFW(message.channel).then(function(r) {
               if (r != 'Channel is not nsfw') {
