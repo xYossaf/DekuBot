@@ -34,7 +34,7 @@ Commands.help = {
   name: "help",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  lvl: ["MANAGE_MESSAGES"],
   cooldown: 0,
   func: function(bot, msg) {
     msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");

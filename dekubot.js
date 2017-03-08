@@ -212,8 +212,8 @@ dekubot.on("message", (message) => {
     guildDB.getPrefix(message.guild.id).then(function(p) {
 
       if (firstWord.substr(0, p.length) === p) {
-        permissionDB.getPermission(message.channel.guild.id, message.author.id).then(function(r) {
-          authorpermissionlvl = r;
+        //permissionDB.getPermission(message.channel.guild.id, message.author.id).then(function(r) {
+          //authorpermissionlvl = r;
           var command = firstWord.slice(p.length);
           customcommands.getAllHere(message.guild).then(function(r) {
             if (r != 'No custom commands found') {
@@ -226,7 +226,9 @@ dekubot.on("message", (message) => {
           }).catch(function(e) {
             console.log(e)
           })
-          if (authorpermissionlvl >= Commands[command].lvl) {
+          //console.log(message.member)
+          if (message.member.hasPermissions(Commands[command].lvl)) {
+            //console.log("if")
             if (Commands[command].type == 'nsfw') {
               guildDB.checkNSFW(message.channel).then(function(r) {
                 if (r != 'Channel is not nsfw') {
@@ -285,9 +287,10 @@ dekubot.on("message", (message) => {
               }
             }
           } else {
+            //console.log("else")
             message.channel.sendMessage("You dont have a high enough permission level to use this command.")
           }
-        });
+        //});
       }
     });
   }).catch(function(e) {
@@ -304,10 +307,10 @@ dekubot.on("message", (message) => {
       guildDB.getPrefix(message.guild.id).then(function(p) {
 
         if (firstWord.substr(0, p.length) === p) {
-          permissionDB.getPermission(message.channel.guild.id, message.author.id).then(function(r) {
-            authorpermissionlvl = r;
+          //permissionDB.getPermission(message.channel.guild.id, message.author.id).then(function(r) {
+            //authorpermissionlvl = r;
             var command = firstWord.slice(p.length);
-            if (authorpermissionlvl >= 3) {
+            if (message.member.hasPermissions(["MANAGE_CHANNELS"])) {
               for (x = 0; x < cooldownArray.length; x++) {
                 (function (i) {
                   if (cooldownArray[i].guildID == message.guild.id) {
@@ -330,7 +333,7 @@ dekubot.on("message", (message) => {
                 })(x)
               }
             }
-          });
+          //});
         }
       });
 
