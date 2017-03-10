@@ -471,6 +471,7 @@ Commands.maths = {
   }
 };
 
+//TODO Add online members field
 Commands.server = {
   name: "server",
   help: "I'll tell you some information about the server you're currently in.",
@@ -571,65 +572,11 @@ Commands.purge = {
   }
 };
 
-// Commands.getpermissionlevel = {
-//   name: "getpermissionlevel",
-//   help: "tbd",
-//   type: "admin",
-//   perms: 1,
-//   cooldown: 0,
-//   func: function(bot, msg, args) {
-//     if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
-//       msg.reply("```diff\n- Please mention a user```");
-//     } else {
-//       permissionDB.getPermission(msg.channel.guild.id, msg.mentions.users.array()[0].id).then(function(r) {
-//         msg.channel.sendMessage(r);
-//       });
-//     }
-//   }
-// };
-
-// Commands.setpermissionlevel = {
-//   name: "setpermissionlevel",
-//   help: "tbd",
-//   type: "admin",
-//   perms: 3,
-//   cooldown: 0,
-//   func: function(bot, msg, args) {
-//     var num = args.substr(args.indexOf(" ") + 1)
-//     var isnum = /^\d+$/.test(num);
-//     if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
-//       msg.reply("```diff\n- Please mention a user```");
-//       return;
-//     } else {
-//       if (!num || !isnum || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
-//         msg.channel.sendMessage("```diff\n- Please define the permission level you wish to set for the user.```");
-//         return;
-//       } else {
-//         permissionDB.check(msg.channel.guild.id, msg.mentions.users.array()[0].id).catch(function(e) {
-//           console.log(e);
-//           if (e == 'Nothing found!1') {
-//             permissionDB.newPermission(msg.channel.guild, msg.mentions.users.array()[0]);
-//           };
-//         });
-//         permissionDB.getPermission(msg.channel.guild.id, msg.author.id).then(function(r) {
-//           permissionDB.setPermission(r, msg.channel.guild, msg.mentions.users.array()[0], num).then(function(res) {
-//             msg.channel.sendMessage(msg.mentions.users.array()[0] + res);
-//           }).catch(function(e) {
-//             msg.channel.sendMessage(e);
-//           });
-//         }).catch(function(e) {
-//           console.log(e);
-//         });
-//       }
-//     }
-//   }
-// };
-
 Commands.createfaction = {
   name: "createfaction",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
   cooldown: 0,
   func: function(bot, msg, args) {
     var name = args.substr(0, args.indexOf("#") - 1).toLowerCase();
@@ -665,7 +612,7 @@ Commands.deletefaction = {
   name: "deletefaction",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
   cooldown: 0,
   func: function(bot, msg, args) {
     var found = false
@@ -716,6 +663,7 @@ Commands.unignore = {
   }
 };
 
+//TODO REMOVE LVL FROM THE CC DB AND WORK OUT EVERYTHING MENTION WISES
 Commands.createcommand = {
   name: "createcommand",
   help: "tbd",
@@ -945,7 +893,7 @@ Commands.togglewelcomepm = {
   name: "togglewelcomepm",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleWelcomePM(msg.guild.id).then(function(r) {
@@ -958,7 +906,7 @@ Commands.togglefactionpm = {
   name: "togglefactionpm",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
@@ -971,7 +919,7 @@ Commands.setjoinmessage = {
   name: "setjoinmessage",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, " " + args).then(function(r) {
@@ -984,7 +932,7 @@ Commands.setleavemessage = {
   name: "setleavemessage",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, args).then(function(r) {
@@ -997,7 +945,7 @@ Commands.disablejoinmessage = {
   name: "togglefactionpm",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
@@ -1010,7 +958,7 @@ Commands.disableleavemessage = {
   name: "togglefactionpm",
   help: "tbd",
   type: "admin",
-  perms: ["MANAGE_GUILD"],
+  perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setLeavemsg(msg.guild.id, "").then(function(r) {
@@ -1109,7 +1057,7 @@ Commands.spoils = {
         //console.log(height)
         gm(385, height*20, "#36393E")
           .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-          .fontSize(15)  
+          .fontSize(14)  
           .fill("#B9BABC")
           .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal")
           .write('./images/tempspoil.png',function (err) {
@@ -1640,7 +1588,7 @@ Commands.unservermangatrack = {
 Commands.dj = {
   name: "dj",
   help: "tbd",
-  perms: ["MANAGE_GUILD"],
+  perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
