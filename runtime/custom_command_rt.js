@@ -8,12 +8,12 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.createNewCommand = function(name, guild, text, lvl) {
+exports.createNewCommand = function(name, guild, text) {
   var commanddoc = {
     guild_id: guild.id,
     name: name,
-    text: text,
-    lvl: lvl
+    text: text
+    //lvl: lvl
   };
   db.insert(commanddoc, function (err, result) {
     if (err) {
