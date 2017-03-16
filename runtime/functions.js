@@ -32,6 +32,9 @@ exports.checkManga = function(bot) {
                 
                 var temporary = chapterTest[k].substr(chapterTest[k].indexOf(mangatag) + mangatag.length + 1)
                 var chapVal = temporary.substring(0, temporary.indexOf("/"))
+                if (unescape(m.chapter).match(/[0-9\.]+/ig) === null) {
+                  return;
+                }
                 if (chapVal > unescape(m.chapter).match(/[0-9\.]+/ig)[0]){
                   var temp = ('http://mangastream.com/read/' + mangatag + '/').length
                   var begin = b.search( 'http://mangastream.com/read/' + mangatag + '/') + temp

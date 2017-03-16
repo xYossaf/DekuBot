@@ -672,7 +672,7 @@ Commands.createcommand = {
   cooldown: 0,
   func: function(bot, msg, args) {
     var comexists = false
-    var specific_lvl = 0;
+    //var specific_lvl = 0;
     if (!args) {
       msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
       return;
@@ -681,21 +681,21 @@ Commands.createcommand = {
       msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
       return;
     }
-    if (/---[0-3]|---6/.test(args)) {
-      if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
-        msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
-        return;
-      } else {
-        specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
-      }
-    }
+    // if (/---[0-3]|---6/.test(args)) {
+    //   if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
+    //     msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+    //     return;
+    //   } else {
+    //     specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
+    //   }
+    // }
     var tempname = args.split(" ")[0].trim();
     var comname = args.split(" ")[0].toLowerCase().trim();
     if (args.split(" ")[1] != "|") {
       msg.channel.sendMessage("```diff\n- Command name cannot contain spaces.```");
       return;
     }
-    var comcontent = args.replace(tempname + " | ", "").replace("---" + specific_lvl, "").trim();
+    var comcontent = args.replace(tempname + " | ", "").trim().replace(/@/igm, "@\u200B")
     if (Commands[comname]) {
       msg.channel.sendMessage("```diff\n- Cannot overwrite core bot commands.```");
       return;
@@ -708,15 +708,15 @@ Commands.createcommand = {
       }
       if (comexists) {
         customcommands.deleteCommand(msg.guild, comname);
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        customcommands.createNewCommand(comname, msg.guild, comcontent);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
       }  else {
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        customcommands.createNewCommand(comname, msg.guild, comcontent);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
       }
     }).catch(function(e) {
       if (e == "No custom commands found") {
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        customcommands.createNewCommand(comname, msg.guild, comcontent);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
       }
     });
@@ -1690,8 +1690,10 @@ Commands.request = {
             youtube.search(args, 2, function(error, result) {
               if (error) {
                 console.log(error);
-              }
-              else {
+              } else if (result.items.length < 1) {
+                msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA or give a search term```');
+                return;
+              } else {
                 var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
 
                 var data = new Discord.RichEmbed(data);
