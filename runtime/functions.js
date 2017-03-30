@@ -80,7 +80,7 @@ exports.initMangaDB = function() {
     var start = body.indexOf('<table class="table table-striped">')
     var end = body.indexOf('</table>')
 
-    var urlArray = body.substring(start, end).match(/http:[/]{2}mangastream[.]com[/]r[/]\w+[/][^/]+[/]/g);
+    var urlArray = body.substring(start, end).match(/http:[/]{2}readms[.]net[/]r[/]\w+[/][^/]+[/]/g);
     var altUrlArray = body.substring(start, end).match(/http:[/]{2}mangastream[.]com[/]manga[/]\w+/g);
     
     for (i=0; i < urlArray.length; i++) {
