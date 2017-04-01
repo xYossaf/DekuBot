@@ -211,66 +211,68 @@ dekubot.on("message", (message) => {
         }).catch(function(e) {
           console.log(e)
         })
-        if (message.member.hasPermissions(Commands[command].perms)) {
-          if (Commands[command].type == 'nsfw') {
-            guildDB.checkNSFW(message.channel).then(function(r) {
-              if (r != 'Channel is not nsfw') {
-                // console.log(r);
-              } else {
-                message.channel.sendMessage(r);
-              }
-            }).catch(function(e) {
-              if (e != 'This channel is nsfw') {
-                console.log(e);
-              } else {
-                for (x = 0; x < cooldownArray.length; x++) {
-                  (function (i) {
-                    if (cooldownArray[i].guildID == message.guild.id) {
-                      for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
-                        if (cooldownArray[i].tsArray[j].name == command) {
-                          if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
-                            Commands[command].func(dekubot, message, args);
-                            commandLogger.log('info', `${command}`, {
-                              guildID: message.guild.id,
-                              guildName: message.guild.name,
-                              channel: message.channel.id, 
-                              authorID: message.author.id, 
-                              authorName: message.author.name
-                            })
-                            cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+        if (Commands[command] != null) {
+          if (message.member.hasPermissions(Commands[command].perms)) {
+            if (Commands[command].type == 'nsfw') {
+              guildDB.checkNSFW(message.channel).then(function(r) {
+                if (r != 'Channel is not nsfw') {
+                  // console.log(r);
+                } else {
+                  message.channel.sendMessage(r);
+                }
+              }).catch(function(e) {
+                if (e != 'This channel is nsfw') {
+                  console.log(e);
+                } else {
+                  for (x = 0; x < cooldownArray.length; x++) {
+                    (function (i) {
+                      if (cooldownArray[i].guildID == message.guild.id) {
+                        for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                          if (cooldownArray[i].tsArray[j].name == command) {
+                            if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                              Commands[command].func(dekubot, message, args);
+                              commandLogger.log('info', `${command}`, {
+                                guildID: message.guild.id,
+                                guildName: message.guild.name,
+                                channel: message.channel.id, 
+                                authorID: message.author.id, 
+                                authorName: message.author.name
+                              })
+                              cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                            }
                           }
                         }
                       }
-                    }
-                  })(x)
+                    })(x)
+                  }
                 }
-              }
-            })
-          } else {
-            for (x = 0; x < cooldownArray.length; x++) {
-              (function (i) {
-                if (cooldownArray[i].guildID == message.guild.id) {
-                  for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
-                    if (cooldownArray[i].tsArray[j].name == command) {
-                      if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
-                        Commands[command].func(dekubot, message, args);
-                        commandLogger.log('info', `${command}`, {
-                          guildID: message.guild.id,
-                          guildName: message.guild.name,
-                          channel: message.channel.id, 
-                          authorID: message.author.id, 
-                          authorName: message.author.name
-                        })
-                        cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+              })
+            } else {
+              for (x = 0; x < cooldownArray.length; x++) {
+                (function (i) {
+                  if (cooldownArray[i].guildID == message.guild.id) {
+                    for (j = 0; j < cooldownArray[i].tsArray.length; j++) {
+                      if (cooldownArray[i].tsArray[j].name == command) {
+                        if (message.createdAt.getTime()-cooldownArray[i].tsArray[j].lastTS > Commands[command].cooldown) {
+                          Commands[command].func(dekubot, message, args);
+                          commandLogger.log('info', `${command}`, {
+                            guildID: message.guild.id,
+                            guildName: message.guild.name,
+                            channel: message.channel.id, 
+                            authorID: message.author.id, 
+                            authorName: message.author.name
+                          })
+                          cooldownArray[i].tsArray[j].lastTS = message.createdAt.getTime()
+                        }
                       }
                     }
                   }
-                }
-              })(x)
+                })(x)
+              }
             }
+          } else {
+            message.channel.sendMessage("You dont have high enough permissions to use this command.")
           }
-        } else {
-          message.channel.sendMessage("You dont have high enough permissions to use this command.")
         }
       }
     });
