@@ -374,3 +374,12 @@ exports.handleText = function(buf, height, text, channel, count, name) {
       }
     })
 };
+
+/**
+ * Escapes regex from a string.
+ * @param {String} str The string for which to escape regex.
+ * @return {String} A new string with regex escaped.
+ */
+exports.escapeRegex = function (str) {
+  return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+};
