@@ -439,7 +439,7 @@ Commands.quote = {
   }
 };
 
-Commands.math = {
+Commands.math = Commands.maths = {
   name: "math",
   help: "tbd",
   type: "general",
@@ -451,23 +451,6 @@ Commands.math = {
     } catch(e) {
       msg.channel.sendMessage("```diff\n-" + e + "```")
     }
-
-  }
-};
-
-Commands.maths = {
-  name: "maths",
-  help: "tbd",
-  type: "general",
-  perms: ["SEND_MESSAGES"],
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    try {
-      msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
-    } catch(e) {
-      msg.channel.sendMessage("```diff\n-" + e + "```")
-    }
-
   }
 };
 
