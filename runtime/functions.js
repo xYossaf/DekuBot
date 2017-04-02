@@ -374,3 +374,20 @@ exports.handleText = function(buf, height, text, channel, count, name) {
       }
     })
 };
+
+/**
+ * Returns a new string with global mentions (@everyone, @here) escaped,
+ * and optionally does the same for mentionable roles and users in a guild.
+ * Yes, it's a hack for globals. Unfortunately, there is no easy way to disable
+ * these mentions on a per-message basis.
+ * @summary Escapes mentions from a string.
+ * @param {String} str The string for which to escape mentions.
+ * @param {Boolean} escapeAll (optional) Toggle to escape user and role mentions.
+ * @return {String} A new string with zero-width spaces inserted to escape mentions.
+ */
+exports.escapeMentions = function (str, escapeAll) {
+  if (escapeAll) {
+    str = str.replace(/<(@[&!]?[0-9]+?)>/g, '$1')
+  }
+  return str.replace(/@(everyone|here)/gi, '@\u200B$1');
+};
