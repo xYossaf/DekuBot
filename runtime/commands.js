@@ -862,7 +862,7 @@ Commands.setprefix = {
   perms: ["ADMINISTRATOR"],
   cooldown: 0,
   func: function(bot, msg, args) {
-    var eargs = args.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere");
+    var eargs = functions.escapeMentions(args, true);
     if (eargs.length > 140) {
       msg.channel.sendMessage("This prefix is too long :|");
     } else {
@@ -1480,10 +1480,10 @@ Commands.mangatrack = {
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.addToPM(record._id, msg.author);
-      msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked to you in a Private Message ✔");
+      msg.channel.sendMessage("You are now tracking ``" + functions.escapeMentions(args, true) + "``. All new chapters will be linked to you in a Private Message ✔");
     }).catch(function(e) {
       if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
+        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }
@@ -1498,10 +1498,10 @@ Commands.unmangatrack = {
   func: function(bot, msg, args) {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.removeFromPM(record._id, msg.author);
-      msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` ✔");
+      msg.channel.sendMessage("You are now no longer tracking ``" + functions.escapeMentions(args, true) + "`` ✔");
     }).catch(function(e) {
       if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
+        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }
@@ -1524,7 +1524,7 @@ Commands.servermangatrack = {
 
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
-        msg.channel.sendMessage("You are already tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
+        msg.channel.sendMessage("You are already tracking ``" + functions.escapeMentions(args, true) + "`` in this server.");
       }).catch(function(e) {
         var obj = {
           guild_id: msg.guild.id,
@@ -1532,11 +1532,11 @@ Commands.servermangatrack = {
           mention: mentionVal
         }
         mangaDB.addGuildChannel(record._id, obj);
-        msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked in this channel ✔");
+        msg.channel.sendMessage("You are now tracking ``" + functions.escapeMentions(args, true) + "``. All new chapters will be linked in this channel ✔");
       })
     }).catch(function(e) {
       if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
+        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }
@@ -1552,13 +1552,13 @@ Commands.unservermangatrack = {
     mangaDB.checkAlias(args).then(function(record) {
       mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
         mangaDB.removeGuildChannel(record._id, r);
-        msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` In this server.");
+        msg.channel.sendMessage("You are now no longer tracking ``" + functions.escapeMentions(args, true) + "`` In this server.");
       }).catch(function(e) {
-        msg.channel.sendMessage("You are already not tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
+        msg.channel.sendMessage("You are already not tracking ``" + functions.escapeMentions(args, true) + "`` in this server.");
       })
     }).catch(function(e) {
       if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
+        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
       }
     })
   }
