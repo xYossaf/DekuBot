@@ -12,7 +12,6 @@ var music = require("./runtime/music.js");
 
 var Discord = require("discord.js");
 var youtubeNode = require("youtube-node");
-var mangaDB = require("./runtime/manga_track_rt.js");
 var winston = require('winston');
 var dekubot = new Discord.Client({fetchAllMembers: true});
 var youtubeNode = new youtubeNode();
@@ -156,8 +155,6 @@ dekubot.on("ready", () => {
       })
     })(x)
   }
-  functions.initMangaDB()
-  //functions.checkManga(dekubot);
   rssDB.checkAllRSS(dekubot)
   functions.checkReddit(dekubot);
 });
