@@ -634,7 +634,7 @@ Commands.rsslist = {
               msg.channel.sendMessage("All RSS feeds have been deleted 🗑️")
             } else if (res > 0 && res <= r.length) {
               rssDB.deleteTrack(r[res-1]._id)
-              msg.channel.sendMessage("The RSS <" + r[res-1].url + "> feed has been deleted 🗑️")
+              msg.channel.sendMessage("The RSS feed <" + r[res-1].url + "> has been deleted 🗑️")
             }
           })
         })
@@ -669,7 +669,7 @@ Commands.rsslist = {
                 msg.channel.sendMessage("All RSS feeds have been deleted 🗑️")
               } else if (res > 0 && res <= r.length) {
                 rssDB.deleteTrack(r[res-1]._id)
-                msg.channel.sendMessage("The RSS <" + r[res-1].url + "> feed has been deleted 🗑️")
+                msg.channel.sendMessage("The RSS feed <" + r[res-1].url + "> has been deleted 🗑️")
               }
             })
           }

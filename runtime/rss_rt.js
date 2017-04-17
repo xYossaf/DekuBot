@@ -92,7 +92,6 @@ exports.parseRSS = function(url) {
     })
 
     feedparser.on('end', function () {
-      //console.log("here2")
       resolve(articleArray);
     })
   })
@@ -141,9 +140,10 @@ var makePost = function(article, rss, bot) {
   var randomHex = "#000000".replace(/0/g, function() {
     return (~~(Math.random() * 16)).toString(16);
   });
+  console.log(article)
   data.setColor(randomHex)
-  data.setTitle(article.title)
-  data.setDescription(article.summary)
+  data.setTitle(article.title.substring(0, 500))
+  data.setDescription(unescape(article.description.substring(0, 2000)))
   data.setAuthor(article.author)
   data.setImage(article.image.url)
   data.setURL(article.link)
