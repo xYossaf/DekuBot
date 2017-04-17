@@ -140,11 +140,19 @@ var makePost = function(article, rss, bot) {
   var randomHex = "#000000".replace(/0/g, function() {
     return (~~(Math.random() * 16)).toString(16);
   });
-  console.log(article)
+  //console.log(article)
+  var upndown = require('upndown');
+
+  var und = new upndown();
+  und.convert(article.summary, function(err, markdown) {
+      if(err) { console.log(err) }
+      else { data.setDescription(unescape(markdown.substring(0, 2000))) } // Outputs: # Hello, World !
+  })
+
   data.setColor(randomHex)
   data.setTitle(article.title.substring(0, 500))
-  data.setDescription(unescape(article.description.substring(0, 2000)))
-  data.setAuthor(article.author)
+  //data.setDescription(unescape(article.description.substring(0, 2000)))
+  data.setAuthor(article.meta.title)
   data.setImage(article.image.url)
   data.setURL(article.link)
   data.setTimestamp(article.date)
