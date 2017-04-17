@@ -2,6 +2,7 @@ var config = require("./config.json");
 var userDB = require("./runtime/user_rt.js");
 var guildDB = require("./runtime/guild_rt.js");
 var factionDB = require("./runtime/faction_rt.js");
+var rssDB = require("./runtime/rss_rt.js");
 var Commands = require("./runtime/commands.js").Commands;
 var functions = require("./runtime/functions.js");
 var battle = require("./runtime/battle_rt.js");
@@ -156,7 +157,8 @@ dekubot.on("ready", () => {
     })(x)
   }
   functions.initMangaDB()
-  functions.checkManga(dekubot);
+  //functions.checkManga(dekubot);
+  rssDB.checkAllRSS(dekubot)
   functions.checkReddit(dekubot);
 });
 

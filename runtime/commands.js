@@ -6,8 +6,10 @@ var mangaDB = require("./manga_track_rt.js");
 var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
+var rssDB = require("./rss_rt.js");
 var customcommands = require("./custom_command_rt.js");
 var music = require("./music.js");
+//var testest = require("./update_script.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -29,6 +31,17 @@ youtube.setKey(config.youtube);
 youtube.addParam('type', 'video');
 
 // GENERAL COMMANDS
+// Commands.test = {
+//   name: "test",
+//   help: "tbd",
+//   type: "general",
+//   perms: ["ADMINISTRATOR"],
+//   cooldown: 0,
+//   func: function(bot, msg) {
+//     testest.test()
+//   }
+// };
+
 Commands.help = {
   name: "help",
   help: "tbd",
@@ -516,6 +529,164 @@ Commands.setgame = {
     }
   }
 };
+
+Commands.rss = {
+  name: "rss",
+  help: "tbd",
+  type: "weeb",
+  perms: ["SEND_MESSAGES"],
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (!args) {
+      var msgArray = []
+      msgArray.push("📰 This is the RSS feed command. Below are a few popular RSS feeds 📰 : ")
+      msgArray.push(" ➖ <https://jaiminisbox.com/reader/feeds/rss> ⬅️ Manga scanlating website")
+      msgArray.push(" ➖ <http://mangastream.com/rss> ⬅️ Another manga scanlating website")
+      msgArray.push(" ➖ <http://feeds.bbci.co.uk/news/rss.xml> ⬅️ Good ol' British news")
+      msgArray.push(" ➖ <http://feeds.feedburner.com/techcrunch> ⬅️ Crunchy Tech YumYum")
+      msgArray.push(" ➖ <https://www.nasa.gov/rss/dyn/breaking_news.rss> ⬅️ Space news for blues clues yo")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      args = args.split(" ")
+      var url = args[0]
+      var filter = ""
+      var channel
+      var isUser 
+      var track = true
+      if (args.length > 1) {
+        filter = args[1]
+      }
+      rssDB.parseRSS(url).then(function(r) {
+        var ts = new Date(r[0].date)
+        ts = ts.getTime()
+        if (msg.channel.type == "dm") {
+          channel = msg.author.id
+          isUser = true
+        } else if (msg.channel.type == "text") {
+          if (msg.member.hasPermission("MANAGE_CHANNELS")) {
+            channel = msg.channel.id
+            isUser = false
+          } else {
+            msg.channel.sendMessage(`You don't have high enough permissions to track this RSS feed for this entire channel.`).then(function(mesg) {
+              mesg.author = msg.author
+              functions.responseHandlingREG(bot, mesg, `If you wanted to track the RSS feed so that it private messages you directly, please respond with "y"`, msg.author).then(function(res) {
+                if (res.toLowerCase() == "y") {
+                  channel = msg.author.id
+                  isUser = true
+                } else {
+                  track = false
+                }
+              })
+            })    
+          }
+        }
+        if (track) {
+          rssDB.check(url, channel, filter).then(function(re) {
+            console.log("meats")
+            if (re == "tracking all") {
+              msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
+            } else if (re == "same filter") {
+              msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")  
+            } else {
+              rssDB.trackRSS(channel, isUser, url, filter, ts)
+              if (filter == "") {
+                msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " 📰. All updates to the RSS feed will be posted here.")
+              } else {
+                msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+              }
+            }
+          })
+        }
+      }).catch(function(e) {
+        msg.channel.sendMessage("```diff\n- Error: Invalid RSS feed link```")
+      })
+    }
+  }
+};
+
+Commands.rsslist = {
+  name: "rsslist",
+  help: "tbd",
+  type: "weeb",
+  perms: ["SEND_MESSAGES"], 
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var msgArray = []
+    if (msg.channel.type == "dm") {
+      rssDB.getByUser(msg.author).then(function(r) {
+        msgArray.push("📰 The RSS feeds you are currently tracking are as follows 📰 : ")
+        var count = 0
+        for (item of r) {
+          var filter
+          if (item.filter == "") {
+            filter = "no"
+          } else {
+            filter = item.filter
+          }
+          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked with ${filter} filter`)
+          count++
+        }
+        msg.channel.sendMessage(msgArray).then(function(mesg) {
+          mesg.author = msg.author
+          functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the RSS feeds currently being tracked, type the number next to the RSS feed above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+            if (res.toLowerCase() == "all") {
+              for (item of r) {
+                rssDB.deleteTrack(item._id)
+              }
+              msg.channel.sendMessage("All RSS feeds have been deleted 🗑️")
+            } else if (res > 0 && res <= r.length) {
+              rssDB.deleteTrack(r[res-1]._id)
+              msg.channel.sendMessage("The RSS <" + r[res-1].url + "> feed has been deleted 🗑️")
+            }
+          })
+        })
+      }).catch(function(e) {
+        if (e == "No RSS found here") {
+          msgArray.push("📰 You are currently not tracking any RSS feeds 📰")
+        }
+        msg.channel.sendMessage(msgArray)
+      })
+    } else if (msg.channel.type == "text") {
+      rssDB.getByGuild(msg.guild).then(function(r) {
+        msgArray.push("📰 The RSS feeds currently being tracked on this server are as follows 📰 : ")
+        var count = 0
+        for (item of r) {
+          var filter
+          if (item.filter == "") {
+            filter = "no"
+          } else {
+            filter = item.filter
+          }
+          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked in ${bot.channels.get(rss.discordID)} with ${filter} filter`)
+          count++
+        }
+        msg.channel.sendMessage(msgArray).then(function(mesg) {
+          if (msg.member.hasPermission("MANAGE_CHANNELS")) {
+            mesg.author = msg.author
+            functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the RSS feeds currently being tracked, type the number next to the RSS feed above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+              if (res.toLowerCase() == "all") {
+                for (item of r) {
+                  rssDB.deleteTrack(item._id)
+                }
+                msg.channel.sendMessage("All RSS feeds have been deleted 🗑️")
+              } else if (res > 0 && res <= r.length) {
+                rssDB.deleteTrack(r[res-1]._id)
+                msg.channel.sendMessage("The RSS <" + r[res-1].url + "> feed has been deleted 🗑️")
+              }
+            })
+          }
+        })
+      }).catch(function(e) {
+        //console.log("here6.5")
+        if (e == "No RSS found here") {
+          msgArray.push("📰 There are currently no RSS feeds being tracked in any channels on this server 📰")
+        }
+        msg.channel.sendMessage(msgArray)
+      })
+    }
+  }
+};
+
 
 
 
@@ -1488,82 +1659,6 @@ Commands.mangatrack = {
     })
   }
 };
-
-Commands.unmangatrack = {
-  name: "unmangatrack",
-  help: "tbd",
-  type: "weeb",
-  perms: ["SEND_MESSAGES"],
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.removeFromPM(record._id, msg.author);
-      msg.channel.sendMessage("You are now no longer tracking ``" + functions.escapeMentions(args, true) + "`` ✔");
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
-Commands.servermangatrack = {
-  name: "mangatrack",
-  help: "tbd",
-  type: "weeb",
-  perms: ["MANAGE_CHANNELS"],
-  cooldown: 0,
-  func: function(bot, msg, args) {
-
-    var mentionVal = ""
-
-    if (args.includes(" | ")) {
-      mentionVal = args.substring(args.indexOf(" | ")+3)
-      args = args.substring(0, args.indexOf(" | "))
-    }
-
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
-        msg.channel.sendMessage("You are already tracking ``" + functions.escapeMentions(args, true) + "`` in this server.");
-      }).catch(function(e) {
-        var obj = {
-          guild_id: msg.guild.id,
-          channel_id: msg.channel.id,
-          mention: mentionVal
-        }
-        mangaDB.addGuildChannel(record._id, obj);
-        msg.channel.sendMessage("You are now tracking ``" + functions.escapeMentions(args, true) + "``. All new chapters will be linked in this channel ✔");
-      })
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
-Commands.unservermangatrack = {
-  name: "mangatrack",
-  help: "tbd",
-  type: "weeb",
-  perms: ["MANAGE_CHANNELS"],
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
-        mangaDB.removeGuildChannel(record._id, r);
-        msg.channel.sendMessage("You are now no longer tracking ``" + functions.escapeMentions(args, true) + "`` In this server.");
-      }).catch(function(e) {
-        msg.channel.sendMessage("You are already not tracking ``" + functions.escapeMentions(args, true) + "`` in this server.");
-      })
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
 
 
 //MUSIC COMMANDS
