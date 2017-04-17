@@ -2,14 +2,12 @@ var config = require("../config.json");
 var userDB = require("./user_rt.js");
 var guildDB = require("./guild_rt.js");
 var factionDB = require("./faction_rt.js");
-var mangaDB = require("./manga_track_rt.js");
 var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
 var rssDB = require("./rss_rt.js");
 var customcommands = require("./custom_command_rt.js");
 var music = require("./music.js");
-//var testest = require("./update_script.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
