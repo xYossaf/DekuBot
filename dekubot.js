@@ -162,9 +162,28 @@ dekubot.on("ready", () => {
 //Bot start:
 dekubot.on("message", (message) => {
   if (message.author.id == dekubot.user.id) {
-    return;
-  } else if (message.channel.type == 'dm' || message.channel.type == 'group') {
-    return;
+    return
+  } else if (message.channel.type == 'group') {
+    return
+  } else if (message.channel.type == 'dm') {
+    var temp = message.content.toLowerCase()
+    var words = temp.split(' ')
+    var firstWord = words[0]
+    var args = message.content.substr(words[0].length+1)
+
+    if (firstWord.substr(0, 1) === "!") {
+      var command = firstWord.slice(1)
+      if (Commands[command] != null && Commands[command].pm) {       
+        Commands[command].func(dekubot, message, args)
+        commandLogger.log('info', `${command}`, {
+          channel: message.channel.id, 
+          authorID: message.author.id, 
+          authorName: message.author.name
+        })
+      } else {
+        message.author.sendMessage("```diff\n- Error: This command is only usable on a server, not through private messages```");
+      }
+    } 
   } else {
 
     guildDB.check(message.guild).catch(function(e) {
