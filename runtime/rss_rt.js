@@ -262,6 +262,8 @@ exports.getByGuild = function(guild) {
           } else {
             reject("No RSS found here")
           }
+        } else {
+          reject("No RSS found here")
         }
        });
     } catch (e) {
@@ -286,6 +288,8 @@ exports.getByUser = function(user) {
           } else {
             reject("No RSS found here")
           }
+        } else {
+          reject("No RSS found here")
         }
        });
     } catch (e) {

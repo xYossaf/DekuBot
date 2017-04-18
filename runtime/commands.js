@@ -45,6 +45,7 @@ Commands.help = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");
@@ -56,6 +57,7 @@ Commands.ping = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.reply(":ping_pong:");
@@ -67,6 +69,7 @@ Commands.pong = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.reply("Received command in--- wait, hold on, you're supposed to *ping* me! I haven't the slightest clue how to respond to this *pong* nonsense.");
@@ -78,6 +81,7 @@ Commands.rps = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     args = args.toLowerCase();
@@ -130,6 +134,7 @@ Commands.namechanges = {
   help: "tbt",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg) {
     if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
@@ -155,6 +160,7 @@ Commands.botstatus = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     var channelcount = 0;
@@ -199,6 +205,7 @@ Commands.faction = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var msgArray = [];
@@ -238,6 +245,7 @@ Commands.customcommands = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     customcommands.getAllHere(msg.guild).then(function(r) {
@@ -257,6 +265,7 @@ Commands.rip = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 4000,
   func: function(bot, msg, args) {
     var url = ""
@@ -293,6 +302,7 @@ Commands["8ball"] = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     var response = [];
@@ -331,6 +341,7 @@ Commands.dice = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (args) {
@@ -358,6 +369,7 @@ Commands.triggered = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 4000,
   func: function(bot, msg, args) {
     var url = ""
@@ -411,6 +423,7 @@ Commands.invite = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146954327\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
@@ -422,6 +435,7 @@ Commands.quote = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var quote = ""
@@ -455,6 +469,7 @@ Commands.math = Commands.maths = {
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     try {
@@ -469,7 +484,9 @@ Commands.math = Commands.maths = {
 Commands.server = {
   name: "server",
   help: "I'll tell you some information about the server you're currently in.",
+  type: "general",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.channel.guild) {
@@ -508,6 +525,7 @@ Commands.setavatar = {
   name: "setavatar",
   help: "tbd",
   perms: ["ADMINISTRATOR"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
    if (msg.author.id === config.dev_id) {
@@ -520,6 +538,7 @@ Commands.setgame = {
   name: "setgame",
   help: "tbd",
   perms: ["ADMINISTRATOR"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args){
     if (msg.author.id === config.dev_id) {
@@ -533,6 +552,7 @@ Commands.rss = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (!args) {
@@ -565,14 +585,27 @@ Commands.rss = {
             channel = msg.channel.id
             isUser = false
           } else {
+            track = false
             msg.channel.sendMessage(`You don't have high enough permissions to track this RSS feed for this entire channel.`).then(function(mesg) {
               mesg.author = msg.author
-              functions.responseHandlingREG(bot, mesg, `If you wanted to track the RSS feed so that it private messages you directly, please respond with "y"`, msg.author).then(function(res) {
+              functions.responseHandlingREG(bot, mesg, '```If you wanted to track the RSS feed so that it private messages you directly, please respond with "y"```', msg.author).then(function(res) {
                 if (res.toLowerCase() == "y") {
                   channel = msg.author.id
                   isUser = true
-                } else {
-                  track = false
+                  rssDB.check(url, channel, filter).then(function(re) {
+                    if (re == "tracking all") {
+                      msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
+                    } else if (re == "same filter") {
+                      msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")  
+                    } else {
+                      rssDB.trackRSS(channel, isUser, url, filter, ts)
+                      if (filter == "") {
+                        msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** 📰. All updates to the RSS feed will be posted here.")
+                      } else {
+                        msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                      }
+                    }
+                  })
                 }
               })
             })    
@@ -580,17 +613,24 @@ Commands.rss = {
         }
         if (track) {
           rssDB.check(url, channel, filter).then(function(re) {
-            console.log("meats")
             if (re == "tracking all") {
               msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
             } else if (re == "same filter") {
               msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")  
             } else {
               rssDB.trackRSS(channel, isUser, url, filter, ts)
-              if (filter == "") {
-                msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " 📰. All updates to the RSS feed will be posted here.")
+              if (isUser) {
+                if (filter == "") {
+                  msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** 📰. All updates to the RSS feed will be posted here.")
+                } else {
+                  msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                }
               } else {
-                msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                if (filter == "") {
+                  msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " 📰. All updates to the RSS feed will be posted here.")
+                } else {
+                  msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                }
               }
             }
           })
@@ -606,7 +646,8 @@ Commands.rsslist = {
   name: "rsslist",
   help: "tbd",
   type: "weeb",
-  perms: ["SEND_MESSAGES"], 
+  perms: ["SEND_MESSAGES"],
+  pm: true, 
   cooldown: 0,
   func: function(bot, msg, args) {
     var msgArray = []
@@ -694,6 +735,7 @@ Commands.purge = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     // if (msg.channel.type == 'dm') {
@@ -729,6 +771,7 @@ Commands.createfaction = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var name = args.substr(0, args.indexOf("#") - 1).toLowerCase();
@@ -765,6 +808,7 @@ Commands.deletefaction = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var found = false
@@ -790,6 +834,7 @@ Commands.ignore = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.ignoreChannel(msg.channel).then(function(r) {
@@ -805,6 +850,7 @@ Commands.unignore = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.unignoreChannel(msg.channel).then(function(r) {
@@ -821,6 +867,7 @@ Commands.createcommand = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var comexists = false
@@ -880,6 +927,7 @@ Commands.deletecommand = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (!args) {
@@ -899,6 +947,7 @@ Commands.nsfw = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.nsfwChannel(msg.channel).then(function(r) {
@@ -914,6 +963,7 @@ Commands.unnsfw = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.unNSFWChannel(msg.channel).then(function(r) {
@@ -929,6 +979,7 @@ Commands.reddit = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var found = false;
@@ -981,6 +1032,7 @@ Commands.unreddit = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var found = false;
@@ -1029,6 +1081,7 @@ Commands.setprefix = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var eargs = functions.escapeMentions(args, true);
@@ -1046,6 +1099,7 @@ Commands.togglewelcomepm = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleWelcomePM(msg.guild.id).then(function(r) {
@@ -1059,6 +1113,7 @@ Commands.togglefactionpm = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
@@ -1072,6 +1127,7 @@ Commands.setjoinmessage = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, " " + args).then(function(r) {
@@ -1085,6 +1141,7 @@ Commands.setleavemessage = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, args).then(function(r) {
@@ -1098,6 +1155,7 @@ Commands.disablejoinmessage = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
@@ -1111,6 +1169,7 @@ Commands.disableleavemessage = {
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setLeavemsg(msg.guild.id, "").then(function(r) {
@@ -1153,6 +1212,7 @@ Commands.spoiler = {
   help: "tbd",
   type: "admin",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     //console.log(msg.member.displayName)
@@ -1193,6 +1253,7 @@ Commands.spoils = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     //console.log(msg.member.displayName)
@@ -1238,6 +1299,7 @@ Commands.anime = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1281,6 +1343,7 @@ Commands.manga = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1325,6 +1388,7 @@ Commands.character = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1401,6 +1465,7 @@ Commands.animesearch = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1499,6 +1564,7 @@ Commands.mangasearch = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1584,6 +1650,7 @@ Commands.animeairdate = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1622,41 +1689,41 @@ Commands.animeairdate = {
   }
 };
 
-Commands.mangalist= {
-  name: "mangalist",
-  help: "tbd",
-  type: "weeb",
-  perms: ["SEND_MESSAGES"],
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.getAll().then(function(r) {
-      var msgarray = [];
-      msgarray.push("This is a list of all of the manga tracked on mangastream");
-      for (i = 0; i < r.length; i++) {
-        msgarray.push(`<${r[i].url}> Aliases: ${r[i].aliases}`);
-      }
-      msg.author.sendMessage(msgarray, {split: true});
-    })
-  }
-};
+// Commands.mangalist= {
+//   name: "mangalist",
+//   help: "tbd",
+//   type: "weeb",
+//   perms: ["SEND_MESSAGES"],
+//   cooldown: 0,
+//   func: function(bot, msg, args) {
+//     mangaDB.getAll().then(function(r) {
+//       var msgarray = [];
+//       msgarray.push("This is a list of all of the manga tracked on mangastream");
+//       for (i = 0; i < r.length; i++) {
+//         msgarray.push(`<${r[i].url}> Aliases: ${r[i].aliases}`);
+//       }
+//       msg.author.sendMessage(msgarray, {split: true});
+//     })
+//   }
+// };
 
-Commands.mangatrack = {
-  name: "mangatrack",
-  help: "tbd",
-  type: "weeb",
-  perms: ["SEND_MESSAGES"],
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.addToPM(record._id, msg.author);
-      msg.channel.sendMessage("You are now tracking ``" + functions.escapeMentions(args, true) + "``. All new chapters will be linked to you in a Private Message ✔");
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
+// Commands.mangatrack = {
+//   name: "mangatrack",
+//   help: "tbd",
+//   type: "weeb",
+//   perms: ["SEND_MESSAGES"],
+//   cooldown: 0,
+//   func: function(bot, msg, args) {
+//     mangaDB.checkAlias(args).then(function(record) {
+//       mangaDB.addToPM(record._id, msg.author);
+//       msg.channel.sendMessage("You are now tracking ``" + functions.escapeMentions(args, true) + "``. All new chapters will be linked to you in a Private Message ✔");
+//     }).catch(function(e) {
+//       if (e == "Nothing found") {
+//         msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
+//       }
+//     })
+//   }
+// };
 
 
 //MUSIC COMMANDS
@@ -1665,6 +1732,7 @@ Commands.dj = {
   name: "dj",
   help: "tbd",
   perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1685,6 +1753,7 @@ Commands.joinvoice = {
   name: "joinvoice",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     //have the d role to use this command
@@ -1713,6 +1782,7 @@ Commands.leavevoice = {
   name: "leavevoice",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1737,6 +1807,7 @@ Commands.request = {
   name: "request",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
@@ -1800,6 +1871,7 @@ Commands.skipsong = {
   name: "skipsong",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
@@ -1818,6 +1890,7 @@ Commands.clearqueue = {
   name: "clearsongs",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1843,6 +1916,7 @@ Commands.endsong = {
   name: "endsong",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1868,6 +1942,7 @@ Commands.queue = {
   name: "queue",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
@@ -1882,6 +1957,7 @@ Commands.pause = {
   name: "pause",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1906,6 +1982,7 @@ Commands.resume = {
   name: "resume",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1931,6 +2008,7 @@ Commands.volume = {
   name: "resume",
   help: "tbd",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1968,6 +2046,7 @@ Commands.rule34 = {
   help: "tbd",
   type: "nsfw",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
@@ -2006,6 +2085,7 @@ Commands.konachan = {
   help: "tbd",
   type: "nsfw",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (args.split(" ").length > 5) {
@@ -2045,6 +2125,7 @@ Commands.danbooru = {
   help: "tbd",
   type: "nsfw",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (args.split(" ").length > 2) {
@@ -2084,6 +2165,7 @@ Commands.yandere = {
   help: "tbd",
   type: "nsfw",
   perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     request('https://yande.re/post/index.json?limit=500&tags=' + args, function (error, response, body) {
