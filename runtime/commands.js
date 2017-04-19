@@ -1,7 +1,8 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
 var guildDB = require("./guild_rt.js");
-var factionDB = require("./faction_rt.js");
+var factionDB = require("./faction_rt.js");//
+var assignableRolesDB = require("./assignable_roles_rt.js");
 var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
@@ -200,8 +201,8 @@ Commands.botstatus = {
   }
 };
 
-Commands.faction = {
-  name: "faction",
+Commands.selfroles = {
+  name: "selfroles",
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
@@ -209,32 +210,18 @@ Commands.faction = {
   cooldown: 0,
   func: function(bot, msg, args) {
     var msgArray = [];
-    var guildFactions = [];
     var found = false;
-    factionDB.getFactionsHere(msg.guild).then(function(guildFactions) {
-        for (i = 0; i < guildFactions.length; i++) {
-          if (msg.member.roles.has(guildFactions[i])) {
-            msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message a member of staff.");
-            found = true;
-          }
-          if (!found && i == guildFactions.length-1) {
-            msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
-            msgArray.push("Im one of the bots on this server made by RoddersGH#4702. I help with a bunch of things which you can check out by going to the following link: https://github.com/RoddersGH/DekuBot/wiki");
-            msgArray.push(" ");
-            msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact RoddersGH#4702 with any issues)");
-            msgArray.push(" ");
-            msgArray.push("We have different factions on the server that give you a coloured name and put you on the faction leaderboards(still being made).");
-            msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
-            msgArray.push("The factions are:" );
-            for (j = 0; j < guildFactions.length; j++) {
-              msgArray.push(`${j+1}. ${msg.guild.roles.get(guildFactions[j]).name}` );
-            }
-            functions.responseHandling(msgArray, msg.author, msg.guild, guildFactions)
-          }
+    assignableRolesDB.getRolesHere(msg.guild).then(function(guildRoles) {
+        msgArray.push("We have different self assignable roles on the server that give you a coloured name.")
+        msgArray.push("If you want one of these roles, type the command ``giverole <role name>``")
+        msgArray.push("The roles available for you are:" )
+        for (i = 0; i < guildRoles.length; i++) {
+          msgArray.push(`➖ ${msg.guild.roles.get(guildRoles[i]).name}` );
         }
+        //functions.responseHandling(msgArray, msg.author, msg.guild, guildFactions)
     }).catch(function(e) {
-      if (e == 'No factions found') {
-        msg.channel.sendMessage('This server has no factions in it at the moment. Message an admin if you wish for them to create factions for the server.' )
+      if (e == 'No roles found') {
+        msg.channel.sendMessage('```This server has no self assignable roles on it at the moment. Message an admin if you wish for them to create some for the server.```' )
       }
     })
   }

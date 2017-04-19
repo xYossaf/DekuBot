@@ -8,7 +8,7 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.createNewRole = function(id, guild, name, colour, required) {//need to add an _id field whihc is the id of the role. make it all based on roles.
+exports.createNewRole = function(id, guild, name, colour, required) {
   var roledoc = {
     _id: id,
     guildID: guild.id,
@@ -36,7 +36,7 @@ exports.getRoleName = function(roleid) {
         if (res.length === 0) {
           return reject('No role found');
         } else {
-          resolve(res[0].faction_name);
+          resolve(res[0].roleName);
         }
       });
     } catch (e) {

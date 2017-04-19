@@ -1,7 +1,8 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
 var guildDB = require("./guild_rt.js");
-var factionDB = require("./faction_rt.js");
+var factionDB = require("./faction_rt.js");//
+var assignableRolesDB = require("./assignable_roles_rt.js");
 var redditDB = require("./reddit_rt.js");
 
 var Discord = require("discord.js");
