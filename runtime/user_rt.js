@@ -9,7 +9,7 @@ var db = new Datastore({
 db.persistence.setAutocompactionInterval(30000);
 
 exports.trackUser = function(user) {
-  var userdoc = {//need to get rid of the factions parameter entirely. Pointless. Replace with the blacklist parameter
+  var userdoc = {
     _id: user.id,
     known_names: [user.username],
     blacklisted: false

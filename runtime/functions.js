@@ -1,7 +1,7 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
 var guildDB = require("./guild_rt.js");
-var factionDB = require("./faction_rt.js");
+var assignableRolesDB = require("./assignable_roles_rt.js");
 var redditDB = require("./reddit_rt.js");
 
 var Discord = require("discord.js");
@@ -197,7 +197,7 @@ exports.responseHandlingREG = function(bot, msg, promptmsg, user) {
   });
 };
 
-exports.responseHandling = function(msg, user, guild, guildFactions) {
+exports.responseHandling = function(msg, user, guild, guildRoles) {
   user.sendMessage(msg).then(mesg => {
     var id = 0;
     var response = "";
@@ -214,28 +214,28 @@ exports.responseHandling = function(msg, user, guild, guildFactions) {
     responseCollector.on('end', (collection, reason) => {
       if (reason == 'recieved') {
         response = collection.get(id).content
-        exports.choice(user, guild, response, guildFactions);
+        exports.choice(user, guild, response, guildRoles);
       }
     });
   })
 };
 
-exports.choice = function (user, guild, response, guildFactions) {
+exports.choice = function (user, guild, response, guildRoles) {
   var found = false
-  for (i = 1; i < guildFactions.length+1; i++) {
+  for (i = 1; i < guildRoles.length+1; i++) {
     if (response == i.toString()) {
-      var currentrole = guild.roles.get(guildFactions[i-1])
+      var currentrole = guild.roles.get(guildRoles[i-1])
       if (currentrole == undefined) {
         return
       }
       guild.members.get(user.id).addRole(currentrole).then(member => {
-        member.sendMessage(`Thanks for choosing the faction **${currentrole.name}**`);
+        member.sendMessage(`Thanks for choosing the role **${currentrole.name}**`);
       })
       found = true
     }
-    if (!found && i == guildFactions.length) {
-      user.sendMessage("Im sorry, but that response doesn't match any of the faction options listed above.").then(message => {
-        exports.responseHandling("**To choose a faction, type the number next to the faction name you wish to join <3 **", user, guild, guildFactions)
+    if (!found && i == guildRoles.length) {
+      user.sendMessage("Im sorry, but that response doesn't match any of the options listed above.").then(message => {
+        exports.responseHandling("**To choose a role, type the number next to the role name <3 in this DM**", user, guild, guildRoles)
       });
     }
   }
