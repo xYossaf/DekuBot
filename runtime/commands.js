@@ -201,29 +201,128 @@ Commands.botstatus = {
   }
 };
 
-Commands.selfroles = {
-  name: "selfroles",
+Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
+  name: "selfassignrole",
   help: "tbd",
   type: "general",
   perms: ["SEND_MESSAGES"],
   pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
-    var msgArray = [];
-    var found = false;
-    assignableRolesDB.getRolesHere(msg.guild).then(function(guildRoles) {
-        msgArray.push("We have different self assignable roles on the server that give you a coloured name.")
-        msgArray.push("If you want one of these roles, type the command ``giverole <role name>``")
-        msgArray.push("The roles available for you are:" )
-        for (i = 0; i < guildRoles.length; i++) {
-          msgArray.push(`➖ ${msg.guild.roles.get(guildRoles[i]).name}` );
-        }
-        //functions.responseHandling(msgArray, msg.author, msg.guild, guildFactions)
-    }).catch(function(e) {
-      if (e == 'No roles found') {
-        msg.channel.sendMessage('```This server has no self assignable roles on it at the moment. Message an admin if you wish for them to create some for the server.```' )
+    if (!args) {
+      var msgArray = [];
+      msgArray.push("This is the self assignable role command. below are the different options:")
+      msgArray.push("``selfrole list`` : This will list all of the self assignable roles")
+      msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name")
+      msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name")
+      msgArray.push("``selfrole assign <pre-existing role id>`` : This is used to make pre-existing roles self assignable")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      args = args.split(" ")
+      switch(args[0]) {
+          case "l":
+          case "list":
+              var msgArray = [];
+              assignableRolesDB.getRolesHere(msg.guild).then(function(guildRoles) {
+                msgArray.push("We have different self assignable roles on the server that give you a coloured name.")
+                msgArray.push("If you want one of these roles, type the command ``selfrole give <role name>``")
+                msgArray.push("The roles are:")
+                for (i = 0; i < guildRoles.length; i++) {
+                  msgArray.push(`➖ ${functions.escapeMentions(msg.guild.roles.get(guildRoles[i]).name), true}` );
+                }
+                msg.channel.sendMessage(msgArray)
+              }).catch(function(e) {
+                if (e == 'No roles found') {
+                  msg.channel.sendMessage('```This server has no self assignable roles on it at the moment. Message an admin if you wish for them to create some for the server.```' )
+                }
+              })
+              break;
+          case "a":
+          case "assign":
+              if (msg.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
+                if (args[1]) {
+                  var role = msg.guild.roles.find("name", args[1])
+                  if (role) {
+                    assignableRolesDB.checkName(msg.guild, role.name).then(function(r) {
+                      msg.channel.sendMessage('The role **' + role.name + '** will now be made self assignable.').then(function(mesg) {
+                        mesg.author = msg.author
+                        functions.responseHandlingREG(bot, mesg, 'Would you like to prompt members when they join, asking if they want this role? **[Y/N]**', msg.author).then(function(res) {
+                          var prompt
+                          if (res.toLowerCase() == "y") {
+                            msg.channel.sendMessage('💾 The role **' + role.name + '** has been made self assignable and will be prompted. 💾')
+                            prompt = true
+                          } else {
+                            msg.channel.sendMessage('💾 The role **' + role.name + '** has been made self assignable. 💾')
+                            prompt = false
+                          }
+                          assignableRolesDB.createNewRole(role.id, guild, role.name, role.color, prompt)
+                        })
+                      })
+                    }).catch(function(e) {
+                      if (e == 'exists') {
+                        msg.channel.sendMessage('```diff\n- Error: A role with this name is already self assignable.```')
+                      } else {
+                        console.log(e)
+                      }
+                    })
+                  } else {
+                    msg.channel.sendMessage('```diff\n- Error: No role with this name was found (role name is case sensitive)```')
+                  }
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format - selfrole assign <role name>```')
+                }
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: You do not have the appropriate permissions```')
+              }
+              break;
+          case "g":
+          case "give":
+              if (args[1]) {
+                assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
+                  msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
+                }).catch(function(e) {
+                  if (e == 'exists') {
+                    assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
+                      msg.member.addRole(r)
+                      msg.channel.sendMessage(msg.member + ' You now have the **' + functions.escapeMentions(args[1], true) '** role')
+                    })
+                  }
+                })
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format -  selfrole give <role name>```')
+              }
+              break;
+          case "r":
+          case "remove":
+              if (args[1]) {
+                assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
+                  msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
+                }).catch(function(e) {
+                  if (e == 'exists') {
+                    assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
+                      if (msg.member.roles.has(r)) {
+                        msg.member.removeRole(r)
+                        msg.channel.sendMessage(msg.member + ' You no longer have the **' + functions.escapeMentions(args[1], true) '** role')
+                      } else {
+                        msg.channel.sendMessage('```diff\n- Error: you already do not have this role```')
+                      }
+                    })
+                  }
+                })
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format -  selfrole take <role name>```')
+              }
+              break;
+          default:
+              var msgArray = [];
+              msgArray.push("This is the self assignable role command. below are the different options:")
+              msgArray.push("``selfrole list`` : This will list all of the self assignable roles")
+              msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name")
+              msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name")
+              msgArray.push("``selfrole assign <pre-existing role id>`` : This is used to make pre-existing roles self assignable")
+              msg.channel.sendMessage(msgArray)
       }
-    })
+    }
   }
 };
 
@@ -753,69 +852,6 @@ Commands.purge = {
   }
 };
 
-Commands.createfaction = {
-  name: "createfaction",
-  help: "tbd",
-  type: "admin",
-  perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
-  pm: false,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    var name = args.substr(0, args.indexOf("#") - 1).toLowerCase();
-    var hex = args.substr(args.indexOf("#"))
-    var isHex = /^#[0-9A-F]{6}$/i.test(hex);
-
-    if (!isHex) {
-      msg.channel.sendMessage("```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
-      return;
-    };
-    factionDB.checkNameClash(msg.channel.guild, name).then(function() {
-      var hex_int = parseInt("0x" + hex.substr(hex.indexOf("#") + 1), 16);
-      msg.guild.createRole({
-        color : hex_int,
-        hoist : false,
-        name : name,
-        mentionable: false
-      }).then(role => {
-        factionDB.createNewFaction(role.id, role.guild, role.name, hex_int, role.permissions);
-        msg.channel.sendMessage("The faction " + role.name + " has been created ✔");
-      }).catch(function(e) {
-        msg.channel.sendMessage(e);
-        return;
-      })
-    }).catch(function(e) {
-      msg.channel.sendMessage(e);
-      return;
-    });
-  }
-};
-
-Commands.deletefaction = {
-  name: "deletefaction",
-  help: "tbd",
-  type: "admin",
-  perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
-  pm: false,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    var found = false
-    factionDB.getFactionsHere(msg.guild).then(function(r) {
-      for (i = 0; i < r.length; i++) {
-        if (msg.guild.roles.get(r[i]).name == args) {
-          factionDB.deleteFaction(r[i]);
-          msg.guild.roles.get(r[i]).delete().then(r => {
-            msg.channel.sendMessage(`The faction **${r.name}** has been deleted`)
-          })
-          found = true
-        }
-        if (!found && i == r.length-1) {
-          msg.channel.sendMessage("```diff\nA faction with this name does not exist\n```")
-        }
-      }
-    })
-  }
-};
-
 Commands.ignore = {
   name: "ignore",
   help: "tbd",
@@ -1138,7 +1174,7 @@ Commands.setleavemessage = {
 };
 
 Commands.disablejoinmessage = {
-  name: "togglefactionpm",
+  name: "disablejoinmessage",
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
@@ -1152,7 +1188,7 @@ Commands.disablejoinmessage = {
 };
 
 Commands.disableleavemessage = {
-  name: "togglefactionpm",
+  name: "disableleavemessage",
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],

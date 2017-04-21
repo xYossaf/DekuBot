@@ -8,13 +8,12 @@ var db = new Datastore({
 
 db.persistence.setAutocompactionInterval(30000);
 
-exports.createNewRole = function(id, guild, name, colour, required) {
+exports.createNewRole = function(id, guild, name, colour, prompt) {
   var roledoc = {
     _id: id,
     guildID: guild.id,
     roleName: name,
     roleColour: colour,
-    required: required,
     prompt: prompt
   };
   db.insert(roledoc, function (err, result) {
@@ -54,8 +53,10 @@ exports.getRoleID = function(guildID, name) {
         }
         if (res.length === 0) {
           return reject('No role found');
-        } else {
+        } else if (res.length > 1) {
           resolve(res[0]._id);
+        } else {
+          resolve(res._id)
         }
       });
     } catch (e) {
@@ -87,29 +88,29 @@ exports.getRolesHere = function(guild) {
   });
 };
 
-// exports.checkNameClash = function(guild, name) {
-//   return new Promise(function(resolve, reject) {
-//     try {
-//       db.find({guildID: guild.id}, function(err, res) {
-//         if (err) {
-//           return reject(err);
-//         }
-//         if (res.length === 0) {
-//           resolve('No factions found for this server');
-//         } else {
-//       for (result of res) {
-//         if (result.faction_name == name) {
-//           return reject('A faction with this name already exists on this server.');
-//         }
-//       };
-//       resolve("Name available");
-//         }
-//       });
-//     } catch (e) {
-//       reject(e);
-//     }
-//   });
-// };
+exports.checkName = function(guild, name) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({guildID: guild.id}, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          resolve('No roles found');
+        } else {
+          for (result of res) {
+            if (result.roleName == name) {
+              return reject('exists');
+            }
+          }
+          resolve("available");
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 
 exports.deleteRole = function(id) {
   return new Promise(function(resolve, reject) {
