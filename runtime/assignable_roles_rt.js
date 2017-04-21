@@ -53,10 +53,8 @@ exports.getRoleID = function(guildID, name) {
         }
         if (res.length === 0) {
           return reject('No role found');
-        } else if (res.length > 1) {
-          resolve(res[0]._id);
         } else {
-          resolve(res._id)
+          resolve(res[0]._id)
         }
       });
     } catch (e) {
