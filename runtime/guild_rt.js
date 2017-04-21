@@ -5,7 +5,7 @@ var db = new Datastore({
   filename: './databases/guild_store',
   autoload: true
 });
-//TODO UPDATE DB SO THAT IT HOLDS DJROLE
+//TODO UPDATE DB SO THAT IT IS NOW selfrolePM
 db.persistence.setAutocompactionInterval(30000);
 //*TODO* Add blacklist field
 exports.newGuild = function(guild) {
@@ -20,7 +20,7 @@ exports.newGuild = function(guild) {
   prefix: '!',
   DJRole: "",
   welcomePM: false,
-  factionPM: false
+  selfRolePM: false
   };
   db.insert(guild_doc, function (err, result) {
     if (err) {
@@ -520,7 +520,7 @@ exports.checkWelcomePM = function(guild_id) {
   });
 };
 
-exports.checkFactionPM = function(guild_id) {
+exports.checkSelfRolePM = function(guild_id) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
@@ -532,7 +532,7 @@ exports.checkFactionPM = function(guild_id) {
         if (res.length === 0) {
           return reject('No guild found');
         } else {
-          resolve(res[0].factionPM);
+          resolve(res[0].selfRolePM);
         }
       });
     } catch (e) {
@@ -580,7 +580,7 @@ exports.toggleWelcomePM = function(guild_id) {
   });
 };
 
-exports.toggleFactionPM = function(guild_id) {
+exports.toggleSelfRolePM = function(guild_id) {
   return new Promise(function(resolve, reject) {
     try {
       db.find({
@@ -592,24 +592,24 @@ exports.toggleFactionPM = function(guild_id) {
         if (res.length === 0) {
           return reject('Nothing found!');
         } else {
-          if (res[0].factionPM) {
+          if (res[0].selfRolePM) {
             db.update({
               _id: guild_id
             }, {
               $set: {
-                factionPM: false
+                selfRolePM: false
               }
             }, {});
-            resolve('The faction join prompt message will now not be sent in a private message.')
+            resolve('The self role prompt message will now not be sent in a private message.')
           } else {
             db.update({
               _id: guild_id
             }, {
               $set: {
-                factionPM: true
+                selfRolePM: true
               }
             }, {});
-            resolve('The faction join prompt message will now be sent in a private message to each new member.')
+            resolve('The self role prompt message will now be sent in a private message to each new member.')
           }
         }
       });

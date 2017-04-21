@@ -1,7 +1,6 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
 var guildDB = require("./guild_rt.js");
-var factionDB = require("./faction_rt.js");//
 var assignableRolesDB = require("./assignable_roles_rt.js");
 var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
@@ -228,7 +227,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
                 msgArray.push("If you want one of these roles, type the command ``selfrole give <role name>``")
                 msgArray.push("The roles are:")
                 for (i = 0; i < guildRoles.length; i++) {
-                  msgArray.push(`➖ ${functions.escapeMentions(msg.guild.roles.get(guildRoles[i]).name), true}` );
+                  msgArray.push(`➖ ${functions.escapeMentions(msg.guild.roles.get(guildRoles[i]).name, true)}` );
                 }
                 msg.channel.sendMessage(msgArray)
               }).catch(function(e) {
@@ -255,7 +254,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
                             msg.channel.sendMessage('💾 The role **' + role.name + '** has been made self assignable. 💾')
                             prompt = false
                           }
-                          assignableRolesDB.createNewRole(role.id, guild, role.name, role.color, prompt)
+                          assignableRolesDB.createNewRole(role.id, msg.guild, role.name, role.color, prompt)
                         })
                       })
                     }).catch(function(e) {
@@ -284,7 +283,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
                   if (e == 'exists') {
                     assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
                       msg.member.addRole(r)
-                      msg.channel.sendMessage(msg.member + ' You now have the **' + functions.escapeMentions(args[1], true) '** role')
+                      msg.channel.sendMessage(msg.member + ' You now have the **' + functions.escapeMentions(args[1], true) + '** role')
                     })
                   }
                 })
@@ -292,8 +291,8 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
                 msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format -  selfrole give <role name>```')
               }
               break;
-          case "r":
-          case "remove":
+          case "t":
+          case "take":
               if (args[1]) {
                 assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
                   msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
@@ -302,7 +301,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
                     assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
                       if (msg.member.roles.has(r)) {
                         msg.member.removeRole(r)
-                        msg.channel.sendMessage(msg.member + ' You no longer have the **' + functions.escapeMentions(args[1], true) '** role')
+                        msg.channel.sendMessage(msg.member + ' You no longer have the **' + functions.escapeMentions(args[1], true) + '** role')
                       } else {
                         msg.channel.sendMessage('```diff\n- Error: you already do not have this role```')
                       }
@@ -1131,15 +1130,15 @@ Commands.togglewelcomepm = {
   }
 };
 
-Commands.togglefactionpm = {
-  name: "togglefactionpm",
+Commands.toggleselfrolepm = {
+  name: "toggleselfrolepm",
   help: "tbd",
   type: "admin",
   perms: ["ADMINISTRATOR"],
   pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
-    guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
+    guildDB.toggleSelfRolePM(msg.guild.id).then(function(r) {
       msg.channel.sendMessage(r);
     })
   }

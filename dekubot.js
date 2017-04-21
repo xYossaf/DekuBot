@@ -1,7 +1,7 @@
 var config = require("./config.json");
 var userDB = require("./runtime/user_rt.js");
 var guildDB = require("./runtime/guild_rt.js");
-var factionDB = require("./runtime/faction_rt.js");
+var assignableRolesDB = require("./runtime/assignable_roles_rt.js");
 var rssDB = require("./runtime/rss_rt.js");
 var Commands = require("./runtime/commands.js").Commands;
 var functions = require("./runtime/functions.js");
@@ -87,13 +87,13 @@ dekubot.on("guildDelete", (guild) => {
 
   mangaDB.deleteAllHere(guild);
   redditDB.deleteAllHere(guild);
-  factionDB.deleteAllHere(guild);
+  assignableRolesDB.deleteAllHere(guild);
   customcommands.deleteAllHere(guild);
   guildDB.deleteGuild(guild);
 });
 
 dekubot.on("roleDelete", (role) => {
-  factionDB.deleteFaction(role.id).catch(function(e) {
+  assignableRolesDB.deleteRole(role.id).catch(function(e) {
     logger.log('error', e)
   })
 });
@@ -373,27 +373,21 @@ dekubot.on("guildMemberAdd", (member) => {
       });
     })
 
-    guildDB.checkFactionPM(member.guild.id).then(function(bool) {
-
+    guildDB.checkSelfRolePM(member.guild.id).then(function(bool) {
       if (bool) {
-        factionDB.getFactionsHere(member.guild).then(function(guildFactions) {
+        assignableRolesDB.getRolesHere(member.guild).then(function(guildRoles) {
           var msgArray = [];
 
-          msgArray.push("We have different factions on the server that give you a role and coloured name.");
-          msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
-          msgArray.push("The factions are:" );
-          for (j = 0; j < guildFactions.length; j++) {
-            msgArray.push(`${j+1}. ${member.guild.roles.get(guildFactions[j]).name}` );
+          msgArray.push("We have different self assignable roles on the server that give you a coloured name.");
+          msgArray.push("**If you want one of the following roles, type the **number** next to that role.**" );
+          msgArray.push("The roles are:" );
+          for (j = 0; j < guildRoles.length; j++) {
+            msgArray.push(`${j+1}. ${member.guild.roles.get(guildRoles[j]).name}` );
           }
-          functions.responseHandling(msgArray, member.user, member.guild, guildFactions);
+          functions.responseHandling(msgArray, member.user, member.guild, guildRoles);
         }).catch(function(e) {
-          if (e == 'No factions found') {
-
-            var msgArray = []
-
-            msgArray.push("This server has no factions in it at the moment. Message an admin if you would like for them to create factions for the server.");
-
-            member.user.sendMessage(msgArray);
+          if (e !== 'No roles found') {
+            console.log(e)
           }
         })
       }
