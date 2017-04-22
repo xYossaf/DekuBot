@@ -8,6 +8,7 @@ var battleDB = require("./battle_rt.js");
 var rssDB = require("./rss_rt.js");
 var customcommands = require("./custom_command_rt.js");
 var music = require("./music.js");
+var logDB = require("./log_rt.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -781,7 +782,7 @@ Commands.rsslist = {
           } else {
             filter = item.filter
           }
-          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked in ${bot.channels.get(rss.discordID)} with ${filter} filter`)
+          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked in ${bot.channels.get(item.discordID)} with ${filter} filter`)
           count++
         }
         msg.channel.sendMessage(msgArray).then(function(mesg) {
@@ -801,7 +802,6 @@ Commands.rsslist = {
           }
         })
       }).catch(function(e) {
-        //console.log("here6.5")
         if (e == "No RSS found here") {
           msgArray.push("📰 There are currently no RSS feeds being tracked in any channels on this server 📰")
         }
@@ -1228,6 +1228,161 @@ Commands.disableleavemessage = {
     
 //   }
 // };
+
+Commands.log = Commands.logs = {
+  name: "log",
+  help: "tbd",
+  type: "admin",
+  perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
+  pm: false,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (!args) {
+      var msgArray = [];
+      msgArray.push("This is the log command. below are the different options:\n")
+      msgArray.push("``log all`` : This will start logging **everything** listed below\n")
+      msgArray.push("``log traffic`` : This will start logging all the **member joins/leaves**\n")
+      msgArray.push("``log kicks `` : This will start logging all the **kicked members** using the ``punish`` command\n")
+      msgArray.push("``log bans`` : This will start logging all the **banned members**\n")
+      msgArray.push("``log deletes`` : This will start logging all the **deleted messages**\n")
+      msgArray.push("``log warnings`` : This will start logging all the **warnings** given to members using the ``punish`` command\n")
+      msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
+      msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
+      msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+      msgArray.push("``log voice`` : This will start logging all traffic for **voice channels**\n")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      args = args.split(" ")
+
+      var handleLog = function(guild, channel, type) {
+        logDB.checkLog(guild, type).then(function(r) {
+          logDB.createNewLog(guild, channel, type)
+          msg.channel.sendMessage("📩 **" + type + "** is now being logged in " + channel + " 📩")  
+        }).catch(function(e) {
+          if (e == 'exists') {
+            logDB.getLogChannel(guild, type).then(function(r) {
+              msg.channel.sendMessage('You are already tracking **' + type + '** in ' + bot.channels.get(r) + '. To see a list of your logs, do the command  ``loglist``')  
+            }) 
+          } else {
+            console.log(e)  
+          }
+        })
+      }
+
+      switch(args[0]) {
+          case "a":
+          case "all":
+              logDB.checkLogAll(msg.guild).then(function(r) {
+                if (r.length > 0) {
+                  var typeString = r.join(", ")
+                  for (type of r) {
+                    logDB.createNewLog(msg.guild, msg.channel, type)
+                  }
+                  var grammar
+                  if (r.length > 1) {
+                    grammar = "are"
+                  } else {
+                    grammar = "is"
+                  }
+                  msg.channel.sendMessage("📩 **" + typeString + "** " + grammar + " now being logged in " + msg.channel + " 📩")
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: you are already tracking all types of logs on this server. To see a list do the command -  loglist```')
+                }
+              }).catch(function(e) {
+                console.log(e)
+              })
+              break;
+          case "t":
+          case "traffic":
+              handleLog(msg.guild, msg.channel, 'traffic')
+              break;
+          case "k":
+          case "kicks":
+              handleLog(msg.guild, msg.channel, 'kicks')
+              break;
+          case "b":
+          case "bans":
+              handleLog(msg.guild, msg.channel, 'bans')
+              break;
+          case "d":
+          case "deletes":
+              handleLog(msg.guild, msg.channel, 'deletes')
+              break;
+          case "w":
+          case "warnings":
+              handleLog(msg.guild, msg.channel, 'warnings')
+              break;
+          case "c":
+          case "channels":
+              handleLog(msg.guild, msg.channel, 'channels')
+              break;
+          case "r":
+          case "roles":
+              handleLog(msg.guild, msg.channel, 'roles')
+              break;
+          case "e":
+          case "emojis":
+              handleLog(msg.guild, msg.channel, 'emojis')
+              break;
+          case "v":
+          case "voice":
+              handleLog(msg.guild, msg.channel, 'voice')
+              break;
+          default:
+              var msgArray = [];
+              msgArray.push("This is the log command. below are the different options:\n")
+              msgArray.push("``log all`` : This will start logging **everything** listed below\n")
+              msgArray.push("``log traffic`` : This will start logging all the **member joins/leaves**\n")
+              msgArray.push("``log kicks `` : This will start logging all the **kicked members** using the ``punish`` command\n")
+              msgArray.push("``log bans`` : This will start logging all the **banned members**\n")
+              msgArray.push("``log deletes`` : This will start logging all the **deleted messages**\n")
+              msgArray.push("``log warnings`` : This will start logging all the **warnings** given to members using the ``punish`` command\n")
+              msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
+              msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
+              msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+              msg.channel.sendMessage(msgArray)
+      }
+    }
+  }
+};
+
+Commands.loglist = {
+  name: "loglist",
+  help: "tbd",
+  type: "admin",
+  perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
+  pm: false, 
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var msgArray = []
+    logDB.getByGuild(msg.guild).then(function(r) {
+      msgArray.push("📩 The types of logs currently implemented on this server are as follows 📩 : ")
+      var count = 0
+      for (item of r) {
+        msgArray.push(`**${count+1}** ➖ ` + `**${item.type}**  Being tracked in ${bot.channels.get(item.channelID)}`)
+        count++
+      }
+      msg.channel.sendMessage(msgArray).then(function(mesg) {
+        mesg.author = msg.author
+        functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the logs currently implemented, type the number next to the log type above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+          if (res.toLowerCase() == "all") {
+            logDB.deleteAllHere(msg.guild)
+            msg.channel.sendMessage("All logs have been deleted 🗑️")
+          } else if (res > 0 && res <= r.length) {
+            logDB.deleteLog(r[res-1]._id)
+            msg.channel.sendMessage("The log for **" + r[res-1].type + "** has been deleted 🗑️")
+          }
+        })
+      })
+    }).catch(function(e) {
+      if (e == "No logs found here") {
+        msgArray.push("📩 There are currently no logs of any type implemented in any channels on this server 📩")
+      }
+      msg.channel.sendMessage(msgArray)
+    })
+  }
+};
+
 
 Commands.spoiler = {
   name: "spoiler",
