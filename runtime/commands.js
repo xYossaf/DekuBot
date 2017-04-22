@@ -1255,7 +1255,17 @@ Commands.log = Commands.logs = {
       switch(args[0]) {
           case "a":
           case "all":
-              
+              logDB.checkLogAll(msg.guild).then(function(r) {
+                if (r) {
+                  for (type of r) {
+                    logDB.createNewLog(msg.guild, msg.channel, type)
+                  }
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: you are already tracking all types of logs on this server```')
+                }
+              }).catch(function(e) {
+                console.log(e)
+              })
               break;
           case "t":
           case "traffic":
