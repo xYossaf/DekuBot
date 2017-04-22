@@ -9,7 +9,7 @@ var db = new Datastore({
 db.persistence.setAutocompactionInterval(30000);
 
 exports.createNewLog = function(guild, channel, type) {
-  var roledoc = {
+  var logdoc = {
     guildID: guild.id,
     channelID: channel.id,
     type: type
@@ -84,14 +84,30 @@ exports.checkLog = function(guild, type) {
 exports.checkLogAll = function(guild) {
   return new Promise(function(resolve, reject) {
     try {
-      var typeArray = ["traffic", "kicks", "bans", "deletes", "warnings", "channels", "roles", "emojis"]
+      var typeArray = ["traffic", "kicks", "bans", "deletes", "warnings", "channels", "roles", "emojis", "voice"]
       var returnArray = []
-      for (type of typeArray) {
-        exports.checkLog(guild, type).then(function(r) {
-          returnArray.push(type)
-        })
+      var i = 0
+      function pushItem(type, callback) {
+        returnArray.push(type)
+        i++
+        callback()
       }
-      resolve(returnArray)
+
+      function next() {
+        if (i < typeArray.length) {
+          exports.checkLog(guild, typeArray[i]).then(function(r) {
+            pushItem(typeArray[i], next)
+          }).catch(function(e) {
+            if (e == 'exists') {
+              i++
+              next()  
+            }
+          })
+        } else {
+          resolve(returnArray)
+        }
+      }
+      next()
     } catch (e) {
       reject(e);
     }

@@ -8,6 +8,7 @@ var battleDB = require("./battle_rt.js");
 var rssDB = require("./rss_rt.js");
 var customcommands = require("./custom_command_rt.js");
 var music = require("./music.js");
+var logDB = require("./log_rt.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -1252,16 +1253,35 @@ Commands.log = Commands.logs = {
       msg.channel.sendMessage(msgArray)
     } else {
       args = args.split(" ")
+
+      var handleLog = function(guild, channel, type) {
+        logDB.checkLog(guild, type).then(function(r) {
+          logDB.createNewLog(guild, channel, type)
+          msg.channel.sendMessage("📩 **" + type + "** is now being logged in " + channel + " 📩")  
+        }).catch(function(e) {
+          if (e == 'exists') {
+            logDB.getLogChannel(guild, type).then(function(r) {
+              msg.channel.sendMessage('You are already tracking **' + type + '** in ' + bot.channels.get(r) + '. To see a list of your logs, do the command  ``loglist``')  
+            }) 
+          } else {
+            console.log(e)  
+          }
+        })
+      }
+
       switch(args[0]) {
           case "a":
           case "all":
               logDB.checkLogAll(msg.guild).then(function(r) {
-                if (r) {
+                if (r.length > 0) {
+                  var typeString = r.join(", ")
+                  //console.log(typeString)
                   for (type of r) {
                     logDB.createNewLog(msg.guild, msg.channel, type)
                   }
+                  msg.channel.sendMessage("📩 **" + typeString + "** are now being logged in " + msg.channel + " 📩")
                 } else {
-                  msg.channel.sendMessage('```diff\n- Error: you are already tracking all types of logs on this server```')
+                  msg.channel.sendMessage('```diff\n- Error: you are already tracking all types of logs on this server. To see a list do the command -  loglist```')
                 }
               }).catch(function(e) {
                 console.log(e)
@@ -1269,35 +1289,39 @@ Commands.log = Commands.logs = {
               break;
           case "t":
           case "traffic":
-           
+              handleLog(msg.guild, msg.channel, 'traffic')
               break;
           case "k":
           case "kicks":
-              
+              handleLog(msg.guild, msg.channel, 'kicks')
               break;
           case "b":
           case "bans":
-              
+              handleLog(msg.guild, msg.channel, 'bans')
               break;
           case "d":
           case "deletes":
-              
+              handleLog(msg.guild, msg.channel, 'deletes')
               break;
           case "w":
           case "warnings":
-              
+              handleLog(msg.guild, msg.channel, 'warnings')
               break;
           case "c":
           case "channels":
-              
+              handleLog(msg.guild, msg.channel, 'channels')
               break;
           case "r":
           case "roles":
-              
+              handleLog(msg.guild, msg.channel, 'roles')
               break;
           case "e":
           case "emojis":
-              
+              handleLog(msg.guild, msg.channel, 'emojis')
+              break;
+          case "v":
+          case "voice":
+              handleLog(msg.guild, msg.channel, 'voice')
               break;
           default:
               var msgArray = [];

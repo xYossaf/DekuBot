@@ -9,6 +9,8 @@ var db = new Datastore({
   autoload: true
 });
 
+db.persistence.setAutocompactionInterval(30000);
+
 exports.trackRSS = function(id, isUser, url, filter, ts) {
   var rssdoc = {
     discordID: id,
