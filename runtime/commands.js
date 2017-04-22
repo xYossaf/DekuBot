@@ -526,7 +526,7 @@ Commands.quote = {
   func: function(bot, msg, args) {
     var quote = ""
     var data = new Discord.RichEmbed(data)
-    
+
     if (msg.mentions.users.array().length <= 0) {
       quote = args
       data.setAuthor(` ${msg.author.username}`, msg.author.avatarURL)
@@ -540,7 +540,7 @@ Commands.quote = {
     var randomHex = "#000000".replace(/0/g, function() {
       return (~~(Math.random() * 16)).toString(16);
     });
-    
+
     data.setColor(randomHex)
     data.setDescription(quote)
     data.setFooter('Quoted by ' + msg.member.displayName)
@@ -633,6 +633,42 @@ Commands.setgame = {
   }
 };
 
+Commands.ud = {
+  name: "ud",
+  help: "tbd",
+  type: "general",
+  perms: ["SEND_MESSAGES"],
+  pm: true,
+  cooldown: 0,
+  func: function (bot, msg, args) {
+    if (!args) {
+      msg.reply("You need to specify a word to look up")
+      return;
+    }
+    request("http://api.urbandictionary.com/v0/define?term=" + args, function (error, response, body) {
+        var result = JSON.parse(body)
+
+        if (result.result_type !== "no_results" && result.list[0].definition.length > 2000){
+          msg.reply("The definition of this word is to long to fit in a discord message \n https://www.urbandictionary.com/define.php?term=" + args)
+          return
+        }
+
+        if (result.result_type !== "no_results") {
+          var msgArray = []
+          msgArray.push("**" + result.list[0].word + "**")
+          msgArray.push(result.list[0].definition + "\n")
+          msgArray.push("```" + result.list[0].example + "```")
+          msg.channel.sendMessage(msgArray.join("\n"))
+          return
+        } else {
+
+          msg.reply("**" + args + "** does not exist in urbandictionary database")
+          return
+        }
+    })
+  }
+}
+
 Commands.rss = {
   name: "rss",
   help: "tbd",
@@ -655,7 +691,7 @@ Commands.rss = {
       var url = args[0]
       var filter = ""
       var channel
-      var isUser 
+      var isUser
       var track = true
       if (args.length > 1) {
         filter = args[1]
@@ -682,7 +718,7 @@ Commands.rss = {
                     if (re == "tracking all") {
                       msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
                     } else if (re == "same filter") {
-                      msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")  
+                      msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")
                     } else {
                       rssDB.trackRSS(channel, isUser, url, filter, ts)
                       if (filter == "") {
@@ -694,7 +730,7 @@ Commands.rss = {
                   })
                 }
               })
-            })    
+            })
           }
         }
         if (track) {
@@ -702,7 +738,7 @@ Commands.rss = {
             if (re == "tracking all") {
               msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
             } else if (re == "same filter") {
-              msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")  
+              msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")
             } else {
               rssDB.trackRSS(channel, isUser, url, filter, ts)
               if (isUser) {
@@ -733,7 +769,7 @@ Commands.rsslist = {
   help: "tbd",
   type: "weeb",
   perms: ["SEND_MESSAGES"],
-  pm: true, 
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     var msgArray = []
@@ -1220,12 +1256,12 @@ Commands.disableleavemessage = {
 //       data.addField("Bot Prefix", r.prefix, true)
 //       data.addField("Welcome Message", r.welcomePM, true)
 //       data.addField("Faction Join Message", r.factionPM, true)
-      
+
 //       msg.author.sendEmbed(data)
-      
-      
+
+
 //     })
-    
+
 //   }
 // };
 
@@ -1257,14 +1293,14 @@ Commands.log = Commands.logs = {
       var handleLog = function(guild, channel, type) {
         logDB.checkLog(guild, type).then(function(r) {
           logDB.createNewLog(guild, channel, type)
-          msg.channel.sendMessage("📩 **" + type + "** is now being logged in " + channel + " 📩")  
+          msg.channel.sendMessage("📩 **" + type + "** is now being logged in " + channel + " 📩")
         }).catch(function(e) {
           if (e == 'exists') {
             logDB.getLogChannel(guild, type).then(function(r) {
-              msg.channel.sendMessage('You are already tracking **' + type + '** in ' + bot.channels.get(r) + '. To see a list of your logs, do the command  ``loglist``')  
-            }) 
+              msg.channel.sendMessage('You are already tracking **' + type + '** in ' + bot.channels.get(r) + '. To see a list of your logs, do the command  ``loglist``')
+            })
           } else {
-            console.log(e)  
+            console.log(e)
           }
         })
       }
@@ -1351,7 +1387,7 @@ Commands.loglist = {
   help: "tbd",
   type: "admin",
   perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
-  pm: false, 
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var msgArray = []
@@ -1409,7 +1445,7 @@ Commands.spoiler = {
       //console.log(height)
       gm(385, height*20, "#36393E")
         .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-        .fontSize(14)  
+        .fontSize(14)
         .fill("#B9BABC")
         .drawText(5, 15, text)
         .write('./images/tempspoil.png',function (err) {
@@ -1421,7 +1457,7 @@ Commands.spoiler = {
             })
         })
     }
-    
+
   }
 };
 
@@ -1437,7 +1473,7 @@ Commands.spoils = {
     args = args.replace(/\n/ig, " ").replace(/\u200B/ig, "")
     var id = args.substr(args.indexOf(':') + 1).trim()
     //console.log(msg.channel.messages.array().length)
-    
+
     msg.channel.fetchMessage(id).then(mesg => {
       if (args.indexOf(':') <= 0) {
         msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
@@ -1447,7 +1483,7 @@ Commands.spoils = {
         //console.log(height)
         gm(385, height*20, "#36393E")
           .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-          .fontSize(14)  
+          .fontSize(14)
           .fill("#B9BABC")
           .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal")
           .write('./images/tempspoil.png',function (err) {
@@ -1462,8 +1498,8 @@ Commands.spoils = {
       }
     })
     //onsole.log(mesg)
-    
-    
+
+
   }
 };
 
@@ -1939,7 +1975,7 @@ Commands.joinvoice = {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.member.voiceChannel) {
             msg.member.voiceChannel.join().then(connection => {
-              music.addToGuildArray(bot, msg.guild) 
+              music.addToGuildArray(bot, msg.guild)
               msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
             })
           } else {
@@ -1954,7 +1990,7 @@ Commands.joinvoice = {
     })
   }
 };
-  
+
 Commands.leavevoice = {
   name: "leavevoice",
   help: "tbd",
@@ -1966,7 +2002,7 @@ Commands.leavevoice = {
       if (r.DJRole) {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
-            music.removeFromGuildArray(bot, msg.guild) 
+            music.removeFromGuildArray(bot, msg.guild)
             msg.guild.voiceConnection.channel.leave()
             msg.channel.sendMessage('Disconnected from the ``' + msg.guild.voiceConnection.channel.name + '`` voice channel.');
           }
@@ -2004,7 +2040,7 @@ Commands.request = {
               data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
               data.setColor("#FF4500")
               data.setDescription("🔗 **URL:** " + str[0])
-             
+
               msg.channel.sendEmbed(data);
               music.addToSongs(bot, msg.guild, str[0], msg.member, result.items[0])
             }
@@ -2026,7 +2062,7 @@ Commands.request = {
                 data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
                 data.setColor("#FF4500")
                 data.setDescription("🔗 **URL:** " + link)
-                
+
                 msg.channel.sendEmbed(data)
                 music.addToSongs(bot, msg.guild, link, msg.member, result.items[0])
               }
@@ -2074,7 +2110,7 @@ Commands.clearqueue = {
       if (r.DJRole) {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
-            music.clearSongs(bot, msg.guild) 
+            music.clearSongs(bot, msg.guild)
             msg.channel.sendMessage('```fix\nAll songs cleared from the queue```');
           } else {
             msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
@@ -2100,7 +2136,7 @@ Commands.endsong = {
       if (r.DJRole) {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
-            music.endSong(bot, msg.guild) 
+            music.endSong(bot, msg.guild)
             msg.channel.sendMessage('```fix\nSong ended...```');
           } else {
             msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
@@ -2177,7 +2213,7 @@ Commands.resume = {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
       }
     })
-    
+
   }
 };
 
@@ -2211,7 +2247,7 @@ Commands.volume = {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
       }
     })
-    
+
   }
 };
 
