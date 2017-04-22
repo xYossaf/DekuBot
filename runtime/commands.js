@@ -782,7 +782,7 @@ Commands.rsslist = {
           } else {
             filter = item.filter
           }
-          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked in ${bot.channels.get(rss.discordID)} with ${filter} filter`)
+          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked in ${bot.channels.get(item.discordID)} with ${filter} filter`)
           count++
         }
         msg.channel.sendMessage(msgArray).then(function(mesg) {
@@ -802,7 +802,6 @@ Commands.rsslist = {
           }
         })
       }).catch(function(e) {
-        //console.log("here6.5")
         if (e == "No RSS found here") {
           msgArray.push("📰 There are currently no RSS feeds being tracked in any channels on this server 📰")
         }
@@ -1275,11 +1274,16 @@ Commands.log = Commands.logs = {
               logDB.checkLogAll(msg.guild).then(function(r) {
                 if (r.length > 0) {
                   var typeString = r.join(", ")
-                  //console.log(typeString)
                   for (type of r) {
                     logDB.createNewLog(msg.guild, msg.channel, type)
                   }
-                  msg.channel.sendMessage("📩 **" + typeString + "** are now being logged in " + msg.channel + " 📩")
+                  var grammar
+                  if (r.length > 1) {
+                    grammar = "are"
+                  } else {
+                    grammar = "is"
+                  }
+                  msg.channel.sendMessage("📩 **" + typeString + "** " + grammar + " now being logged in " + msg.channel + " 📩")
                 } else {
                   msg.channel.sendMessage('```diff\n- Error: you are already tracking all types of logs on this server. To see a list do the command -  loglist```')
                 }
@@ -1340,6 +1344,44 @@ Commands.log = Commands.logs = {
     }
   }
 };
+
+Commands.loglist = {
+  name: "loglist",
+  help: "tbd",
+  type: "admin",
+  perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
+  pm: false, 
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var msgArray = []
+    logDB.getByGuild(msg.guild).then(function(r) {
+      msgArray.push("📩 The types of logs currently implemented on this server are as follows 📩 : ")
+      var count = 0
+      for (item of r) {
+        msgArray.push(`**${count+1}** ➖ ` + `**${item.type}**  Being tracked in ${bot.channels.get(item.discordID)}`)
+        count++
+      }
+      msg.channel.sendMessage(msgArray).then(function(mesg) {
+        mesg.author = msg.author
+        functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the logs currently implemented, type the number next to the log type above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+          if (res.toLowerCase() == "all") {
+            logDB.deleteAllHere(msg.guild)
+            msg.channel.sendMessage("All logs have been deleted 🗑️")
+          } else if (res > 0 && res <= r.length) {
+            logDB.deleteLog(r[res-1]._id)
+            msg.channel.sendMessage("The log for **" + r[res-1].type + "** has been deleted 🗑️")
+          }
+        })
+      })
+    }).catch(function(e) {
+      if (e == "No logs found here") {
+        msgArray.push("📩 There are currently no logs of any type implemented in any channels on this server 📩")
+      }
+      msg.channel.sendMessage(msgArray)
+    })
+  }
+};
+
 
 Commands.spoiler = {
   name: "spoiler",

@@ -62,6 +62,23 @@ exports.getLogChannel = function(guild, type) {
   });
 };
 
+exports.getByGuild = function(guild) {
+  return new Promise(function(resolve, reject) {
+    try {
+      var returnArray = []
+      db.find({guildID: guild.id}, function(err, result) {
+        if(!err && result.length > 0) {
+          resolve(result)
+        } else {
+          reject("No logs found here")
+        }
+       });
+    } catch (e) {
+      reject(e);
+    }
+  })
+}
+
 exports.checkLog = function(guild, type) {
   return new Promise(function(resolve, reject) {
     try {
