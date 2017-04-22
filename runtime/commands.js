@@ -1229,6 +1229,84 @@ Commands.disableleavemessage = {
 //   }
 // };
 
+Commands.log = Commands.logs = {
+  name: "log",
+  help: "tbd",
+  type: "admin",
+  perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
+  pm: false,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (!args) {
+      var msgArray = [];
+      msgArray.push("This is the log command. below are the different options:\n")
+      msgArray.push("``log all`` : This will start logging **everything** listed below\n")
+      msgArray.push("``log traffic`` : This will start logging all the **member joins/leaves**\n")
+      msgArray.push("``log kicks `` : This will start logging all the **kicked members** using the ``punish`` command\n")
+      msgArray.push("``log bans`` : This will start logging all the **banned members**\n")
+      msgArray.push("``log deletes`` : This will start logging all the **deleted messages**\n")
+      msgArray.push("``log warnings`` : This will start logging all the **warnings** given to members using the ``punish`` command\n")
+      msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
+      msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
+      msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      args = args.split(" ")
+      switch(args[0]) {
+          case "a":
+          case "all":
+              
+              break;
+          case "t":
+          case "traffic":
+           
+              break;
+          case "k":
+          case "kicks":
+              
+              break;
+          case "b":
+          case "bans":
+              
+              break;
+          case "d":
+          case "deletes":
+              
+              break;
+          case "w":
+          case "warnings":
+              
+              break;
+          case "c":
+          case "channels":
+              
+              break;
+          case "r":
+          case "roles":
+              
+              break;
+          case "e":
+          case "emojis":
+              
+              break;
+          default:
+              var msgArray = [];
+              msgArray.push("This is the log command. below are the different options:\n")
+              msgArray.push("``log all`` : This will start logging **everything** listed below\n")
+              msgArray.push("``log traffic`` : This will start logging all the **member joins/leaves**\n")
+              msgArray.push("``log kicks `` : This will start logging all the **kicked members** using the ``punish`` command\n")
+              msgArray.push("``log bans`` : This will start logging all the **banned members**\n")
+              msgArray.push("``log deletes`` : This will start logging all the **deleted messages**\n")
+              msgArray.push("``log warnings`` : This will start logging all the **warnings** given to members using the ``punish`` command\n")
+              msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
+              msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
+              msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+              msg.channel.sendMessage(msgArray)
+      }
+    }
+  }
+};
+
 Commands.spoiler = {
   name: "spoiler",
   help: "tbd",
