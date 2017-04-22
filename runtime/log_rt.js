@@ -53,7 +53,7 @@ exports.getLogChannel = function(guild, type) {
         if (res.length === 0) {
           return reject('No log found')
         } else {
-          resolve(res[0].channelID);
+          resolve(res[0].channelID)
         }
       });
     } catch (e) {

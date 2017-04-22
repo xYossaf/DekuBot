@@ -1249,6 +1249,7 @@ Commands.log = Commands.logs = {
       msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
       msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
       msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+      msgArray.push("``log voice`` : This will start logging all traffic for **voice channels**\n")
       msg.channel.sendMessage(msgArray)
     } else {
       args = args.split(" ")
@@ -1358,7 +1359,7 @@ Commands.loglist = {
       msgArray.push("📩 The types of logs currently implemented on this server are as follows 📩 : ")
       var count = 0
       for (item of r) {
-        msgArray.push(`**${count+1}** ➖ ` + `**${item.type}**  Being tracked in ${bot.channels.get(item.discordID)}`)
+        msgArray.push(`**${count+1}** ➖ ` + `**${item.type}**  Being tracked in ${bot.channels.get(item.channelID)}`)
         count++
       }
       msg.channel.sendMessage(msgArray).then(function(mesg) {
