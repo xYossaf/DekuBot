@@ -170,7 +170,6 @@ exports.check = function(url, id, filter) {
           resolve("No doc found")
         } else {
           for (res of result) {
-            console.log("yatta")
             if (res.filter == "") {
               resolve("tracking all")
             } else if (res.filter == filter) {

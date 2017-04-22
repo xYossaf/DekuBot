@@ -288,7 +288,7 @@ dekubot.on("messageDelete", (message) => {
     
     data.setColor('#FF0000')
     data.setTitle('The following message was deleted:')
-    data.setDescription(message.author + " : " + message.cleanContent)
+    data.setDescription(message.author + " : " + message.cleanContent.substring(0, 1800) + " ...")
     data.setAuthor('📩 MESSAGE REMOVED 📩',  message.author.displayAvatarURL)
     var d = new Date()
     data.setFooter('ID: ' + message.author.id + " | " + d)
