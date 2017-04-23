@@ -692,6 +692,7 @@ Commands.rss = {
       msgArray.push(" ➖ <https://www.nasa.gov/rss/dyn/breaking_news.rss> ⬅️ Space news for blues clues yo")
       msg.channel.sendMessage(msgArray)
     } else {
+      var raw = args
       args = args.split(" ")
       var url = args[0]
       var filter = ""
@@ -699,7 +700,7 @@ Commands.rss = {
       var isUser
       var track = true
       if (args.length > 1) {
-        filter = args[1]
+        filter = raw.substr(raw.indexOf(args[0]) + args[0].length).trim()
       }
       rssDB.parseRSS(url).then(function(r) {
         var ts = new Date(r[0].date)
