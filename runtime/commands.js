@@ -633,7 +633,7 @@ Commands.setgame = {
   }
 };
 
-Commands.ud = {
+Commands.ud = Commands.urbandictionary = Commands.urbdic = {
   name: "ud",
   help: "tbd",
   type: "general",
@@ -647,21 +647,26 @@ Commands.ud = {
     }
     request("http://api.urbandictionary.com/v0/define?term=" + args, function (error, response, body) {
         var result = JSON.parse(body)
-
-        if (result.result_type !== "no_results" && result.list[0].definition.length > 2000){
+        
+        if (result.result_type !== "no_results" && (result.list[0].definition.length > 2000 || result.list[0].example.length > 2000)) {
           msg.reply("The definition of this word is to long to fit in a discord message \n https://www.urbandictionary.com/define.php?term=" + args)
           return
         }
 
         if (result.result_type !== "no_results") {
-          var msgArray = []
-          msgArray.push("**" + result.list[0].word + "**")
-          msgArray.push(result.list[0].definition + "\n")
-          msgArray.push("```" + result.list[0].example + "```")
-          msg.channel.sendMessage(msgArray.join("\n"))
-          return
-        } else {
+          var data = new Discord.RichEmbed(data);
+          data.setColor('#134FE6')
+          data.setTitle(result.list[0].word)
+          data.setDescription(result.list[0].definition)
+          if (result.list[0].example) {
+            data.addField("Example", result.list[0].example)
+          }
+          data.setAuthor('Urban Dictionary', 'https://pilotmoon.com/popclip/extensions/icon/ud.png')
+          data.setURL(result.list[0].permalink)
+          data.setFooter("👍 " + result.list[0].thumbs_up + " : " + result.list[0].thumbs_down + " 👎   |  Made by " + result.list[0].author)
 
+          msg.channel.sendEmbed(data)
+        } else {
           msg.reply("**" + args + "** does not exist in urbandictionary database")
           return
         }
