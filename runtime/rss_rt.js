@@ -126,35 +126,30 @@ var articleFilter = function(articleArray, filter) {
           if (article.title) {
             if (article.title.match(regex)) {
               filteredArray.push(article)
-              console.log(article.title)
               continue
             }
           }
           if (article.description) {
             if (article.description.match(regex)) {
               filteredArray.push(article)
-              console.log(article.title)
               continue
             }
           }
           if (article.summary) {
             if (article.summary.match(regex)) {
               filteredArray.push(article)
-              console.log(article.title)
               continue
             }
           }
           if (article.link) {
             if (article.link.match(regex)) {
               filteredArray.push(article)
-              console.log(article.title)
               continue
             }
           }
           if (article.author) {
             if (article.author.match(regex)) {
               filteredArray.push(article)
-              console.log(article.title)
               continue
             }
           }
