@@ -647,9 +647,9 @@ Commands.ud = Commands.urbandictionary = Commands.urbdic = {
     }
     request("http://api.urbandictionary.com/v0/define?term=" + args, function (error, response, body) {
         var result = JSON.parse(body)
-        
+
         if (result.result_type !== "no_results" && (result.list[0].definition.length > 2000 || result.list[0].example.length > 2000)) {
-          msg.reply("The definition of this word is to long to fit in a discord message \n https://www.urbandictionary.com/define.php?term=" + args)
+          msg.reply("The definition of this word is to long to fit in a discord message. \n" + result.list[0].permalink)
           return
         }
 
