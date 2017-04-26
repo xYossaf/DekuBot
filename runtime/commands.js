@@ -684,7 +684,8 @@ Commands.rss = {
   func: function(bot, msg, args) {
     if (!args) {
       var msgArray = []
-      msgArray.push("📰 This is the RSS feed command. Below are a few popular RSS feeds 📰 : ")
+      msgArray.push("📰 This is the RSS feed command. Below are a few popular RSS feeds. To track one of these, do ``rss <rss feed link> <filter for the rss feed>`` 📰 : ")
+      msgArray.push(" ➖ <http://feeds.feedburner.com/crunchyroll/rss> ⬅️ Crunchyroll anime releases")
       msgArray.push(" ➖ <https://jaiminisbox.com/reader/feeds/rss> ⬅️ Manga scanlating website")
       msgArray.push(" ➖ <http://mangastream.com/rss> ⬅️ Another manga scanlating website")
       msgArray.push(" ➖ <http://feeds.bbci.co.uk/news/rss.xml> ⬅️ Good ol' British news")
@@ -937,11 +938,11 @@ Commands.createcommand = {
     var comexists = false
     //var specific_lvl = 0;
     if (!args) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
       return;
     }
     if (args.indexOf(" | ") < 0) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
       return;
     }
     // if (/---[0-3]|---6/.test(args)) {
