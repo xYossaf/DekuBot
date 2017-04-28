@@ -1956,7 +1956,7 @@ Commands.dj = {
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
-      if (r.DJRole) {
+      if (msg.guild.roles.get(r.DJRole)) {
         msg.channel.sendMessage('```fix\nA DJ role already exists, it is the role:```' + msg.guild.roles.get(r.DJRole))
       } else {
         msg.guild.createRole({name: 'DJ'}).then(role => {
