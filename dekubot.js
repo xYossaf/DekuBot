@@ -423,7 +423,7 @@ dekubot.on("message", (message) => {
           if (r != 'No custom commands found') {
             for (i = 0; i < r.length; i++) {
               if (r[i].name == command && message.guild.id == r[i].guild_id/* && authorpermissionlvl  >= r[i].lvl*/) {
-                message.channel.sendMessage(r[i].text);
+                message.channel.sendMessage(functions.escapeMentions(r[i].text, false));
               }
             }
           }

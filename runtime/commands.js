@@ -938,11 +938,11 @@ Commands.createcommand = {
     var comexists = false
     //var specific_lvl = 0;
     if (!args) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. ");
       return;
     }
     if (args.indexOf(" | ") < 0) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. ");
       return;
     }
     // if (/---[0-3]|---6/.test(args)) {
