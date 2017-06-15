@@ -1,6 +1,6 @@
 Here is a full list of every bloody command.
 
-##Contents
+###Contents
 - [General Purpose](#general)
 - [Administration](#administration)
 - [Music](#music)

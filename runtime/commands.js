@@ -49,7 +49,7 @@ Commands.help = {
   pm: true,
   cooldown: 0,
   func: function(bot, msg) {
-    msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");
+    msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/blob/master/docs/CommandsList.md 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");
   }
 };
 
