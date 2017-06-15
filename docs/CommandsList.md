@@ -123,8 +123,6 @@ Commands and aliases | Description | Usage
 `!createcommand` | This will create the given custom commands **Requires MANAGE_MESSAGES server permission.** | `!createcommand <command name> | <command text>`
 `!deletecommand` | This will delete the given custom command **Requires MANAGE_MESSAGES server permission.** | `!deletecommand <commandname>`
 
-`!` |  **Requires  server permission.** | `!`
-
 ###### [Back to ToC](#contents)
 
 ### RedditFeeds  
