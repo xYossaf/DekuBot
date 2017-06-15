@@ -1,0 +1,5 @@
+site_name: DekuBot
+repo_url: https://github.com/RoddersGH/DekuBot
+pages:
+- Home: index.md
+- Commands: CommandsList.md
