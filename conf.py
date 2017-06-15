@@ -31,54 +31,6 @@ copyright = u'2017, RoddersGH'
 version = ''
 release = ''
 
-# -- Options for HTML output ---------------------------------------------------
-
-html_theme = 'book'
-html_theme_path = ['themes']
-html_title = "DekuBot"
-#html_short_title = None
-#html_logo = None
-#html_favicon = None
-html_static_path = ['_static']
-html_domain_indices = False
-html_use_index = False
-html_show_sphinx = False
-htmlhelp_basename = 'DekuBotdoc'
-html_show_sourcelink = False
-
-# -- Options for LaTeX output --------------------------------------------------
-
-latex_elements = {
-     'papersize': '',
-     'fontpkg': '',
-     'fncychap': '',
-     'maketitle': '\\cover',
-     'pointsize': '',
-     'preamble': '',
-     'releasename': "",
-     'babel': '',
-     'printindex': '',
-     'fontenc': '',
-     'inputenc': '',
-     'classoptions': '',
-     'utf8extra': '',
-     
-}
-
-latex_additional_files = ["mfgan-bw.sty", "mfgan.sty", "_static/cover.png"]
-
-latex_documents = [
-  ('index', 'dekubot.tex', u'DekuBot',
-   u'RoddersGH', 'manual'),
-]
-
-latex_show_pagerefs = False
-latex_domain_indices = False
-latex_use_modindex = False
-#latex_logo = None
-#latex_show_urls = False
-
-
 
 ################################################################################
 
