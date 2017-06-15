@@ -13,8 +13,7 @@ source_parsers = {
 sys.path.insert(0, os.path.abspath('extensions'))
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo',
-              'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.ifconfig',
-              'epub2', 'mobi', 'autoimage', 'code_example']
+              'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.ifconfig']
 
 todo_include_todos = True
 templates_path = ['_templates']
@@ -79,95 +78,6 @@ latex_use_modindex = False
 #latex_logo = None
 #latex_show_urls = False
 
-# -- Options for Epub output ---------------------------------------------------
-
-epub_title = u'DekuBot'
-epub_author = u'RoddersGH'
-epub_publisher = u'RoddersGH'
-epub_copyright = u'2017, RoddersGH'
-
-epub_theme = 'epub2'
-
-# The scheme of the identifier. Typical schemes are ISBN or URL.
-#epub_scheme = ''
-
-# The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
-#epub_identifier = ''
-
-# A unique identification for the text.
-#epub_uid = ''
-
-# A tuple containing the cover image and cover page html template filenames.
-epub_cover = ("_static/cover.png", "epub-cover.html")
-
-# HTML files that should be inserted before the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#epub_pre_files = []
-
-# HTML files shat should be inserted after the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#epub_post_files = []
-
-# A list of files that should not be packed into the epub file.
-epub_exclude_files = ['_static/opensearch.xml', '_static/doctools.js',
-    '_static/jquery.js', '_static/searchtools.js', '_static/underscore.js',
-    '_static/basic.css', 'search.html', '_static/websupport.js']
-
-# The depth of the table of contents in toc.ncx.
-epub_tocdepth = 2
-
-# Allow duplicate toc entries.
-epub_tocdup = False
-
-
-# -- Options for Mobi output ---------------------------------------------------
-
-mobi_theme = "mobi"
-mobi_title = u'DekuBot'
-mobi_author = u'RoddersGH'
-mobi_publisher = u'RoddersGH'
-mobi_copyright = u'2017, RoddersGH'
-
-# The scheme of the identifier. Typical schemes are ISBN or URL.
-#mobi_scheme = ''
-
-# The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
-#mobi_identifier = ''
-
-# A unique identification for the text.
-#mobi_uid = ''
-
-mobi_cover = "_static/cover.png"
-
-# HTML files that should be inserted before the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#mobi_pre_files = []
-
-# HTML files shat should be inserted after the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#mobi_post_files = []
-
-# A list of files that should not be packed into the mobi file.
-mobi_exclude_files = ['_static/opensearch.xml', '_static/doctools.js',
-    '_static/jquery.js', '_static/searchtools.js', '_static/underscore.js',
-    '_static/basic.css', 'search.html', '_static/websupport.js']
-
-# The depth of the table of contents in toc.ncx.
-mobi_tocdepth = 2
-
-# Allow duplicate toc entries.
-mobi_tocdup = False
-
-mobi_add_visible_links = False
-
-
-# -- Options for Code Examples output ---------------------------------------------------
-
-
-code_example_dir = "code-example"
-code_add_python_path = ["../py"]
 
 
 ################################################################################
