@@ -17,7 +17,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo',
 
 todo_include_todos = True
 templates_path = ['_templates']
-source_suffix = ['.rst', '.md']
+source_suffix = ['.md']
 master_doc = 'index'
 exclude_patterns = []
 add_function_parentheses = True
