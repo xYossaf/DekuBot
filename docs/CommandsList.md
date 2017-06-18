@@ -6,11 +6,11 @@ Here is a full list of every bloody command.
 - [Music](#music)
 - [NSFW](#nsfw)
 - [RSS](#rss)
-- [Self Assignable Roles](#SelfAssignableRoles)
+- [Self Assignable Roles](#selfassignableroles)
 - [Logs](#logs)
 - [Custom Commands](#customcommands)
-- [Reddit Feeds](#RedditFeeds)
-- [Anime/Manga](#AnimeManga)
+- [Reddit Feeds](#redditfeeds)
+- [Anime/Manga](#animemanga)
 
 
 ### General
@@ -22,10 +22,10 @@ Commands and aliases | Description | Usage
 `!rps` | Use to play rock paper scissors with DekuBot  | `!`
 `!namechanges` | Returns the known name changes of the member  | `!namechanges @member`
 `!botstatus` | Gives the status of the bot  | `!botstatus`
-`!rip` | Posts a picture of your profile picture on a grave with random text  | `!rip` or optionally '!rip @member'
+`!rip` | Posts a picture of your profile picture on a grave with random text  | `!rip` or optionally `!rip @member`
 `!8ball` | Shake the magic 8ball that is deku  | `!8ball <text you wish to ask>`
 `!dice` | Roll a variety of dice  | `!dice <type of dice>` or just `!dice` which rolls a d6
-`!triggered` | Posts a picture of your profile picture with triggered text  | `!triggered` or optionally '!triggered @member'
+`!triggered` | Posts a picture of your profile picture with triggered text  | `!triggered` or optionally `!triggered @member`
 `!invite` | This will give the invite link for DekuBot  | `!invite`
 `!quote` | This will quote the mentioned user saying the text you give  | `!quote @member <quote text>`
 `!maths` `!math` | Allows you to do basically all the calculations you could want  | `!maths <expression>`
@@ -85,6 +85,7 @@ Commands and aliases | Description | Usage
 Commands and aliases | Description | Usage
 ----------------|--------------|-------
 `!selfrole assign` `!srole a` `!sarole assign` `!sar a` | This will make the given role a self assignable role **Requires MANAGE_ROLES_OR_PERMISSIONS server permission.** | `!sar a <role name>`
+`!selfrole unassign` `!srole u` `!sarole unassign` `!sar u` | This will make the given self role no longer self assignable **Requires MANAGE_ROLES_OR_PERMISSIONS server permission.** | `!sar u <role name>`
 `!selfrole list` `!srole l` `!sarole list` `!sar l` | This will list out all the self assignable roles you can choose from  | `!sar l`
 `!selfrole give` `!srole g` `!sarole give` `!sar g` | This will give you the self assignable role with the name you specified  | `!sar g <self role name>`
 `!selfrole take` `!srole t` `!sarole take` `!sar t` | This will take the self assignable role with the name you specified away from you  | `!sar t <self role name>`
