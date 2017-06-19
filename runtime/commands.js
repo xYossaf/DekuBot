@@ -1,14 +1,14 @@
 var config = require("../config.json");
 var userDB = require("./user_rt.js");
 var guildDB = require("./guild_rt.js");
-var permissionDB = require("./permission_rt.js");
-var factionDB = require("./faction_rt.js");
-var mangaDB = require("./manga_track_rt.js");
+var assignableRolesDB = require("./assignable_roles_rt.js");
 var redditDB = require("./reddit_rt.js");
 var functions = require("./functions.js");
 var battleDB = require("./battle_rt.js");
+var rssDB = require("./rss_rt.js");
 var customcommands = require("./custom_command_rt.js");
 var music = require("./music.js");
+var logDB = require("./log_rt.js");
 
 var math = require('mathjs');
 var Discord = require("discord.js");
@@ -30,14 +30,26 @@ youtube.setKey(config.youtube);
 youtube.addParam('type', 'video');
 
 // GENERAL COMMANDS
+// Commands.test = {
+//   name: "test",
+//   help: "tbd",
+//   type: "general",
+//   perms: ["ADMINISTRATOR"],
+//   cooldown: 0,
+//   func: function(bot, msg) {
+//     testest.test()
+//   }
+// };
+
 Commands.help = {
   name: "help",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
-    msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/wiki/General-Commands 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");
+    msg.reply(" 📙 https://github.com/RoddersGH/DekuBot/blob/master/docs/CommandsList.md 📙 \nFeel free to join https://discord.gg/we8bdxJ if you have any further questions or you just want to hang with us");
   }
 };
 
@@ -45,7 +57,8 @@ Commands.ping = {
   name: "ping",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.reply(":ping_pong:");
@@ -56,7 +69,8 @@ Commands.pong = {
   name: "pong",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.reply("Received command in--- wait, hold on, you're supposed to *ping* me! I haven't the slightest clue how to respond to this *pong* nonsense.");
@@ -67,7 +81,8 @@ Commands.rps = {
   name: "rockpaperscissors",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     args = args.toLowerCase();
@@ -119,7 +134,8 @@ Commands.namechanges = {
   name: "namechanges",
   help: "tbt",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg) {
     if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
@@ -144,7 +160,8 @@ Commands.botstatus = {
   name: "botstatus",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     var channelcount = 0;
@@ -184,42 +201,157 @@ Commands.botstatus = {
   }
 };
 
-Commands.faction = {
-  name: "faction",
+Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
+  name: "selfassignrole",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
-    var msgArray = [];
-    var guildFactions = [];
-    var found = false;
-    factionDB.getFactionsHere(msg.guild).then(function(guildFactions) {
-        for (i = 0; i < guildFactions.length; i++) {
-          if (msg.member.roles.has(guildFactions[i])) {
-            msg.author.sendMessage("❌ Sorry, you are already in a faction. If you really want to change faction, message a member of staff.");
-            found = true;
-          }
-          if (!found && i == guildFactions.length-1) {
-            msgArray.push("Hello member of the " + msg.channel.guild.name + " server");
-            msgArray.push("Im one of the bots on this server made by RoddersGH#4702. I help with a bunch of things which you can check out by going to the following link: https://github.com/RoddersGH/DekuBot/wiki");
-            msgArray.push(" ");
-            msgArray.push("(If this message was an annoyance or was not intended for you then I sincerely apologise and would ask you to contact RoddersGH#4702 with any issues)");
-            msgArray.push(" ");
-            msgArray.push("We have different factions on the server that give you a coloured name and put you on the faction leaderboards(still being made).");
-            msgArray.push("**If you want to join a faction, type the **number** next to the faction you wish to join.**" );
-            msgArray.push("The factions are:" );
-            for (j = 0; j < guildFactions.length; j++) {
-              msgArray.push(`${j+1}. ${msg.guild.roles.get(guildFactions[j]).name}` );
-            }
-            functions.responseHandling(msgArray, msg.author, msg.guild, guildFactions)
-          }
-        }
-    }).catch(function(e) {
-      if (e == 'No factions found') {
-        msg.channel.sendMessage('This server has no factions in it at the moment. Message an admin if you wish for them to create factions for the server.' )
+    if (!args) {
+      var msgArray = [];
+      msgArray.push("This is the self assignable role command. below are the different options:\n")
+      msgArray.push("``selfrole list`` : This will list all of the self assignable roles\n")
+      msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name\n")
+      msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name\n")
+      msgArray.push("``selfrole assign <pre-existing role name or id>`` : This is used to make pre-existing roles self assignable\n")
+      msgArray.push("``selfrole unassign <pre-existing role name or id>`` : This is used to make pre-existing self roles unassignable\n")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      args = args.split(" ")
+      switch(args[0]) {
+          case "l":
+          case "list":
+              var msgArray = [];
+              assignableRolesDB.getRolesHere(msg.guild).then(function(guildRoles) {
+                msgArray.push("We have different self assignable roles on the server that give you a coloured name.")
+                msgArray.push("If you want one of these roles, type the command ``selfrole give <role name>``")
+                msgArray.push("The roles are:")
+                for (i = 0; i < guildRoles.length; i++) {
+                  msgArray.push(`➖ ${functions.escapeMentions(msg.guild.roles.get(guildRoles[i]).name, true)}` );
+                }
+                msg.channel.sendMessage(msgArray)
+              }).catch(function(e) {
+                if (e == 'No roles found') {
+                  msg.channel.sendMessage('```This server has no self assignable roles on it at the moment. Message an admin if you wish for them to create some for the server.```' )
+                }
+              })
+              break;
+          case "a":
+          case "assign":
+              if (msg.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
+                if (args[1]) {
+                  var role = msg.guild.roles.find("name", args[1])
+                  if (role) {
+                    assignableRolesDB.checkName(msg.guild, role.name).then(function(r) {
+                      msg.channel.sendMessage('The role **' + role.name + '** will now be made self assignable.').then(function(mesg) {
+                        mesg.author = msg.author
+                        functions.responseHandlingREG(bot, mesg, 'Would you like to prompt members when they join, asking if they want this role? **[Y/N]**', msg.author).then(function(res) {
+                          var prompt
+                          if (res.toLowerCase() == "y") {
+                            msg.channel.sendMessage('💾 The role **' + role.name + '** has been made self assignable and will be prompted. 💾')
+                            prompt = true
+                          } else {
+                            msg.channel.sendMessage('💾 The role **' + role.name + '** has been made self assignable. 💾')
+                            prompt = false
+                          }
+                          assignableRolesDB.createNewRole(role.id, msg.guild, role.name, role.color, prompt)
+                        })
+                      })
+                    }).catch(function(e) {
+                      if (e == 'exists') {
+                        msg.channel.sendMessage('```diff\n- Error: A role with this name is already self assignable.```')
+                      } else {
+                        console.log(e)
+                      }
+                    })
+                  } else {
+                    msg.channel.sendMessage('```diff\n- Error: No role with this name was found (role name is case sensitive)```')
+                  }
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format - selfrole assign <role name>```')
+                }
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: You do not have the appropriate permissions```')
+              }
+              break;
+          case "u":
+          case "unassign":
+              if (msg.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
+                if (args[1]) {
+                  var role = msg.guild.roles.find("name", args[1])
+                  if (role) {
+                    assignableRolesDB.checkName(msg.guild, role.name).then(function(r) {
+                      msg.channel.sendMessage('```diff\n- Error: No role with this name is self assignable.```')
+                    }).catch(function(e) {
+                      if (e == 'exists') {
+                        msg.channel.sendMessage('The role **' + role.name + '** will now no longer be self assignable.').then(function(mesg) {
+                          assignableRolesDB.deleteRole(role.id)
+                        })
+                      } else {
+                        console.log(e)
+                      }
+                    })
+                  } else {
+                    msg.channel.sendMessage('```diff\n- Error: No role with this name was found (role name is case sensitive)```')
+                  }
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format - selfrole unassign <role name>```')
+                }
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: You do not have the appropriate permissions```')
+              }
+              break;
+          case "g":
+          case "give":
+              if (args[1]) {
+                assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
+                  msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
+                }).catch(function(e) {
+                  if (e == 'exists') {
+                    assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
+                      msg.member.addRole(r)
+                      msg.channel.sendMessage(msg.member + ' You now have the **' + functions.escapeMentions(args[1], true) + '** role')
+                    })
+                  }
+                })
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format -  selfrole give <role name>```')
+              }
+              break;
+          case "t":
+          case "take":
+              if (args[1]) {
+                assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
+                  msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
+                }).catch(function(e) {
+                  if (e == 'exists') {
+                    assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
+                      if (msg.member.roles.has(r)) {
+                        msg.member.removeRole(r)
+                        msg.channel.sendMessage(msg.member + ' You no longer have the **' + functions.escapeMentions(args[1], true) + '** role')
+                      } else {
+                        msg.channel.sendMessage('```diff\n- Error: you already do not have this role```')
+                      }
+                    })
+                  }
+                })
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format -  selfrole take <role name>```')
+              }
+              break;
+          default:
+              var msgArray = [];
+              msgArray.push("This is the self assignable role command. below are the different options:\n")
+              msgArray.push("``selfrole list`` : This will list all of the self assignable roles\n")
+              msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name\n")
+              msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name\n")
+              msgArray.push("``selfrole assign <pre-existing role name or id>`` : This is used to make pre-existing roles self assignable\n")
+              msgArray.push("``selfrole unassign <pre-existing role name or id>`` : This is used to make pre-existing self roles unassignable\n")
+              msg.channel.sendMessage(msgArray)
       }
-    })
+    }
   }
 };
 
@@ -227,7 +359,8 @@ Commands.customcommands = {
   name: "customcommands",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     customcommands.getAllHere(msg.guild).then(function(r) {
@@ -246,7 +379,8 @@ Commands.rip = {
   name: "rip",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 4000,
   func: function(bot, msg, args) {
     var url = ""
@@ -282,7 +416,8 @@ Commands["8ball"] = {
   name: "8ball",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     var response = [];
@@ -320,7 +455,8 @@ Commands.dice = {
   name: "dice",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (args) {
@@ -347,7 +483,8 @@ Commands.triggered = {
   name: "triggered",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 4000,
   func: function(bot, msg, args) {
     var url = ""
@@ -400,7 +537,8 @@ Commands.invite = {
   name: "invite",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg) {
     msg.author.sendMessage(`Here is the link to invite ${bot.user.username} to your server:\nhttps://discordapp.com/oauth2/authorize?client_id=${config.bot_client_id}&scope=bot&permissions=2146954327\nRemember that you need to have manage server permissions to be able to add this bot to your server.`);
@@ -411,12 +549,13 @@ Commands.quote = {
   name: "quote",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var quote = ""
     var data = new Discord.RichEmbed(data)
-    
+
     if (msg.mentions.users.array().length <= 0) {
       quote = args
       data.setAuthor(` ${msg.author.username}`, msg.author.avatarURL)
@@ -430,7 +569,7 @@ Commands.quote = {
     var randomHex = "#000000".replace(/0/g, function() {
       return (~~(Math.random() * 16)).toString(16);
     });
-    
+
     data.setColor(randomHex)
     data.setDescription(quote)
     data.setFooter('Quoted by ' + msg.member.displayName)
@@ -440,11 +579,12 @@ Commands.quote = {
   }
 };
 
-Commands.math = {
+Commands.math = Commands.maths = {
   name: "math",
   help: "tbd",
   type: "general",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     try {
@@ -452,30 +592,16 @@ Commands.math = {
     } catch(e) {
       msg.channel.sendMessage("```diff\n-" + e + "```")
     }
-
   }
 };
 
-Commands.maths = {
-  name: "maths",
-  help: "tbd",
-  type: "general",
-  lvl: 0,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    try {
-      msg.channel.sendMessage("```prolog\n " + math.eval(args) + " ```")
-    } catch(e) {
-      msg.channel.sendMessage("```diff\n-" + e + "```")
-    }
-
-  }
-};
-
+//TODO Add online members field
 Commands.server = {
   name: "server",
   help: "I'll tell you some information about the server you're currently in.",
-  lvl: 0,
+  type: "general",
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.channel.guild) {
@@ -513,7 +639,8 @@ Commands.server = {
 Commands.setavatar = {
   name: "setavatar",
   help: "tbd",
-  lvl: 6,
+  perms: ["ADMINISTRATOR"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
    if (msg.author.id === config.dev_id) {
@@ -525,7 +652,8 @@ Commands.setavatar = {
 Commands.setgame = {
   name: "setgame",
   help: "tbd",
-  lvl: 6,
+  perms: ["ADMINISTRATOR"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args){
     if (msg.author.id === config.dev_id) {
@@ -534,6 +662,228 @@ Commands.setgame = {
   }
 };
 
+Commands.ud = Commands.urbandictionary = Commands.urbdic = {
+  name: "ud",
+  help: "tbd",
+  type: "general",
+  perms: ["SEND_MESSAGES"],
+  pm: true,
+  cooldown: 0,
+  func: function (bot, msg, args) {
+    if (!args) {
+      msg.reply("You need to specify a word to look up")
+      return;
+    }
+    request("http://api.urbandictionary.com/v0/define?term=" + args, function (error, response, body) {
+        var result = JSON.parse(body)
+
+        if (result.result_type !== "no_results" && (result.list[0].definition.length > 2000 || result.list[0].example.length > 2000)) {
+          msg.reply("The definition of this word is to long to fit in a discord message. \n" + result.list[0].permalink)
+          return
+        }
+
+        if (result.result_type !== "no_results") {
+          var data = new Discord.RichEmbed(data);
+          data.setColor('#134FE6')
+          data.setTitle(result.list[0].word)
+          data.setDescription(result.list[0].definition)
+          if (result.list[0].example) {
+            data.addField("Example", result.list[0].example)
+          }
+          data.setAuthor('Urban Dictionary', 'https://pilotmoon.com/popclip/extensions/icon/ud.png')
+          data.setURL(result.list[0].permalink)
+          data.setFooter("👍 " + result.list[0].thumbs_up + " : " + result.list[0].thumbs_down + " 👎   |  Made by " + result.list[0].author)
+
+          msg.channel.sendEmbed(data)
+        } else {
+          msg.reply("**" + args + "** does not exist in urbandictionary database")
+          return
+        }
+    })
+  }
+}
+
+Commands.rss = {
+  name: "rss",
+  help: "tbd",
+  type: "weeb",
+  perms: ["SEND_MESSAGES"],
+  pm: true,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (!args) {
+      var msgArray = []
+      msgArray.push("📰 This is the RSS feed command. Below are a few popular RSS feeds. To track one of these, do ``rss <rss feed link> <filter for the rss feed>`` 📰 : ")
+      msgArray.push(" ➖ <http://feeds.feedburner.com/crunchyroll/rss> ⬅️ Crunchyroll anime releases")
+      msgArray.push(" ➖ <https://jaiminisbox.com/reader/feeds/rss> ⬅️ Manga scanlating website")
+      msgArray.push(" ➖ <http://mangastream.com/rss> ⬅️ Another manga scanlating website")
+      msgArray.push(" ➖ <http://feeds.bbci.co.uk/news/rss.xml> ⬅️ Good ol' British news")
+      msgArray.push(" ➖ <http://feeds.feedburner.com/techcrunch> ⬅️ Crunchy Tech YumYum")
+      msgArray.push(" ➖ <https://www.nasa.gov/rss/dyn/breaking_news.rss> ⬅️ Space news for blues clues yo")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      var raw = args
+      args = args.split(" ")
+      var url = args[0]
+      var filter = ""
+      var channel
+      var isUser
+      var track = true
+      if (args.length > 1) {
+        filter = raw.substr(raw.indexOf(args[0]) + args[0].length).trim()
+      }
+      rssDB.parseRSS(url).then(function(r) {
+        var ts = new Date(r[0].date)
+        ts = ts.getTime()
+        if (msg.channel.type == "dm") {
+          channel = msg.author.id
+          isUser = true
+        } else if (msg.channel.type == "text") {
+          if (msg.member.hasPermission("MANAGE_CHANNELS")) {
+            channel = msg.channel.id
+            isUser = false
+          } else {
+            track = false
+            msg.channel.sendMessage(`You don't have high enough permissions to track this RSS feed for this entire channel.`).then(function(mesg) {
+              mesg.author = msg.author
+              functions.responseHandlingREG(bot, mesg, '```If you wanted to track the RSS feed so that it private messages you directly, please respond with "y"```', msg.author).then(function(res) {
+                if (res.toLowerCase() == "y") {
+                  channel = msg.author.id
+                  isUser = true
+                  rssDB.check(url, channel, filter).then(function(re) {
+                    if (re == "tracking all") {
+                      msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
+                    } else if (re == "same filter") {
+                      msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")
+                    } else {
+                      rssDB.trackRSS(channel, isUser, url, filter, ts)
+                      if (filter == "") {
+                        msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** 📰. All updates to the RSS feed will be posted here.")
+                      } else {
+                        msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                      }
+                    }
+                  })
+                }
+              })
+            })
+          }
+        }
+        if (track) {
+          rssDB.check(url, channel, filter).then(function(re) {
+            if (re == "tracking all") {
+              msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with no filter```")
+            } else if (re == "same filter") {
+              msg.channel.sendMessage("```diff\n- Error: you are already tracking this RSS feed with the same filter```")
+            } else {
+              rssDB.trackRSS(channel, isUser, url, filter, ts)
+              if (isUser) {
+                if (filter == "") {
+                  msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** 📰. All updates to the RSS feed will be posted here.")
+                } else {
+                  msg.author.sendMessage("📰 You are now tracking the RSS feed **" + r[0].meta.title + "** with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                }
+              } else {
+                if (filter == "") {
+                  msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " 📰. All updates to the RSS feed will be posted here.")
+                } else {
+                  msg.channel.sendMessage("📰 The RSS feed **" + r[0].meta.title + "** is now being tracked in " + msg.channel + " with filter **" + filter + "** 📰. All updates to the RSS feed will be posted here.")
+                }
+              }
+            }
+          })
+        }
+      }).catch(function(e) {
+        msg.channel.sendMessage("```diff\n- Error: Invalid RSS feed link```")
+      })
+    }
+  }
+};
+
+Commands.rsslist = {
+  name: "rsslist",
+  help: "tbd",
+  type: "weeb",
+  perms: ["SEND_MESSAGES"],
+  pm: true,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var msgArray = []
+    if (msg.channel.type == "dm") {
+      rssDB.getByUser(msg.author).then(function(r) {
+        msgArray.push("📰 The RSS feeds you are currently tracking are as follows 📰 : ")
+        var count = 0
+        for (item of r) {
+          var filter
+          if (item.filter == "") {
+            filter = "no"
+          } else {
+            filter = item.filter
+          }
+          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked with ${filter} filter`)
+          count++
+        }
+        msg.channel.sendMessage(msgArray).then(function(mesg) {
+          mesg.author = msg.author
+          functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the RSS feeds currently being tracked, type the number next to the RSS feed above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+            if (res.toLowerCase() == "all") {
+              for (item of r) {
+                rssDB.deleteTrack(item._id)
+              }
+              msg.channel.sendMessage("All RSS feeds have been deleted 🗑️")
+            } else if (res > 0 && res <= r.length) {
+              rssDB.deleteTrack(r[res-1]._id)
+              msg.channel.sendMessage("The RSS feed <" + r[res-1].url + "> has been deleted 🗑️")
+            }
+          })
+        })
+      }).catch(function(e) {
+        if (e == "No RSS found here") {
+          msgArray.push("📰 You are currently not tracking any RSS feeds 📰")
+        }
+        msg.channel.sendMessage(msgArray)
+      })
+    } else if (msg.channel.type == "text") {
+      rssDB.getByGuild(msg.guild).then(function(r) {
+        msgArray.push("📰 The RSS feeds currently being tracked on this server are as follows 📰 : ")
+        var count = 0
+        for (item of r) {
+          var filter
+          if (item.filter == "") {
+            filter = "no"
+          } else {
+            filter = item.filter
+          }
+          msgArray.push(`**${count+1}** ➖ ` + `<${item.url}>  Being tracked in ${bot.channels.get(item.discordID)} with ${filter} filter`)
+          count++
+        }
+        msg.channel.sendMessage(msgArray).then(function(mesg) {
+          if (msg.member.hasPermission("MANAGE_CHANNELS")) {
+            mesg.author = msg.author
+            functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the RSS feeds currently being tracked, type the number next to the RSS feed above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+              if (res.toLowerCase() == "all") {
+                for (item of r) {
+                  rssDB.deleteTrack(item._id)
+                }
+                msg.channel.sendMessage("All RSS feeds have been deleted 🗑️")
+              } else if (res > 0 && res <= r.length) {
+                rssDB.deleteTrack(r[res-1]._id)
+                msg.channel.sendMessage("The RSS feed <" + r[res-1].url + "> has been deleted 🗑️")
+              }
+            })
+          }
+        })
+      }).catch(function(e) {
+        if (e == "No RSS found here") {
+          msgArray.push("📰 There are currently no RSS feeds being tracked in any channels on this server 📰")
+        }
+        msg.channel.sendMessage(msgArray)
+      })
+    }
+  }
+};
+
+
 
 
 // ADMIN COMMANDS
@@ -541,25 +891,26 @@ Commands.purge = {
   name: "purge",
   help: "tbd",
   type: "admin",
-  lvl: 1,
+  perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
-    if (msg.channel.type == 'dm') {
-      msg.channel.sendMessage("```diff\n- You can't do that in a DM you silly silly person!```");
-      return;
-    }
-    if (!args || isNaN(args)) {
-      msg.channel.sendMessage("```diff\n- Please define an amount of messages for me to delete!```");
-      return;
-    }
-    if (!msg.member.hasPermission("MANAGE_MESSAGES")) {
-      msg.channel.sendMessage("```diff\n- Your role in this guild does not have enough permissions.```");
-      return;
-    }
-    if (!msg.guild.members.get(bot.user.id).hasPermission("MANAGE_MESSAGES")) {
-      msg.channel.sendMessage("```diff\n- I don't have permission to do that!```");
-      return;
-    }
+    // if (msg.channel.type == 'dm') {
+    //   msg.channel.sendMessage("```diff\n- You can't do that in a DM you silly silly person!```");
+    //   return;
+    // }
+    // if (!args || isNaN(args)) {
+    //   msg.channel.sendMessage("```diff\n- Please define an amount of messages for me to delete!```");
+    //   return;
+    // }
+    // if (!msg.member.hasPermission("MANAGE_MESSAGES")) {
+    //   msg.channel.sendMessage("```diff\n- Your role in this guild does not have enough permissions.```");
+    //   return;
+    // }
+    // if (!msg.guild.members.get(bot.user.id).hasPermission("")) {
+    //   msg.channel.sendMessage("```diff\n- I don't have permission to do that!```");
+    //   return;
+    // }
     if (args > 100) {
       msg.channel.sendMessage("```diff\n- The maximum is 100.```");
       return;
@@ -572,129 +923,12 @@ Commands.purge = {
   }
 };
 
-Commands.getpermissionlevel = {
-  name: "getpermissionlevel",
-  help: "tbd",
-  type: "admin",
-  lvl: 1,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
-      msg.reply("```diff\n- Please mention a user```");
-    } else {
-      permissionDB.getPermission(msg.channel.guild.id, msg.mentions.users.array()[0].id).then(function(r) {
-        msg.channel.sendMessage(r);
-      });
-    }
-  }
-};
-
-Commands.setpermissionlevel = {
-  name: "setpermissionlevel",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    var num = args.substr(args.indexOf(" ") + 1)
-    var isnum = /^\d+$/.test(num);
-    if ((msg.mentions.users.array().length === 0) || (msg.mentions.users.array().length > 1)) {
-      msg.reply("```diff\n- Please mention a user```");
-      return;
-    } else {
-      if (!num || !isnum || (num == 4) || (num == 5) || (num < 0) || (num > 6)) {
-        msg.channel.sendMessage("```diff\n- Please define the permission level you wish to set for the user.```");
-        return;
-      } else {
-        permissionDB.check(msg.channel.guild.id, msg.mentions.users.array()[0].id).catch(function(e) {
-          console.log(e);
-          if (e == 'Nothing found!1') {
-            permissionDB.newPermission(msg.channel.guild, msg.mentions.users.array()[0]);
-          };
-        });
-        permissionDB.getPermission(msg.channel.guild.id, msg.author.id).then(function(r) {
-          permissionDB.setPermission(r, msg.channel.guild, msg.mentions.users.array()[0], num).then(function(res) {
-            msg.channel.sendMessage(msg.mentions.users.array()[0] + res);
-          }).catch(function(e) {
-            msg.channel.sendMessage(e);
-          });
-        }).catch(function(e) {
-          console.log(e);
-        });
-      }
-    }
-  }
-};
-
-Commands.createfaction = {
-  name: "createfaction",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    var name = args.substr(0, args.indexOf("#") - 1).toLowerCase();
-    var hex = args.substr(args.indexOf("#"))
-    var isHex = /^#[0-9A-F]{6}$/i.test(hex);
-
-    if (!isHex) {
-      msg.channel.sendMessage("```diff\n- Please enter a valid Hex value of the format #<six digit hex number>.```");
-      return;
-    };
-    factionDB.checkNameClash(msg.channel.guild, name).then(function() {
-      var hex_int = parseInt("0x" + hex.substr(hex.indexOf("#") + 1), 16);
-      msg.guild.createRole({
-        color : hex_int,
-        hoist : false,
-        name : name,
-        permissions : [
-          "ATTACH_FILES", "SEND_MESSAGES", "READ_MESSAGES", "EMBED_LINKS", "READ_MESSAGE_HISTORY", "CREATE_INSTANT_INVITE", "CHANGE_NICKNAME", "CONNECT", "SPEAK", "USE_VAD"
-        ],
-        mentionable: false
-      }).then(role => {
-        factionDB.createNewFaction(role.id, role.guild, role.name, hex_int, role.permissions);
-        msg.channel.sendMessage("The faction " + role.name + " has been created ✔");
-      }).catch(function(e) {
-        msg.channel.sendMessage(e);
-        return;
-      })
-    }).catch(function(e) {
-      msg.channel.sendMessage(e);
-      return;
-    });
-  }
-};
-
-Commands.deletefaction = {
-  name: "deletefaction",
-  help: "tbd",
-  type: "admin",
-  lvl: 3,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    var found = false
-    factionDB.getFactionsHere(msg.guild).then(function(r) {
-      for (i = 0; i < r.length; i++) {
-        if (msg.guild.roles.get(r[i]).name == args) {
-          factionDB.deleteFaction(r[i]);
-          msg.guild.roles.get(r[i]).delete().then(r => {
-            msg.channel.sendMessage(`The faction **${r.name}** has been deleted`)
-          })
-          found = true
-        }
-        if (!found && i == r.length-1) {
-          msg.channel.sendMessage("```diff\nA faction with this name does not exist\n```")
-        }
-      }
-    })
-  }
-};
-
 Commands.ignore = {
   name: "ignore",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.ignoreChannel(msg.channel).then(function(r) {
@@ -709,7 +943,8 @@ Commands.unignore = {
   name: "unignore",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.unignoreChannel(msg.channel).then(function(r) {
@@ -720,38 +955,40 @@ Commands.unignore = {
   }
 };
 
+//TODO REMOVE LVL FROM THE CC DB AND WORK OUT EVERYTHING MENTION WISES
 Commands.createcommand = {
   name: "createcommand",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var comexists = false
-    var specific_lvl = 0;
+    //var specific_lvl = 0;
     if (!args) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. ");
       return;
     }
     if (args.indexOf(" | ") < 0) {
-      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+      msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> '. Command name cannot contain spaces. ");
       return;
     }
-    if (/---[0-3]|---6/.test(args)) {
-      if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
-        msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
-        return;
-      } else {
-        specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
-      }
-    }
+    // if (/---[0-3]|---6/.test(args)) {
+    //   if (/---[0-3]|---6/.exec(args).index !== args.length-4) {
+    //     msg.channel.sendMessage("Syntax error. Correct usage: '!createcommand <command name> | <command text> ---<permission level>'. Command name cannot contain spaces. (permission level can be ommitted but the command will be usable by anyone)");
+    //     return;
+    //   } else {
+    //     specific_lvl = args.substr(/---[0-3]|---6/.exec(args).index+3, 1);
+    //   }
+    // }
     var tempname = args.split(" ")[0].trim();
     var comname = args.split(" ")[0].toLowerCase().trim();
     if (args.split(" ")[1] != "|") {
       msg.channel.sendMessage("```diff\n- Command name cannot contain spaces.```");
       return;
     }
-    var comcontent = args.replace(tempname + " | ", "").replace("---" + specific_lvl, "").trim();
+    var comcontent = args.replace(tempname + " | ", "").trim().replace(/@/igm, "@\u200B")
     if (Commands[comname]) {
       msg.channel.sendMessage("```diff\n- Cannot overwrite core bot commands.```");
       return;
@@ -764,15 +1001,15 @@ Commands.createcommand = {
       }
       if (comexists) {
         customcommands.deleteCommand(msg.guild, comname);
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        customcommands.createNewCommand(comname, msg.guild, comcontent);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been overwritten with new response: " + comcontent);
       }  else {
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        customcommands.createNewCommand(comname, msg.guild, comcontent);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
       }
     }).catch(function(e) {
       if (e == "No custom commands found") {
-        customcommands.createNewCommand(comname, msg.guild, comcontent, specific_lvl);
+        customcommands.createNewCommand(comname, msg.guild, comcontent);
         msg.channel.sendMessage("📝 Command `" + comname + "` has been created with response: " + comcontent);
       }
     });
@@ -783,7 +1020,8 @@ Commands.deletecommand = {
   name: "deletecommand",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (!args) {
@@ -802,7 +1040,8 @@ Commands.nsfw = {
   name: "nsfw",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.nsfwChannel(msg.channel).then(function(r) {
@@ -817,7 +1056,8 @@ Commands.unnsfw = {
   name: "unnsfw",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.unNSFWChannel(msg.channel).then(function(r) {
@@ -832,7 +1072,8 @@ Commands.reddit = {
   name: "reddit",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var found = false;
@@ -884,7 +1125,8 @@ Commands.unreddit = {
   name: "unreddit",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["MANAGE_CHANNELS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     var found = false;
@@ -932,10 +1174,11 @@ Commands.setprefix = {
   name: "setprefix",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
-    var eargs = args.replace(/@everyone/g, "@\u200Beveryone").replace(/@here/g, "@\u200Bhere");
+    var eargs = functions.escapeMentions(args, true);
     if (eargs.length > 140) {
       msg.channel.sendMessage("This prefix is too long :|");
     } else {
@@ -949,7 +1192,8 @@ Commands.togglewelcomepm = {
   name: "togglewelcomepm",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.toggleWelcomePM(msg.guild.id).then(function(r) {
@@ -958,14 +1202,15 @@ Commands.togglewelcomepm = {
   }
 };
 
-Commands.togglefactionpm = {
-  name: "togglefactionpm",
+Commands.toggleselfrolepm = {
+  name: "toggleselfrolepm",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
-    guildDB.toggleFactionPM(msg.guild.id).then(function(r) {
+    guildDB.toggleSelfRolePM(msg.guild.id).then(function(r) {
       msg.channel.sendMessage(r);
     })
   }
@@ -975,7 +1220,8 @@ Commands.setjoinmessage = {
   name: "setjoinmessage",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, " " + args).then(function(r) {
@@ -988,7 +1234,8 @@ Commands.setleavemessage = {
   name: "setleavemessage",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, args).then(function(r) {
@@ -998,10 +1245,11 @@ Commands.setleavemessage = {
 };
 
 Commands.disablejoinmessage = {
-  name: "togglefactionpm",
+  name: "disablejoinmessage",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setJoinmsg(msg.guild.id, "").then(function(r) {
@@ -1011,10 +1259,11 @@ Commands.disablejoinmessage = {
 };
 
 Commands.disableleavemessage = {
-  name: "togglefactionpm",
+  name: "disableleavemessage",
   help: "tbd",
   type: "admin",
-  lvl: 3,
+  perms: ["ADMINISTRATOR"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.setLeavemsg(msg.guild.id, "").then(function(r) {
@@ -1043,20 +1292,176 @@ Commands.disableleavemessage = {
 //       data.addField("Bot Prefix", r.prefix, true)
 //       data.addField("Welcome Message", r.welcomePM, true)
 //       data.addField("Faction Join Message", r.factionPM, true)
-      
+
 //       msg.author.sendEmbed(data)
-      
-      
+
+
 //     })
-    
+
 //   }
 // };
+
+Commands.log = Commands.logs = {
+  name: "log",
+  help: "tbd",
+  type: "admin",
+  perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
+  pm: false,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    if (!args) {
+      var msgArray = [];
+      msgArray.push("This is the log command. below are the different options:\n")
+      msgArray.push("``log all`` : This will start logging **everything** listed below\n")
+      msgArray.push("``log traffic`` : This will start logging all the **member joins/leaves**\n")
+      msgArray.push("``log kicks `` : This will start logging all the **kicked members** using the ``punish`` command\n")
+      msgArray.push("``log bans`` : This will start logging all the **banned members**\n")
+      msgArray.push("``log deletes`` : This will start logging all the **deleted messages**\n")
+      msgArray.push("``log warnings`` : This will start logging all the **warnings** given to members using the ``punish`` command\n")
+      msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
+      msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
+      msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+      msgArray.push("``log voice`` : This will start logging all traffic for **voice channels**\n")
+      msg.channel.sendMessage(msgArray)
+    } else {
+      args = args.split(" ")
+
+      var handleLog = function(guild, channel, type) {
+        logDB.checkLog(guild, type).then(function(r) {
+          logDB.createNewLog(guild, channel, type)
+          msg.channel.sendMessage("📩 **" + type + "** is now being logged in " + channel + " 📩")
+        }).catch(function(e) {
+          if (e == 'exists') {
+            logDB.getLogChannel(guild, type).then(function(r) {
+              msg.channel.sendMessage('You are already tracking **' + type + '** in ' + bot.channels.get(r) + '. To see a list of your logs, do the command  ``loglist``')
+            })
+          } else {
+            console.log(e)
+          }
+        })
+      }
+
+      switch(args[0]) {
+          case "a":
+          case "all":
+              logDB.checkLogAll(msg.guild).then(function(r) {
+                if (r.length > 0) {
+                  var typeString = r.join(", ")
+                  for (type of r) {
+                    logDB.createNewLog(msg.guild, msg.channel, type)
+                  }
+                  var grammar
+                  if (r.length > 1) {
+                    grammar = "are"
+                  } else {
+                    grammar = "is"
+                  }
+                  msg.channel.sendMessage("📩 **" + typeString + "** " + grammar + " now being logged in " + msg.channel + " 📩")
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: you are already tracking all types of logs on this server. To see a list do the command -  loglist```')
+                }
+              }).catch(function(e) {
+                console.log(e)
+              })
+              break;
+          case "t":
+          case "traffic":
+              handleLog(msg.guild, msg.channel, 'traffic')
+              break;
+          case "k":
+          case "kicks":
+              handleLog(msg.guild, msg.channel, 'kicks')
+              break;
+          case "b":
+          case "bans":
+              handleLog(msg.guild, msg.channel, 'bans')
+              break;
+          case "d":
+          case "deletes":
+              handleLog(msg.guild, msg.channel, 'deletes')
+              break;
+          case "w":
+          case "warnings":
+              handleLog(msg.guild, msg.channel, 'warnings')
+              break;
+          case "c":
+          case "channels":
+              handleLog(msg.guild, msg.channel, 'channels')
+              break;
+          case "r":
+          case "roles":
+              handleLog(msg.guild, msg.channel, 'roles')
+              break;
+          case "e":
+          case "emojis":
+              handleLog(msg.guild, msg.channel, 'emojis')
+              break;
+          case "v":
+          case "voice":
+              handleLog(msg.guild, msg.channel, 'voice')
+              break;
+          default:
+              var msgArray = [];
+              msgArray.push("This is the log command. below are the different options:\n")
+              msgArray.push("``log all`` : This will start logging **everything** listed below\n")
+              msgArray.push("``log traffic`` : This will start logging all the **member joins/leaves**\n")
+              msgArray.push("``log kicks `` : This will start logging all the **kicked members** using the ``punish`` command\n")
+              msgArray.push("``log bans`` : This will start logging all the **banned members**\n")
+              msgArray.push("``log deletes`` : This will start logging all the **deleted messages**\n")
+              msgArray.push("``log warnings`` : This will start logging all the **warnings** given to members using the ``punish`` command\n")
+              msgArray.push("``log channels`` : This will start logging all changes made to **channels**\n")
+              msgArray.push("``log roles`` : This will start logging all changes made to **roles**\n")
+              msgArray.push("``log emojis`` : This will start logging all changes made to **emojis**\n")
+              msg.channel.sendMessage(msgArray)
+      }
+    }
+  }
+};
+
+Commands.loglist = {
+  name: "loglist",
+  help: "tbd",
+  type: "admin",
+  perms: ["MANAGE_SERVER", "MANAGE_CHANNELS"],
+  pm: false,
+  cooldown: 0,
+  func: function(bot, msg, args) {
+    var msgArray = []
+    logDB.getByGuild(msg.guild).then(function(r) {
+      msgArray.push("📩 The types of logs currently implemented on this server are as follows 📩 : ")
+      var count = 0
+      for (item of r) {
+        msgArray.push(`**${count+1}** ➖ ` + `**${item.type}**  Being tracked in ${bot.channels.get(item.channelID)}`)
+        count++
+      }
+      msg.channel.sendMessage(msgArray).then(function(mesg) {
+        mesg.author = msg.author
+        functions.responseHandlingREG(bot, mesg, "❗ If you would like to delete one of the logs currently implemented, type the number next to the log type above E.G. '2'. To delete them all type 'all'", msg.author).then(function(res) {
+          if (res.toLowerCase() == "all") {
+            logDB.deleteAllHere(msg.guild)
+            msg.channel.sendMessage("All logs have been deleted 🗑️")
+          } else if (res > 0 && res <= r.length) {
+            logDB.deleteLog(r[res-1]._id)
+            msg.channel.sendMessage("The log for **" + r[res-1].type + "** has been deleted 🗑️")
+          }
+        })
+      })
+    }).catch(function(e) {
+      if (e == "No logs found here") {
+        msgArray.push("📩 There are currently no logs of any type implemented in any channels on this server 📩")
+      }
+      msg.channel.sendMessage(msgArray)
+    })
+  }
+};
+
 
 Commands.spoiler = {
   name: "spoiler",
   help: "tbd",
   type: "admin",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     //console.log(msg.member.displayName)
@@ -1076,7 +1481,7 @@ Commands.spoiler = {
       //console.log(height)
       gm(385, height*20, "#36393E")
         .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-        .fontSize(14)  
+        .fontSize(14)
         .fill("#B9BABC")
         .drawText(5, 15, text)
         .write('./images/tempspoil.png',function (err) {
@@ -1088,7 +1493,7 @@ Commands.spoiler = {
             })
         })
     }
-    
+
   }
 };
 
@@ -1096,14 +1501,15 @@ Commands.spoils = {
   name: "spoils",
   help: "tbd",
   type: "admin",
-  lvl: 1,
+  perms: ["MANAGE_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     //console.log(msg.member.displayName)
     args = args.replace(/\n/ig, " ").replace(/\u200B/ig, "")
     var id = args.substr(args.indexOf(':') + 1).trim()
     //console.log(msg.channel.messages.array().length)
-    
+
     msg.channel.fetchMessage(id).then(mesg => {
       if (args.indexOf(':') <= 0) {
         msg.channel.sendMessage('```fix\n- Error: You need give the title of the thing you are spoiling```')
@@ -1113,7 +1519,7 @@ Commands.spoils = {
         //console.log(height)
         gm(385, height*20, "#36393E")
           .font("C:/Users/ME/Documents/Discord/Bots/Dekubot-Indev/DekuBot/images/source-sans-pro.regular.ttf")
-          .fontSize(15)  
+          .fontSize(14)
           .fill("#B9BABC")
           .drawText(5, 15, "! This is a spoiler for " + args.substring(0, args.indexOf(':')) + " ! - Hover over to reveal")
           .write('./images/tempspoil.png',function (err) {
@@ -1128,8 +1534,8 @@ Commands.spoils = {
       }
     })
     //onsole.log(mesg)
-    
-    
+
+
   }
 };
 
@@ -1141,7 +1547,8 @@ Commands.anime = {
   name: "anime",
   help: "tbd",
   type: "weeb",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1184,7 +1591,8 @@ Commands.manga = {
   name: "manga",
   help: "tbd",
   type: "weeb",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1228,7 +1636,8 @@ Commands.character = {
   name: "character",
   help: "tbd",
   type: "weeb",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1304,7 +1713,8 @@ Commands.animesearch = {
   name: "animesearch",
   help: "tbd",
   type: "weeb",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1402,7 +1812,8 @@ Commands.mangasearch = {
   name: "mangasearch",
   help: "tbd",
   type: "weeb",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1487,7 +1898,8 @@ Commands.animeairdate = {
   name: "animeairdate",
   help: "tbd",
   type: "weeb",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: true,
   cooldown: 0,
   func: function(bot, msg, args) {
     msg.channel.sendMessage(" 🔍 *Searching...* 🔍");
@@ -1526,117 +1938,41 @@ Commands.animeairdate = {
   }
 };
 
-Commands.mangalist= {
-  name: "mangalist",
-  help: "tbd",
-  type: "weeb",
-  lvl: 0,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.getAll().then(function(r) {
-      var msgarray = [];
-      msgarray.push("This is a list of all of the manga tracked on mangastream");
-      for (i = 0; i < r.length; i++) {
-        msgarray.push(`<${r[i].url}> Aliases: ${r[i].aliases}`);
-      }
-      msg.author.sendMessage(msgarray, {split: true});
-    })
-  }
-};
+// Commands.mangalist= {
+//   name: "mangalist",
+//   help: "tbd",
+//   type: "weeb",
+//   perms: ["SEND_MESSAGES"],
+//   cooldown: 0,
+//   func: function(bot, msg, args) {
+//     mangaDB.getAll().then(function(r) {
+//       var msgarray = [];
+//       msgarray.push("This is a list of all of the manga tracked on mangastream");
+//       for (i = 0; i < r.length; i++) {
+//         msgarray.push(`<${r[i].url}> Aliases: ${r[i].aliases}`);
+//       }
+//       msg.author.sendMessage(msgarray, {split: true});
+//     })
+//   }
+// };
 
-Commands.mangatrack = {
-  name: "mangatrack",
-  help: "tbd",
-  type: "weeb",
-  lvl: 0,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.addToPM(record._id, msg.author);
-      msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked to you in a Private Message ✔");
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
-Commands.unmangatrack = {
-  name: "unmangatrack",
-  help: "tbd",
-  type: "weeb",
-  lvl: 0,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.removeFromPM(record._id, msg.author);
-      msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` ✔");
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
-Commands.servermangatrack = {
-  name: "mangatrack",
-  help: "tbd",
-  type: "weeb",
-  lvl: 3,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-
-    var mentionVal = ""
-
-    if (args.includes(" | ")) {
-      mentionVal = args.substring(args.indexOf(" | ")+3)
-      args = args.substring(0, args.indexOf(" | "))
-    }
-
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
-        msg.channel.sendMessage("You are already tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
-      }).catch(function(e) {
-        var obj = {
-          guild_id: msg.guild.id,
-          channel_id: msg.channel.id,
-          mention: mentionVal
-        }
-        mangaDB.addGuildChannel(record._id, obj);
-        msg.channel.sendMessage("You are now tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "``. All new chapters will be linked in this channel ✔");
-      })
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
-Commands.unservermangatrack = {
-  name: "mangatrack",
-  help: "tbd",
-  type: "weeb",
-  lvl: 3,
-  cooldown: 0,
-  func: function(bot, msg, args) {
-    mangaDB.checkAlias(args).then(function(record) {
-      mangaDB.checkGuildChannel(msg.guild.id).then(function(r) {
-        mangaDB.removeGuildChannel(record._id, r);
-        msg.channel.sendMessage("You are now no longer tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` In this server.");
-      }).catch(function(e) {
-        msg.channel.sendMessage("You are already not tracking ``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` in this server.");
-      })
-    }).catch(function(e) {
-      if (e == "Nothing found") {
-        msg.channel.sendMessage("``" + args.replace(/@everyone/igm, "@\u200Beveryone").replace(/@here/igm, "@\u200Bhere") + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
-      }
-    })
-  }
-};
-
+// Commands.mangatrack = {
+//   name: "mangatrack",
+//   help: "tbd",
+//   type: "weeb",
+//   perms: ["SEND_MESSAGES"],
+//   cooldown: 0,
+//   func: function(bot, msg, args) {
+//     mangaDB.checkAlias(args).then(function(record) {
+//       mangaDB.addToPM(record._id, msg.author);
+//       msg.channel.sendMessage("You are now tracking ``" + functions.escapeMentions(args, true) + "``. All new chapters will be linked to you in a Private Message ✔");
+//     }).catch(function(e) {
+//       if (e == "Nothing found") {
+//         msg.channel.sendMessage("``" + functions.escapeMentions(args, true) + "`` Is not a recognised name for any of the manga on mangastream.com, if you would like a list then please check http://mangastream.com/manga or do !mangalist");
+//       }
+//     })
+//   }
+// };
 
 
 //MUSIC COMMANDS
@@ -1644,11 +1980,12 @@ Commands.unservermangatrack = {
 Commands.dj = {
   name: "dj",
   help: "tbd",
-  lvl: 3,
+  perms: ["MANAGE_GUILD", "MANAGE_ROLES_OR_PERMISSIONS"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
-      if (r.DJRole) {
+      if (msg.guild.roles.get(r.DJRole)) {
         msg.channel.sendMessage('```fix\nA DJ role already exists, it is the role:```' + msg.guild.roles.get(r.DJRole))
       } else {
         msg.guild.createRole({name: 'DJ'}).then(role => {
@@ -1664,7 +2001,8 @@ Commands.dj = {
 Commands.joinvoice = {
   name: "joinvoice",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     //have the d role to use this command
@@ -1673,7 +2011,7 @@ Commands.joinvoice = {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.member.voiceChannel) {
             msg.member.voiceChannel.join().then(connection => {
-              music.addToGuildArray(bot, msg.guild) 
+              music.addToGuildArray(bot, msg.guild)
               msg.channel.sendMessage('I have successfully connected to the ``' + connection.channel.name + '`` voice channel.');
             })
           } else {
@@ -1688,18 +2026,19 @@ Commands.joinvoice = {
     })
   }
 };
-  
+
 Commands.leavevoice = {
   name: "leavevoice",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
       if (r.DJRole) {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
-            music.removeFromGuildArray(bot, msg.guild) 
+            music.removeFromGuildArray(bot, msg.guild)
             msg.guild.voiceConnection.channel.leave()
             msg.channel.sendMessage('Disconnected from the ``' + msg.guild.voiceConnection.channel.name + '`` voice channel.');
           }
@@ -1716,7 +2055,8 @@ Commands.leavevoice = {
 Commands.request = {
   name: "request",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
@@ -1736,7 +2076,7 @@ Commands.request = {
               data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
               data.setColor("#FF4500")
               data.setDescription("🔗 **URL:** " + str[0])
-             
+
               msg.channel.sendEmbed(data);
               music.addToSongs(bot, msg.guild, str[0], msg.member, result.items[0])
             }
@@ -1746,8 +2086,10 @@ Commands.request = {
             youtube.search(args, 2, function(error, result) {
               if (error) {
                 console.log(error);
-              }
-              else {
+              } else if (result.items.length < 1) {
+                msg.channel.sendMessage('```diff\n- Error: You need to give a valid youtube video link E.G. https://www.youtube.com/watch?v=YLO7tCdBVrA or give a search term```');
+                return;
+              } else {
                 var link = 'https://www.youtube.com/watch?v=' + result.items[0].id.videoId
 
                 var data = new Discord.RichEmbed(data);
@@ -1756,7 +2098,7 @@ Commands.request = {
                 data.setThumbnail(result.items[0].snippet.thumbnails.default.url)
                 data.setColor("#FF4500")
                 data.setDescription("🔗 **URL:** " + link)
-                
+
                 msg.channel.sendEmbed(data)
                 music.addToSongs(bot, msg.guild, link, msg.member, result.items[0])
               }
@@ -1777,7 +2119,8 @@ Commands.request = {
 Commands.skipsong = {
   name: "skipsong",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
@@ -1795,14 +2138,15 @@ Commands.skipsong = {
 Commands.clearqueue = {
   name: "clearsongs",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
       if (r.DJRole) {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
-            music.clearSongs(bot, msg.guild) 
+            music.clearSongs(bot, msg.guild)
             msg.channel.sendMessage('```fix\nAll songs cleared from the queue```');
           } else {
             msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
@@ -1820,14 +2164,15 @@ Commands.clearqueue = {
 Commands.endsong = {
   name: "endsong",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
       if (r.DJRole) {
         if (msg.member.roles.has(r.DJRole)) {
           if (msg.guild.voiceConnection) {
-            music.endSong(bot, msg.guild) 
+            music.endSong(bot, msg.guild)
             msg.channel.sendMessage('```fix\nSong ended...```');
           } else {
             msg.channel.sendMessage("```diff\n- Error: I'm not playing any music```");
@@ -1845,7 +2190,8 @@ Commands.endsong = {
 Commands.queue = {
   name: "queue",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (msg.guild.voiceConnection) {
@@ -1859,7 +2205,8 @@ Commands.queue = {
 Commands.pause = {
   name: "pause",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1883,7 +2230,8 @@ Commands.pause = {
 Commands.resume = {
   name: "resume",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1901,14 +2249,15 @@ Commands.resume = {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
       }
     })
-    
+
   }
 };
 
 Commands.volume = {
   name: "resume",
   help: "tbd",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     guildDB.get(msg.guild.id).then(r => {
@@ -1934,7 +2283,7 @@ Commands.volume = {
           msg.channel.sendMessage('```fix\n- Error: You need to have the DJ role to use this command. To create the DJ role, please do ' + r.prefix + 'dj```');
       }
     })
-    
+
   }
 };
 
@@ -1945,7 +2294,8 @@ Commands.rule34 = {
   name: "rule34",
   help: "tbd",
   type: "nsfw",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
@@ -1983,7 +2333,8 @@ Commands.konachan = {
   name: "konachan",
   help: "tbd",
   type: "nsfw",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (args.split(" ").length > 5) {
@@ -2022,7 +2373,8 @@ Commands.danbooru = {
   name: "danbooru",
   help: "tbd",
   type: "nsfw",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     if (args.split(" ").length > 2) {
@@ -2061,7 +2413,8 @@ Commands.yandere = {
   name: "yandere",
   help: "tbd",
   type: "nsfw",
-  lvl: 0,
+  perms: ["SEND_MESSAGES"],
+  pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
     request('https://yande.re/post/index.json?limit=500&tags=' + args, function (error, response, body) {

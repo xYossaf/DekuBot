@@ -15,7 +15,7 @@ Dekubot is a general purpose discord chat-bot. It performs various different tas
 * General server utils such as having a welcome message
 * Creating feeds for the new posts on a subreddit
 * Works as a music bot by playing youtube links
-* Tracking new releases of manga as they are released on [Mangastream](http://mangastream.com/)
+* Tracking rss feeds
 * Creating custom commands
 * A whole bunch of other stuff yo
 
@@ -23,7 +23,7 @@ Dekubot is a general purpose discord chat-bot. It performs various different tas
 
 * The way to add Dekubot to your server is to simply use the [Invite link](https://discordapp.com/oauth2/authorize?client_id=282126217275244545&scope=bot&permissions=2146954327). From that page you can add the bot to any server where you have manage_server permissions 
 
-* For a list of commands I recommend reading the [Wiki](https://github.com/RoddersGH/DekuBot/wiki/General-Commands) we have here on this repository as it has a comprehensive list of every command and how they can be used
+* For a list of commands I recommend reading the [Wiki](https://github.com/RoddersGH/DekuBot/blob/master/docs/CommandsList.md) we have here on this repository as it has a comprehensive list of every command and how they can be used
 
 * If you have any further questions or you want to help in the development of DekuBot then please join our [discord server](https://discord.gg/we8bdxJ) 
 
