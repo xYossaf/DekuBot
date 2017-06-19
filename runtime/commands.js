@@ -2300,7 +2300,7 @@ Commands.rule34 = {
   func: function(bot, msg, args) {
     request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        if (body.length < 1) {
+        if (result === undefined || result.posts.post === undefined) {
           msg.channel.sendMessage("Sorry, nothing found.");
           return;
         }
