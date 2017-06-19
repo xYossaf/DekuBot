@@ -2344,7 +2344,7 @@ Commands.konachan = {
     request('https://konachan.net/post/index.json?limit=300&tags=' + args, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         var result = JSON.parse(body);
-        if (result.length < 1) {
+        if (result === undefined || result.length < 1 ) {
           msg.channel.sendMessage("Sorry, nothing found.");
           return;
         }
@@ -2384,7 +2384,7 @@ Commands.danbooru = {
     request('https://danbooru.donmai.us/posts.json?limit=300&tags=' + args, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         var result = JSON.parse(body);
-        if (result.length < 1) {
+        if (result === undefined || result.length < 1 ) {
           msg.channel.sendMessage("Sorry, nothing found.");
           return;
         }
@@ -2420,7 +2420,7 @@ Commands.yandere = {
     request('https://yande.re/post/index.json?limit=500&tags=' + args, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         var result = JSON.parse(body);
-        if (result.length < 1) {
+        if (result === undefined || result.length < 1 ) {
           msg.channel.sendMessage("Sorry, nothing found.");
           return;
         }
