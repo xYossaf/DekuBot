@@ -2300,15 +2300,15 @@ Commands.rule34 = {
   func: function(bot, msg, args) {
     request('http://rule34.xxx//index.php?page=dapi&s=post&q=index&limit=300&tags=' + args, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        if (result === undefined || result.posts.post === undefined) {
-          msg.channel.sendMessage("Sorry, nothing found.");
-          return;
-        }
         if (args.length < 1) {
           args = "<no tags specified>";
         }
         if (functions.checkBlacklist(args)) {
           parseString(body, function (err, result) {
+            if (result === undefined || result.posts.post === undefined) {
+              msg.channel.sendMessage("Sorry, nothing found.");
+              return;
+            }
             msg.channel.sendMessage("You've searched for `" + args + "`. Sending images in a pm...").then(mesg => {
               msg.author.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
               msg.author.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
@@ -2317,6 +2317,10 @@ Commands.rule34 = {
           });
         } else {
           parseString(body, function (err, result) {
+            if (result === undefined || result.posts.post === undefined) {
+              msg.channel.sendMessage("Sorry, nothing found.");
+              return;
+            }
             msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
               msg.channel.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
               msg.channel.sendMessage('http:' + result.posts.post[Math.floor((Math.random() * result.posts.post.length))].$.file_url);
