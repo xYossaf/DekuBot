@@ -211,11 +211,12 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
   func: function(bot, msg, args) {
     if (!args) {
       var msgArray = [];
-      msgArray.push("This is the self assignable role command. below are the different options:")
-      msgArray.push("``selfrole list`` : This will list all of the self assignable roles")
-      msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name")
-      msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name")
-      msgArray.push("``selfrole assign <pre-existing role id>`` : This is used to make pre-existing roles self assignable")
+      msgArray.push("This is the self assignable role command. below are the different options:\n")
+      msgArray.push("``selfrole list`` : This will list all of the self assignable roles\n")
+      msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name\n")
+      msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name\n")
+      msgArray.push("``selfrole assign <pre-existing role name or id>`` : This is used to make pre-existing roles self assignable\n")
+      msgArray.push("``selfrole unassign <pre-existing role name or id>`` : This is used to make pre-existing self roles unassignable\n")
       msg.channel.sendMessage(msgArray)
     } else {
       args = args.split(" ")
@@ -275,6 +276,33 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
                 msg.channel.sendMessage('```diff\n- Error: You do not have the appropriate permissions```')
               }
               break;
+          case "u":
+          case "unassign":
+              if (msg.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
+                if (args[1]) {
+                  var role = msg.guild.roles.find("name", args[1])
+                  if (role) {
+                    assignableRolesDB.checkName(msg.guild, role.name).then(function(r) {
+                      msg.channel.sendMessage('```diff\n- Error: No role with this name is self assignable.```')
+                    }).catch(function(e) {
+                      if (e == 'exists') {
+                        msg.channel.sendMessage('The role **' + role.name + '** will now no longer be self assignable.').then(function(mesg) {
+                          assignableRolesDB.deleteRole(role.id)
+                        })
+                      } else {
+                        console.log(e)
+                      }
+                    })
+                  } else {
+                    msg.channel.sendMessage('```diff\n- Error: No role with this name was found (role name is case sensitive)```')
+                  }
+                } else {
+                  msg.channel.sendMessage('```diff\n- Error: no role name given. Correct format - selfrole unassign <role name>```')
+                }
+              } else {
+                msg.channel.sendMessage('```diff\n- Error: You do not have the appropriate permissions```')
+              }
+              break;
           case "g":
           case "give":
               if (args[1]) {
@@ -315,11 +343,12 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
               break;
           default:
               var msgArray = [];
-              msgArray.push("This is the self assignable role command. below are the different options:")
-              msgArray.push("``selfrole list`` : This will list all of the self assignable roles")
-              msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name")
-              msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name")
-              msgArray.push("``selfrole assign <pre-existing role id>`` : This is used to make pre-existing roles self assignable")
+              msgArray.push("This is the self assignable role command. below are the different options:\n")
+              msgArray.push("``selfrole list`` : This will list all of the self assignable roles\n")
+              msgArray.push("``selfrole give <role name>`` : This will give you the role with the specified name\n")
+              msgArray.push("``selfrole take <role name>`` : This will take away the role with the specified name\n")
+              msgArray.push("``selfrole assign <pre-existing role name or id>`` : This is used to make pre-existing roles self assignable\n")
+              msgArray.push("``selfrole unassign <pre-existing role name or id>`` : This is used to make pre-existing self roles unassignable\n")
               msg.channel.sendMessage(msgArray)
       }
     }
