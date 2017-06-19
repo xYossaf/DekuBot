@@ -2438,7 +2438,7 @@ Commands.yandere = {
             msg.author.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
           });
         } else {
-          msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...", function(err, mesg) {
+          msg.channel.sendMessage("You've searched for `" + args + "`. Sending 3 random images from a potential 300 results...").then(mesg => {
             msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
             msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
             msg.channel.sendMessage(result[Math.floor((Math.random() * result.length))].file_url);
