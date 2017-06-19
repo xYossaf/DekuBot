@@ -164,3 +164,23 @@ exports.deleteAllHere = function(guild) {
     }
   });
 };
+
+exports.deleteAllChannelHere = function(channel) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({channelID: channel.id}, function(err, result) {
+        if (!err || result.length > 0) {
+          for (i = 0; i < result.length; i++) {
+            db.remove({_id: result[i]._id}, {}, function(err, nr) {
+              if (err) {
+                return reject(err);
+              }
+            })
+          }
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};

@@ -360,3 +360,54 @@ exports.deleteTrack = function(id) {
     }
   });
 };
+
+exports.deleteByDiscordID = function(id) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({
+      discordID: id
+      }, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('Not tracking this rss feed');
+        } else {
+          db.remove({
+            _id: res[0]._id
+          }, {}, function(err, nr) {
+            if (err) {
+              return reject(err);
+            }
+            if (nr >= 1) {
+              resolve('No longer tracking.');
+            }
+          });
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
+exports.deleteAllHere = function(guild) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({isUser: false}, function(err, result) {
+        if(!err && result.length > 0) {
+          for (record of result) {
+            if (guild.channels.has(record.discordID)) {
+              exports.deleteTrack(record._id)
+            } 
+          }
+        } else {
+          reject("No RSS found here")
+        }
+       });
+    } catch (e) {
+      reject(e);
+    }
+  })
+}
+

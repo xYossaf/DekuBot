@@ -84,7 +84,8 @@ dekubot.on("guildDelete", (guild) => {
     }
   } 
 
-  mangaDB.deleteAllHere(guild);
+  rssDB.deleteAllHere(guild);
+  logDB.deleteAllHere(guild)
   redditDB.deleteAllHere(guild);
   assignableRolesDB.deleteAllHere(guild);
   customcommands.deleteAllHere(guild);
@@ -190,7 +191,9 @@ dekubot.on("channelDelete", (channel) => {
           set to ${channel.guild.defaultChannel.name} by default.`)
       }
     })
-  
+    redditDB.deleteAllChannelHere(channel)
+    logDB.deleteAllChannelHere(channel)
+    rssDB.deleteByDiscordID(channel.id)
     // mangaDB.getAll().then(function(r) {
     //   for (i = 0; i < r.length; i++) {
     //     for (j = 0; j < r[i].guild_channel_array.length; j++) {
