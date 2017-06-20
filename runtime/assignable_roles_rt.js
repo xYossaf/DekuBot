@@ -44,6 +44,30 @@ exports.getRoleName = function(roleid) {
   });
 };
 
+exports.updateNameChange = function(role) {
+  return new Promise(function(resolve, reject) {
+    try {
+      db.find({_id: role.id}, function(err, res) {
+        if (err) {
+          return reject(err);
+        }
+        if (res.length === 0) {
+          return reject('No role found');
+        } else {
+          if (res[0].roleName == role.name) {
+            return reject("No change")
+          } else {
+            db.update({_id: res[0]._id}, {$set: {roleName: role.name}}, {});
+            resolve("Name changed")
+          }
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 exports.getRoleID = function(guildID, name) {
   return new Promise(function(resolve, reject) {
     try {
