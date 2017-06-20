@@ -209,6 +209,13 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
   pm: false,
   cooldown: 0,
   func: function(bot, msg, args) {
+    for (x = 0; x < msg.guild.roles.array().length; x++) {
+      (function(i){
+        assignableRolesDB.updateNameChange(msg.guild.roles.array()[i]).then(function(r){
+          console.log(r)
+        })
+      })(x)
+    }
     if (!args) {
       var msgArray = [];
       msgArray.push("This is the self assignable role command. below are the different options:\n")
@@ -219,6 +226,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
       msgArray.push("``selfrole unassign <pre-existing role name or id>`` : This is used to make pre-existing self roles unassignable\n")
       msg.channel.sendMessage(msgArray)
     } else {
+      rawArgs = args
       args = args.split(" ")
       switch(args[0]) {
           case "l":
@@ -242,7 +250,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
           case "assign":
               if (msg.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
                 if (args[1]) {
-                  var role = msg.guild.roles.find("name", args[1])
+                  var role = msg.guild.roles.find("name", rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/)
                   if (role) {
                     assignableRolesDB.checkName(msg.guild, role.name).then(function(r) {
                       msg.channel.sendMessage('The role **' + role.name + '** will now be made self assignable.').then(function(mesg) {
@@ -280,7 +288,7 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
           case "unassign":
               if (msg.member.hasPermission("MANAGE_ROLES_OR_PERMISSIONS")) {
                 if (args[1]) {
-                  var role = msg.guild.roles.find("name", args[1])
+                  var role = msg.guild.roles.find("name", rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/)
                   if (role) {
                     assignableRolesDB.checkName(msg.guild, role.name).then(function(r) {
                       msg.channel.sendMessage('```diff\n- Error: No role with this name is self assignable.```')
@@ -306,13 +314,13 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
           case "g":
           case "give":
               if (args[1]) {
-                assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
+                assignableRolesDB.checkName(msg.guild, rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/).then(function(r) {
                   msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
                 }).catch(function(e) {
                   if (e == 'exists') {
-                    assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
+                    assignableRolesDB.getRoleID(msg.guild.id, rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/).then(function(r) {
                       msg.member.addRole(r)
-                      msg.channel.sendMessage(msg.member + ' You now have the **' + functions.escapeMentions(args[1], true) + '** role')
+                      msg.channel.sendMessage(msg.member + ' You now have the **' + functions.escapeMentions(rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/, true) + '** role')
                     })
                   }
                 })
@@ -323,14 +331,14 @@ Commands.selfrole = Commands.srole = Commands.sarole = Commands.sar = {
           case "t":
           case "take":
               if (args[1]) {
-                assignableRolesDB.checkName(msg.guild, args[1]).then(function(r) {
+                assignableRolesDB.checkName(msg.guild, rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/).then(function(r) {
                   msg.channel.sendMessage('```diff\n- Error: No self assignable role with this name was found (role name is case sensitive). To see a list do -  selfrole list```')
                 }).catch(function(e) {
                   if (e == 'exists') {
-                    assignableRolesDB.getRoleID(msg.guild.id, args[1]).then(function(r) {
+                    assignableRolesDB.getRoleID(msg.guild.id, rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/).then(function(r) {
                       if (msg.member.roles.has(r)) {
                         msg.member.removeRole(r)
-                        msg.channel.sendMessage(msg.member + ' You no longer have the **' + functions.escapeMentions(args[1], true) + '** role')
+                        msg.channel.sendMessage(msg.member + ' You no longer have the **' + functions.escapeMentions(rawArgs.substr(rawArgs.indexOf(args[1]))/*args[1]*/, true) + '** role')
                       } else {
                         msg.channel.sendMessage('```diff\n- Error: you already do not have this role```')
                       }

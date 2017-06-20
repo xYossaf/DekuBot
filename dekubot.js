@@ -108,6 +108,7 @@ dekubot.on("roleCreate", (role) => {
 
 dekubot.on("roleUpdate", (oldRole, newRole) => {
   if (!oldRole.equals(newRole)) {
+    assignableRolesDB.updateNameChange(newRole)
     logDB.getLogChannel(newRole.guild, 'roles').then(function(r) {
       var data = new Discord.RichEmbed(data);
       
