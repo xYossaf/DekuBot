@@ -186,7 +186,12 @@ var makePost = function(article, rss, bot) {
   data.setTimestamp(article.date)
 
   if (rss.isUser) {
-    bot.users.get(rss.discordID).sendEmbed(data)
+    if (bot.users.get(rss.discordID)) {
+      bot.users.get(rss.discordID).sendEmbed(data)
+    } else {
+      exports.deleteTrack(rss._id)
+    }
+    
   } else {
     bot.channels.get(rss.discordID).sendEmbed(data)
   } 
