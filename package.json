@@ -4,7 +4,7 @@
     "erlpack": "hammerandchisel/erlpack#master",
     "feedparser": "^2.2.0",
     "gm": "^1.23.0",
-    "jimp": "^0.2.27",
+    "jimp": "^0.3.7",
     "mathjs": "^3.9.2",
     "nani": "^1.2.0",
     "nedb": "^1.8.0",
